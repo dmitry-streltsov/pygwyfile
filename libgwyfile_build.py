@@ -5,11 +5,11 @@
 from cffi import FFI
 ffibuilder = FFI()
 
-ffibuilder.set_source("_gwyio",
+ffibuilder.set_source("_libgwyfile",
                      r"""
-                     #include "gwyfilelib/gwyfile.h"
+                     #include "libgwyfile/gwyfile.h"
                      """,
-                     sources=["gwyfilelib/gwyfile.c"])
+                     sources=["libgwyfile/gwyfile.c"])
 
 
 ffibuilder.cdef("""

@@ -3,7 +3,7 @@
 import os.path
 import numpy as np
 
-from _gwyio import ffi, lib
+from _libgwyfile import ffi, lib
 
 
 class GwyfileError(Exception):
