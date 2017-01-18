@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Gwyfile IO operations using Gwyfile C library http://libgwyfile.sourceforge.net/
-"""
-
+"""Gwyfile IO operations using Libgwyfile C library"""
 import os.path
 import numpy as np
 
@@ -9,8 +7,56 @@ from _gwyio import ffi, lib
 
 
 class GwyfileError(Exception):
-    """Class for Gwyfile C Library exceptions"""
+    """Class for Gwyfile C Library errors"""
     pass
+
+
+
+class GwyDataframe():
+    """Class for Gwy Dataframe representation
+
+    Attributes:
+        data (np.float64 array): 2D numpy array with the Dataframe data
+        xres (int): Horizontal dimension of the dataframe in pixels
+        yres (int): Vertical dimension of the dataframe in pixels
+        xreal (float): Horizontal size of the dataframe in physical units
+        yreal (float): Vertical size of the dataframe in physical units
+        xyunit (str): Physical unit of lateral dimensions, base SI unit, e.g. 'm'
+        zunit (str): Physical unit of vertical dimension, base SI unit, e.g. 'm'
+
+    """
+    def __init__(self, data, metadata):
+        """
+        Args:
+            data (np.float64 array): 2D numpy array with GWY dataframe data
+            metadata (dictionary): Python dictionary with GWY dataframe metadata
+                                   keys - names of metadata fields (e.g. 'xres')
+                                   values - values of metadata fields (e.g. 512)
+
+        """
+        self.data = data
+        for key in metadata:
+            setattr(self, key, metadata[key])
+
+
+
+class GwyChannel():
+    """Class for Gwy channel representation.
+    Contains at least one dataframe.
+    Could also contains Mask or Presentation dataframes.
+
+    Attributes:
+        title (str): Title of the GWY channel
+        dataframe (GwyDataframe): Dataframe of the channel
+        mask (GwyDataframe): Mask of the channel
+        presentation (GwyDataframe): Presentation of the channel
+    """
+    def __init__(self, title, dataframe, mask=None, presentation=None):
+        self.title = title
+        self.dataframe = dataframe
+        self.mask = mask
+        self.presentation = presentation
+
 
 
 def gwyfile_channels_dump(filename):
@@ -20,8 +66,7 @@ def gwyfile_channels_dump(filename):
         filename (str): Name of the gwyddion file.
         
     Returns:
-        List of all channels contained in the gwyddion file.
-        Each element of this list is a dictionary returned by gwychannel_dump function:
+        List of all channels objects contained in the gwyddion file.
     
     """
     errorp = ffi.new("GwyfileError**")
@@ -96,12 +141,12 @@ def gwydataframe_get_metadata(gwyfile_object, key):
     Returns:
         metadata_dic (dictionary): Python dictionary with GWY dataframe metadata
             keys of the metadata_dic:
-                'xres' (int) - Horisontal dimension in pixels
-                'yres' (int) - Vertical dimension in pixels
-                'xreal' (float) - Horisontal size in physical units
-                'yreal' (float) - Vertical size in physical units
-                'xyunit' (str) - Physical units of lateral dimensions, base SI units, e.g. "m"
-                'zunit' (str) - Physical unit of vertical dimension, base SI unit, e.g. "m"    
+                'xres' (int): Horizontal dimension in pixels
+                'yres' (int): Vertical dimension in pixels
+                'xreal' (float): Horizontal size in physical units
+                'yreal' (float): Vertical size in physical units
+                'xyunit' (str): Physical units of lateral dimensions, base SI units, e.g. "m"
+                'zunit' (str): Physical unit of vertical dimension, base SI unit, e.g. "m"    
     """
     errorp = ffi.new("GwyfileError**")
     xresp = ffi.new("int32_t*")
@@ -145,12 +190,12 @@ def gwychannel_get_metadata(gwyfile_object, id):
     Returns:
         metadata_dic (dictionary): Python dictionary with GWY channel metadata
             keys of the metadata_dic:
-                'xres' (int) - Horisontal dimension in pixels
-                'yres' (int) - Vertical dimension in pixels
-                'xreal' (float) - Horisontal size in physical units
-                'yreal' (float) - Vertical size in physical units
-                'xyunit' (str) - Physical units of lateral dimensions, base SI units, e.g. "m"
-                'zunit' (str) - Physical unit of vertical dimension, base SI unit, e.g. "m"
+                'xres' (int): Horizontal dimension in pixels
+                'yres' (int): Vertical dimension in pixels
+                'xreal' (float): Horizontal size in physical units
+                'yreal' (float): Vertical size in physical units
+                'xyunit' (str): Physical units of lateral dimensions, base SI units, e.g. "m"
+                'zunit' (str): Physical unit of vertical dimension, base SI unit, e.g. "m"
 
     """
     key = "/{:d}/data".format(id)
@@ -168,12 +213,12 @@ def gwymask_get_metadata(gwyfile_object, id):
     Returns:
         metadata_dic (dictionary): Python dictionary with GWY channel metadata
             keys of the metadata_dic:
-                'xres' (int) - Horisontal dimension in pixels
-                'yres' (int) - Vertical dimension in pixels
-                'xreal' (float) - Horisontal size in physical units
-                'yreal' (float) - Vertical size in physical units
-                'xyunit' (str) - Physical units of lateral dimensions, base SI units, e.g. "m"
-                'zunit' (str) - Physical unit of vertical dimension, base SI unit, e.g. "m"
+                'xres' (int): Horizontal dimension in pixels
+                'yres' (int): Vertical dimension in pixels
+                'xreal' (float): Horizontal size in physical units
+                'yreal' (float): Vertical size in physical units
+                'xyunit' (str): Physical units of lateral dimensions, base SI units, e.g. "m"
+                'zunit' (str): Physical unit of vertical dimension, base SI unit, e.g. "m"
 
     """
     key = "/{:d}/mask".format(id)
@@ -191,12 +236,12 @@ def gwypresentation_get_metadata(gwyfile_object, id):
     Returns:
         metadata_dic (dictionary): Python dictionary with GWY channel metadata
             keys of the metadata_dic:
-                'xres' (int) - Horisontal dimension in pixels
-                'yres' (int) - Vertical dimension in pixels
-                'xreal' (float) - Horisontal size in physical units
-                'yreal' (float) - Vertical size in physical units
-                'xyunit' (str) - Physical units of lateral dimensions, base SI units, e.g. "m"
-                'zunit' (str) - Physical unit of vertical dimension, base SI unit, e.g. "m"
+                'xres' (int): Horizontal dimension in pixels
+                'yres' (int): Vertical dimension in pixels
+                'xreal' (float): Horizontal size in physical units
+                'yreal' (float): Vertical size in physical units
+                'xyunit' (str): Physical units of lateral dimensions, base SI units, e.g. "m"
+                'zunit' (str): Physical unit of vertical dimension, base SI unit, e.g. "m"
 
     """
     key = "/{:d}/show".format(id)
@@ -210,7 +255,7 @@ def gwydataframe_get_data(gwyfile_object, key, xres, yres):
     Args:
         gwyfile_object (cdata GwyfileObject*): GWY file data object
         key (str): name of the dataframe in the GWY file (e.g. "/0/data")
-        xres (int): Horisontal dimension of the dataframe in pixels
+        xres (int): Horizontal dimension of the dataframe in pixels
         yres (int): Vertical dimension of the dataframe in pixels
         
     Returns:
@@ -242,7 +287,7 @@ def gwychannel_get_data(gwyfile_object, id, xres, yres):
     Args:
         gwyfile_object (cdata GwyfileObject*): GWY file data object
         id (int): id number of the channel in the GWY file
-        xres (int): Horisontal dimension of the channel in pixels
+        xres (int): Horizontal dimension of the channel in pixels
         yres (int): Vertical dimension of the channel in pixels
         
     Returns:
@@ -260,7 +305,7 @@ def gwymask_get_data(gwyfile_object, id, xres, yres):
     Args:
         gwyfile_object (cdata GwyfileObject*): GWY file data object
         id (int): id number of the mask dataframe in the GWY file
-        xres (int): Horisontal dimension of the mask dataframe in pixels
+        xres (int): Horizontal dimension of the mask dataframe in pixels
         yres (int): Vertical dimension of the mask dataframe in pixels
         
     Returns:
@@ -278,7 +323,7 @@ def gwypresentation_get_data(gwyfile_object, id, xres, yres):
     Args:
         gwyfile_object (cdata GwyfileObject*): GWY file data object
         id (int): id number of the presentation dataframe in the GWY file
-        xres (int): Horisontal dimension of the presentation dataframe in pixels
+        xres (int): Horizontal dimension of the presentation dataframe in pixels
         yres (int): Vertical dimension of the presentation dataframe in pixels
         
     Returns:
@@ -340,20 +385,42 @@ def gwychannel_dump(gwyfile_object, id):
         id (int): id number of the channel in a GWY file
         
     Returns:
-        gwychannel_dic (python dictionary):
-            gwychannel_dic keys:
-                'title' (str): title of the channel
-                'xres' (int): Horisontal dimension in pixels
-                'yres' (int): Vertical dimension in pixels
-                'xreal' (float): Horisontal size in physical units
-                'yreal' (float): Vertical size in physical units
-                'xyunit' (str): Physical units of lateral dimensions, base SI units, e.g. "m"
-                'zunit' (str): Physical unit of vertical dimension, base SI unit, e.g. "m"
-                'data' (2D numpy array, float64): Data from the GWY channel 
+        gwychannel (GwyChannel): Object with GWY channel data
+
     """
-    gwychannel_dic = gwychannel_get_metadata(gwyfile_object, id)
-    gwychannel_dic['title'] = gwychannel_get_title(gwyfile_object, id)
-    xres = gwychannel_dic['xres']
-    yres = gwychannel_dic['yres']
-    gwychannel_dic['data'] = gwychannel_get_data(gwyfile_object, id, xres, yres)
-    return gwychannel_dic    
+    title = gwychannel_get_title(gwyfile_object, id)
+
+    # Create channel dataframe object
+    metadata = gwychannel_get_metadata(gwyfile_object, id)
+    data = gwychannel_get_data(gwyfile_object, id,
+                               xres=metadata['xres'],
+                               yres=metadata['yres'])
+    data_df = GwyDataframe(data, metadata)
+
+    # Create mask dataframe object if mask exists
+    if gwychannel_check_mask(gwyfile_object, id):
+        mask_metadata = gwymask_get_metadata(gwyfile_object, id)
+        mask_data = gwymask_get_data(gwyfile_object, id,
+                                     xres=mask_metadata['xres'],
+                                     yres=mask_metadata['yres'])
+        mask_df = GwyDataframe(mask_data, mask_metadata)
+    else:
+        mask_df = None
+
+    # Create presentation dataframe object if presentation exists
+    if gwychannel_check_presentation(gwyfile_object, id):
+        presentation_metadata = gwypresentation_get_metadata(gwyfile_object,
+                                                             id)
+        presentation_data = gwypresentation_get_data(gwyfile_object,
+                                                     id,
+                                                     xres=presentation_metadata['xres'],
+                                                     yres=presentation_metadata['yres'])
+        presentation_df = GwyDataframe(presentation_data, presentation_metadata)
+    else:
+        presentation_df = None
+
+    return GwyChannel(title=title,
+                      dataframe=data_df,
+                      mask=mask_df,
+                      presentation=presentation_df)
+
