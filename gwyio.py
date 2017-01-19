@@ -3,7 +3,7 @@
 import os.path
 import numpy as np
 
-from _libgwyfile import ffi, lib
+from libgwyfile._libgwyfile import ffi, lib
 
 
 class GwyfileError(Exception):
@@ -43,7 +43,7 @@ class GwyDataframe():
 class GwyChannel():
     """Class for Gwy channel representation.
     Contains at least one dataframe.
-    Could also contains Mask or Presentation dataframes.
+    Could also contain Mask or Presentation dataframes.
 
     Attributes:
         title (str): Title of the GWY channel
