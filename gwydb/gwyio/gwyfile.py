@@ -1,8 +1,9 @@
-# -*- coding: utf-8 -*-
 """ Wrapper for GwyfileObject from Libgwyfile C library """
 import os.path
+
 import numpy as np
-from _libgwyfile import ffi, lib
+
+from ._libgwyfile import ffi, lib
 
 
 class GwyfileError(Exception):
@@ -96,7 +97,7 @@ class Gwyfile():
 
 
     def get_mask_metadata(self, channel_id):
-        """Get metadata from the mask if it exists, otherwise returns None
+        """Get metadata from the mask
         
         Args:
             channel_id (int): id of the channel
@@ -111,38 +112,29 @@ class Gwyfile():
                 'xyunit' (str): Physical units of lateral dimensions, base SI units, e.g. "m"
                 'zunit' (str): Physical unit of vertical dimension, base SI unit, e.g. "m"
 
-            If mask does not exist returns None
-
         """
         key = "/{:d}/mask".format(channel_id)
-        if not self._gwyobject_check(key):
-            return None
-        else:
-            metadata = self._gwydf_get_metadata(key)
-            return metadata
+        metadata = self._gwydf_get_metadata(key)
+        return metadata
 
 
     def get_mask_data(self, channel_id):
-        """Get data from the mask if it exists, otherwise returns None
+        """Get data from the mask
 
         Args:
             channel_id (int): id of the channel
 
         Returns:
             data (2D numpy array, float64): data frame from the mask
-            If mask does not exist returns None
             
         """
         key = "/{:d}/mask".format(channel_id)
-        if not self._gwyobject_check(key):
-            return None
-        else:
-            data = self._gwydf_get_data(key)
-            return data
+        data = self._gwydf_get_data(key)
+        return data
 
 
     def get_presentation_metadata(self, channel_id):
-        """Get metadata from the presentation if it exists, otherwise returns None
+        """Get metadata from the presentation
         
         Args:
             channel_id (int): id of the channel
@@ -157,36 +149,25 @@ class Gwyfile():
                 'xyunit' (str): Physical units of lateral dimensions, base SI units, e.g. "m"
                 'zunit' (str): Physical unit of vertical dimension, base SI unit, e.g. "m"
 
-            If presentation does not exist returns None
-
         """
         key = "/{:d}/show".format(channel_id)
-        if not self._gwyobject_check(key):
-            return None
-        else:
-            metadata = self._gwydf_get_metadata(key)
-            return metadata
-
+        metadata = self._gwydf_get_metadata(key)
+        return metadata
 
     
     def get_presentation_data(self, channel_id):
-        """Get data from the presentation if it exists, otherwise returns None
+        """Get data from the presentation
 
         Args:
             channel_id (int): id of the channel
 
         Returns:
             data (2D numpy array, float64): data frame from the presentation
-            If presentation does not exist returns None
             
         """
         key = "/{:d}/show".format(channel_id)
-        if not self._gwyobject_check(key):
-            return None
-        else:
-            data = self._gwydf_get_data(key)
-            return data
-
+        data = self._gwydf_get_data(key)
+        return data
 
 
     def _gwyfile_get_object(self, key):
@@ -311,6 +292,103 @@ class Gwyfile():
             return False
         else:
             return True
+
+
+    def get_channel(self, channel_id):
+        """Return channel data as GwyChannel object
+        
+        Args:
+            channel_id (int): id of the channels
+        """
+        title = self.get_title(channel_id)
+        
+        data = self.get_data(channel_id)
+        metadata = self.get_metadata(channel_id)
+        channel_df = GwyDataframe(data, metadata)
+
+        if self._gwyobject_check("/{:d}/mask".format(channel_id)):
+            mask_metadata = self.get_mask_metadata(channel_id)
+            mask_data = self.get_mask_data(channel_id)
+            mask_df = GwyDataframe(mask_data, mask_metadata)
+        else:
+            mask_df = None
+
+        if self._gwyobject_check("/{:d}/show".format(channel_id)):
+            presentation_data = self.get_presentation_data(channel_id)
+            presentation_metadata = self.get_presentation_metadata(channel_id)
+            presentation_df = GwyDataframe(presentation_data, presentation_metadata)
+        else:
+            presentation_df = None
+
+        channel = GwyChannel(title, channel_df, mask_df, presentation_df)
+        return channel
+
+
+    def get_container(self):
+        """Return GwyContainer object
+ 
+        """
+        ids = self.get_channels_ids()
+        channels = [self.get_channel(channel_id) for channel_id in ids]
+        return GwyContainer(channels)
+
+
+
+class GwyDataframe():
+    """Class for Gwy Dataframe representation
+
+    Attributes:
+        data (np.float64 array): 2D numpy array with the Dataframe data
+        xres (int): Horizontal dimension of the dataframe in pixels
+        yres (int): Vertical dimension of the dataframe in pixels
+        xreal (float): Horizontal size of the dataframe in physical units
+        yreal (float): Vertical size of the dataframe in physical units
+        xyunit (str): Physical unit of lateral dimensions, base SI unit, e.g. 'm'
+        zunit (str): Physical unit of vertical dimension, base SI unit, e.g. 'm'
+
+    """
+    def __init__(self, data, metadata):
+        """
+        Args:
+            data (np.float64 array): 2D numpy array with GWY dataframe data
+            metadata (dictionary): Python dictionary with GWY dataframe metadata
+
+        """
+        self.data = data
+        for key in metadata:
+            setattr(self, key, metadata[key])
+
+
+
+class GwyChannel():
+    """Class for Gwy channel representation.
+    Contains at least one dataframe.
+    Could also contain Mask or Presentation data frames.
+
+    Attributes:
+        title (str): Title of the GWY channel
+        dataframe (GwyDataframe): Dataframe of the channel
+        mask (GwyDataframe): Mask of the channel
+        presentation (GwyDataframe): Presentation of the channel
+
+    """
+    def __init__(self, title, dataframe, mask=None, presentation=None):
+        self.title = title
+        self.dataframe = dataframe
+        self.mask = mask
+        self.presentation = presentation
+
+        
+
+class GwyContainer():
+    """Class for Gwy container representation.
+
+    Attributes:
+        channels (list): list of GwyChannel objects
+   
+    """
+    def __init__(self, channels):
+        self.channels = channels
 
 
 

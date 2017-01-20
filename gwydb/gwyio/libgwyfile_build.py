@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """ CFFI interface for interacting with Libgwyfile library
 """
 
