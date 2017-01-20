@@ -60,13 +60,13 @@ class Gwyfile():
 
 
     def get_metadata(self, channel_id):
-        """Get metadata from  the channel  data frame
+        """Get metadata from  the channel data field
 
         Args:
             channel_id (int): id of the channel
 
         Returns:
-            metadata (dictionary): Python dictionary with the channel metadata
+            metadata (dictionary): Python dictionary with the channel data field metadata
                                    Keys of the metadata dictionary:
                                        'xres' (int): Horizontal dimension in pixels
                                        'yres' (int): Vertical dimension in pixels
@@ -82,13 +82,13 @@ class Gwyfile():
 
     
     def get_data(self, channel_id):
-        """Get data from the channel
+        """Get data from the channel data field
 
         Args:
             channel_id (int): id of the channel
 
         Returns:
-            data (2D numpy array, float64): data frame from the channel
+            data (2D numpy array, float64): data field from the channel
             
         """
         key = "/{:d}/data".format(channel_id)
@@ -125,7 +125,7 @@ class Gwyfile():
             channel_id (int): id of the channel
 
         Returns:
-            data (2D numpy array, float64): data frame from the mask
+            data (2D numpy array, float64): data field from the mask
             
         """
         key = "/{:d}/mask".format(channel_id)
@@ -162,7 +162,7 @@ class Gwyfile():
             channel_id (int): id of the channel
 
         Returns:
-            data (2D numpy array, float64): data frame from the presentation
+            data (2D numpy array, float64): data field from the presentation
             
         """
         key = "/{:d}/show".format(channel_id)
@@ -190,13 +190,13 @@ class Gwyfile():
 
 
     def _gwydf_get_metadata(self, key):
-        """Get metadata from  the data frame (channel, mask or presentation)
+        """Get metadata from  the data field (channel, mask or presentation)
 
         Args:
-            key (str): name of the data frame (e.g. "/0/data/")
+            key (str): name of the data field (e.g. "/0/data/")
 
         Returns:
-            metadata (dictionary): Python dictionary with the data frame metadata
+            metadata (dictionary): Python dictionary with the data field metadata
                                    
                                    Keys of the metadata dictionary:
                                        'xres' (int): Horizontal dimension in pixels
@@ -240,13 +240,13 @@ class Gwyfile():
     
 
     def _gwydf_get_data(self, key):
-        """Get data array from the GWY dataframe (e.g. channel, mask, presentation)
+        """Get data array from the GWY data field (e.g. channel, mask, presentation)
         
         Args:
-            key (str): name of the data frame (e.g. "/0/data")
+            key (str): name of the data field (e.g. "/0/data")
         
         Returns:
-            data (2D numpy array, float64): data from the data frame
+            data (2D numpy array, float64): data from the data field
         
         """
         xresp = ffi.new("int32_t*")
@@ -304,19 +304,19 @@ class Gwyfile():
         
         data = self.get_data(channel_id)
         metadata = self.get_metadata(channel_id)
-        channel_df = GwyDataframe(data, metadata)
+        channel_df = GwyDatafield(data, metadata)
 
         if self._gwyobject_check("/{:d}/mask".format(channel_id)):
             mask_metadata = self.get_mask_metadata(channel_id)
             mask_data = self.get_mask_data(channel_id)
-            mask_df = GwyDataframe(mask_data, mask_metadata)
+            mask_df = GwyDatafield(mask_data, mask_metadata)
         else:
             mask_df = None
 
         if self._gwyobject_check("/{:d}/show".format(channel_id)):
             presentation_data = self.get_presentation_data(channel_id)
             presentation_metadata = self.get_presentation_metadata(channel_id)
-            presentation_df = GwyDataframe(presentation_data, presentation_metadata)
+            presentation_df = GwyDatafield(presentation_data, presentation_metadata)
         else:
             presentation_df = None
 
@@ -334,15 +334,15 @@ class Gwyfile():
 
 
 
-class GwyDataframe():
-    """Class for Gwy Dataframe representation
+class GwyDatafield():
+    """Class for Gwy Datafield representation
 
     Attributes:
-        data (np.float64 array): 2D numpy array with the Dataframe data
-        xres (int): Horizontal dimension of the dataframe in pixels
-        yres (int): Vertical dimension of the dataframe in pixels
-        xreal (float): Horizontal size of the dataframe in physical units
-        yreal (float): Vertical size of the dataframe in physical units
+        data (np.float64 array): 2D numpy array with the datafield
+        xres (int): Horizontal dimension of the data field in pixels
+        yres (int): Vertical dimension of the data field in pixels
+        xreal (float): Horizontal size of the data field in physical units
+        yreal (float): Vertical size of the data field in physical units
         xyunit (str): Physical unit of lateral dimensions, base SI unit, e.g. 'm'
         zunit (str): Physical unit of vertical dimension, base SI unit, e.g. 'm'
 
@@ -350,8 +350,8 @@ class GwyDataframe():
     def __init__(self, data, metadata):
         """
         Args:
-            data (np.float64 array): 2D numpy array with GWY dataframe data
-            metadata (dictionary): Python dictionary with GWY dataframe metadata
+            data (np.float64 array): 2D numpy array with GWY data field
+            metadata (dictionary): Python dictionary with GWY datafield metadata
 
         """
         self.data = data
@@ -362,19 +362,19 @@ class GwyDataframe():
 
 class GwyChannel():
     """Class for Gwy channel representation.
-    Contains at least one dataframe.
-    Could also contain Mask or Presentation data frames.
+    Contains at least one datafield.
+    Could also contain Mask or Presentation datafields.
 
     Attributes:
         title (str): Title of the GWY channel
-        dataframe (GwyDataframe): Dataframe of the channel
-        mask (GwyDataframe): Mask of the channel
-        presentation (GwyDataframe): Presentation of the channel
+        datafield (GwyDatafield): Datafield of the channel
+        mask (GwyDatafield): Mask of the channel
+        presentation (GwyDatafield): Presentation of the channel
 
     """
-    def __init__(self, title, dataframe, mask=None, presentation=None):
+    def __init__(self, title, datafield, mask=None, presentation=None):
         self.title = title
-        self.dataframe = dataframe
+        self.datafield = datafield
         self.mask = mask
         self.presentation = presentation
 
