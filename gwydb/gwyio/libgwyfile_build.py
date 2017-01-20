@@ -7,9 +7,9 @@ ffibuilder = FFI()
 
 ffibuilder.set_source("_libgwyfile",
                      r"""
-                     #include "gwyfile.h"
+                     #include "../libgwyfile/gwyfile.h"
                      """,
-                     sources=["gwyfile.c"])
+                     sources=["../libgwyfile/gwyfile.c"])
 
 
 ffibuilder.cdef("""
