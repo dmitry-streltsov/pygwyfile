@@ -2,14 +2,15 @@
 """
 
 from cffi import FFI
+
+
 ffibuilder = FFI()
 
 ffibuilder.set_source("_libgwyfile",
-                     r"""
-                     #include "../libgwyfile/gwyfile.h"
-                     """,
-                     sources=["../libgwyfile/gwyfile.c"])
-
+                      r"""
+                      #include "../libgwyfile/gwyfile.h"
+                      """,
+                      sources=["../libgwyfile/gwyfile.c"])
 
 ffibuilder.cdef("""
     typedef ... GwyfileObject;
@@ -18,7 +19,7 @@ ffibuilder.cdef("""
         ...;
         char* message;
     } GwyfileError;
-    
+
     GwyfileObject* gwyfile_read_file(const char*  filename, GwyfileError**  error);
     const char* gwyfile_object_name(const GwyfileObject* object);
     int* gwyfile_object_container_enumerate_channels(const GwyfileObject* object, unsigned int* nchannels);
@@ -31,4 +32,3 @@ ffibuilder.cdef("""
 
 if __name__ == "__main__":
     ffibuilder.compile(verbose=True)
-
