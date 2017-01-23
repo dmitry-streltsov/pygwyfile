@@ -17,17 +17,26 @@ class Gwyfile():
     """Wrapper class for GwyfileObject from Libgwyfile C library
 
     Attributes:
-        gwyfile (cdata  GwyfileObject*): gwyfile object from
-                                         Libgwyfile C library
+        c_gwyfile (cdata  GwyfileObject*): gwyfile object from
+                                           Libgwyfile C library
 
     """
 
     def __init__(self, c_gwyfile):
-        if ffi.typeof(c_gwyfile) == ffi.typeof('GwyfileObject*'):
-            self.c_gwyfile = c_gwyfile
-        else:
-            raise GwyfileError(
-                'Gwyfile should be initialized by <cdata GwyfileObject*>')
+        """
+        Args:
+            c_gwyfile (cdata GwyfileOjbect*): gwyfile object from
+                                              Libgwyfile C library
+
+        The top-level object of the c_gwyfile must be 'GwyContainer'
+        """
+
+        toplevel_object_name = ffi.string(lib.gwyfile_object_name(c_gwyfile))
+        if not toplevel_object_name == b'GwyContainer':
+            error_msg = 'The top-level object of c_gwyfile is not ' \
+                        ' a GwyContainer'
+            raise GwyfileError(error_msg)
+        self.c_gwyfile = c_gwyfile
 
     def get_channels_ids(self):
         """Get list of channels ids
@@ -113,8 +122,8 @@ class Gwyfile():
             channel_id (int): id of the channel
 
         Returns:
-            metadata (dictionary): Python dictionary with the mask metadata
-                keys of the metadata:
+            metadata (dict): Python dictionary with the mask metadata
+                keys of the metadata dictionary:
                   'xres' (int): Horizontal dimension in pixels
                   'yres' (int): Vertical dimension in pixels
                   'xreal' (float): Horizontal size in physical units
@@ -421,7 +430,7 @@ class GwyContainer():
         self.channels = channels
 
 
-def read_gwy(filename):
+def read_gwyfile(filename):
     """Read gwy file
 
     Args:
@@ -442,9 +451,5 @@ def read_gwy(filename):
     if not c_gwyfile:
         error_msg = ffi.string(errorp[0].message).decode('utf-8')
         raise GwyfileError(error_msg)
-    elif not ffi.string(lib.gwyfile_object_name(c_gwyfile)) == b'GwyContainer':
-        error_msg = ('The top-level object in the file {} '
-                     'is not a GwyContainer').format(filename)
-        raise GwyfileError(error_msg)
 
-    return Gwyfile(c_gwyfile)
+    return c_gwyfile
