@@ -21,7 +21,7 @@ class Gwyfile():
                                            Libgwyfile C library
 
     """
-
+    
     def __init__(self, c_gwyfile):
         """
         Args:
@@ -30,12 +30,15 @@ class Gwyfile():
 
         The top-level object of the c_gwyfile must be 'GwyContainer'
         """
+        if not c_gwyfile:
+            raise GwyfileError("c_gwyfile object is empty")
 
         toplevel_object_name = ffi.string(lib.gwyfile_object_name(c_gwyfile))
         if not toplevel_object_name == b'GwyContainer':
             error_msg = 'The top-level object of c_gwyfile is not ' \
                         ' a GwyContainer'
             raise GwyfileError(error_msg)
+
         self.c_gwyfile = c_gwyfile
 
     def get_channels_ids(self):
@@ -265,12 +268,21 @@ class Gwyfile():
             metadata['yres'] = yresp[0]
             metadata['xreal'] = xrealp[0]
             metadata['yreal'] = yrealp[0]
-            metadata['xyunit'] = ffi.string(xyunitp[0]).decode('utf-8')
-            metadata['zunit'] = ffi.string(zunitp[0]).decode('utf-8')
+            if xyunitp[0]:
+                metadata['xyunit'] = ffi.string(xyunitp[0]).decode('utf-8')
+            else:
+                metadata['xyunit'] = ''
+            if zunitp[0]:
+                metadata['zunit'] = ffi.string(zunitp[0]).decode('utf-8')
+            else:
+                metadata['zunit'] = ''
             return metadata
         else:
-            error_msg = ffi.string(errorp[0].message).decode('utf-8')
-            raise GwyfileError(error_msg)
+            if errorp[0]:
+                error_msg = ffi.string(errorp[0].message).decode('utf-8')
+                raise GwyfileError(error_msg)
+            else:
+                raise GwyfileError
 
     def _gwydf_get_data(self, key):
         """Get data array from the GWY data field (e.g. channel, mask, presentation)
@@ -296,8 +308,11 @@ class Gwyfile():
             xres = xresp[0]
             yres = yresp[0]
         else:
-            error_msg = ffi.string(errorp[0].message).decode('utf-8')
-            raise GwyfileError(error_msg)
+            if errorp[0]:
+                error_msg = ffi.string(errorp[0].message).decode('utf-8')
+                raise GwyfileError(error_msg)
+            else:
+                raise GwyfileError
 
         data = ffi.new("double[]", xres*yres)
         datap = ffi.new("double**", data)
@@ -310,8 +325,11 @@ class Gwyfile():
                                        count=xres*yres).reshape((xres, yres))
             return data_array
         else:
-            error_msg = ffi.string(errorp[0].message).decode('utf-8')
-            raise GwyfileError(error_msg)
+            if errorp[0]:
+                error_msg = ffi.string(errorp[0].message).decode('utf-8')
+                raise GwyfileError(error_msg)
+            else:
+                raise GwyfileError
 
     def _gwyobject_check(self, key):
         """Check the presence of the object
@@ -444,12 +462,15 @@ def read_gwyfile(filename):
     errorp = ffi.new("GwyfileError**")
 
     if not os.path.isfile(filename):
-        raise OSError("Cannot read file {}".format(filename))
+        raise OSError("Cannot find file {}".format(filename))
 
     c_gwyfile = lib.gwyfile_read_file(filename.encode('utf-8'), errorp)
 
     if not c_gwyfile:
-        error_msg = ffi.string(errorp[0].message).decode('utf-8')
-        raise GwyfileError(error_msg)
+        if errorp[0]:
+            error_msg = ffi.string(errorp[0].message).decode('utf-8')
+            raise GwyfileError(error_msg)
+        else:
+            raise GwyfileError
 
     return c_gwyfile
