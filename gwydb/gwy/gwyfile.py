@@ -90,6 +90,12 @@ class Gwyfile():
                                                   physical units
                                  'yreal' (float): Vertical size in
                                                   physical units
+                                 'xoff' (double): Horizontal offset of
+                                                  the top-left corner
+                                                  in physical units.
+                                 'yoff' (double): Vertical offset of
+                                                  the top-left corner
+                                                  in physical units.
                                  'xyunit' (str): Physical units of lateral
                                                  dimensions, base SI units,
                                                  e.g. "m"
@@ -131,6 +137,12 @@ class Gwyfile():
                   'yres' (int): Vertical dimension in pixels
                   'xreal' (float): Horizontal size in physical units
                   'yreal' (float): Vertical size in physical units
+                  'xoff' (double): Horizontal offset of
+                                   the top-left corner
+                                   in physical units.
+                  'yoff' (double): Vertical offset of
+                                   the top-left corner
+                                   in physical units.
                   'xyunit' (str): Physical units of lateral dimensions,
                                   base SI units, e.g. "m"
                   'zunit' (str): Physical unit of vertical dimension,
@@ -170,6 +182,12 @@ class Gwyfile():
                     'yres' (int): Vertical dimension in pixels
                     'xreal' (float): Horizontal size in physical units
                     'yreal' (float): Vertical size in physical units
+                    'xoff' (double): Horizontal offset of
+                                     the top-left corner
+                                     in physical units.
+                    'yoff' (double): Vertical offset of
+                                     the top-left corner
+                                     in physical units.
                     'xyunit' (str): Physical units of lateral dimensions,
                                     base SI units, e.g. "m"
                     'zunit' (str): Physical unit of vertical dimension,
@@ -234,6 +252,12 @@ class Gwyfile():
                                                        in physical units
                                       'yreal' (float): Vertical size
                                                        in physical units
+                                      'xoff' (double): Horizontal offset of
+                                                       the top-left corner
+                                                       in physical units.
+                                      'yoff' (double): Vertical offset of
+                                                       the top-left corner
+                                                       in physical units.
                                       'xyunit' (str): Physical units of lateral
                                                       dimensions,
                                                       base SI units, e.g. "m"
@@ -248,6 +272,8 @@ class Gwyfile():
         yresp = ffi.new("int32_t*")
         xrealp = ffi.new("double*")
         yrealp = ffi.new("double*")
+        xoffp = ffi.new("double*")
+        yoffp =ffi.new("double*")
         xyunitp = ffi.new("char**")
         zunitp = ffi.new("char**")
 
@@ -261,6 +287,8 @@ class Gwyfile():
                 ffi.new("char[]", b'yres'), yresp,
                 ffi.new("char[]", b'xreal'), xrealp,
                 ffi.new("char[]", b'yreal'), yrealp,
+                ffi.new("char[]", b'xoff'), xoffp,
+                ffi.new("char[]", b'yoff'), yoffp,
                 ffi.new("char[]", b'si_unit_xy'), xyunitp,
                 ffi.new("char[]", b'si_unit_z'), zunitp,
                 ffi.NULL):
@@ -268,6 +296,8 @@ class Gwyfile():
             metadata['yres'] = yresp[0]
             metadata['xreal'] = xrealp[0]
             metadata['yreal'] = yrealp[0]
+            metadata['xoff'] = xoffp[0]
+            metadata['yoff'] = yoffp[0]
             if xyunitp[0]:
                 metadata['xyunit'] = ffi.string(xyunitp[0]).decode('utf-8')
             else:
@@ -395,6 +425,8 @@ class GwyDatafield():
         yres (int): Vertical dimension of the data field in pixels
         xreal (float): Horizontal size of the data field in physical units
         yreal (float): Vertical size of the data field in physical units
+        xoff (double): Horizontal offset of the top-left corner in physical units.
+        yoff (double): Vertical offset of the top-left corner in physical units.
         xyunit (str): Physical unit of lateral dimensions,
                       base SI unit, e.g. 'm'
         zunit (str): Physical unit of vertical dimension,

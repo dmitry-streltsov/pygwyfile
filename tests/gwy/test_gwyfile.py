@@ -100,11 +100,10 @@ class Gwyfile_get_channels_ids_TestCase(unittest.TestCase):
         self.gwyfile = Mock(spec=Gwyfile)
         self.gwyfile.c_gwyfile = Mock()
         self.gwyfile.get_channels_ids = Gwyfile.get_channels_ids
-        
+
         patcher_lib = patch('gwydb.gwy.gwyfile.lib', autospec=True)
         self.addCleanup(patcher_lib.stop)
         self.mock_lib = patcher_lib.start()
-
 
     def test_libgwyfile_function_returns_non_zero_channels(self):
         """Returns list of channels ids if their number is not zero"""
@@ -119,7 +118,7 @@ class Gwyfile_get_channels_ids_TestCase(unittest.TestCase):
         return ids
 
     def test_libgwyfile_function_returns_null(self):
-        """Returns empty list if lib function returns NULL"""
+        """Returns empty list if libgwyfile function returns NULL"""
         self.mock_lib.gwyfile_object_container_enumerate_channels.return_value = ffi.NULL
         ids = self.gwyfile.get_channels_ids(self.gwyfile)
         self.assertEqual(ids, [])
@@ -132,7 +131,7 @@ class Gwyfile__gwyfile_get_object_TestCase(unittest.TestCase):
         self.gwyfile = Mock(spec=Gwyfile)
         self.gwyfile.c_gwyfile = Mock()
         self.gwyfile._gwyfile_get_object = Gwyfile._gwyfile_get_object
-        
+
         patcher_lib = patch('gwydb.gwy.gwyfile.lib', autospec=True)
         self.addCleanup(patcher_lib.stop)
         self.mock_lib = patcher_lib.start()
@@ -182,7 +181,7 @@ class Gwyfile__gwydf_get_metadata(unittest.TestCase):
         self.gwyfile = Mock(spec=Gwyfile)
         self.gwyfile.c_gwyfile = Mock()
         self.gwyfile._gwydf_get_metadata = Gwyfile._gwydf_get_metadata
-        
+
         patcher_lib = patch('gwydb.gwy.gwyfile.lib', autospec=True)
         self.addCleanup(patcher_lib.stop)
         self.mock_lib = patcher_lib.start()
@@ -191,11 +190,14 @@ class Gwyfile__gwydf_get_metadata(unittest.TestCase):
         self.falsep = ffi.new("bool*", False)
         self.truep = ffi.new("bool*", True)
         self.errorp = ffi.new("GwyfileError**")
-        self.acceptable_keys = ['xres', 'yres',
-                                'xreal', 'yreal',
-                                'xoff', 'yoff',
-                                'si_unit_xy',
-                                'si_unit_z']
+        self.metadata_dict = {'xres': ffi.typeof(ffi.new("int32_t*")),
+                              'yres': ffi.typeof(ffi.new("int32_t*")),
+                              'xreal': ffi.typeof(ffi.new("double*")),
+                              'yreal': ffi.typeof(ffi.new("double*")),
+                              'xoff': ffi.typeof(ffi.new("double*")),
+                              'yoff': ffi.typeof(ffi.new("double*")),
+                              'si_unit_xy': ffi.typeof(ffi.new("char**")),
+                              'si_unit_z': ffi.typeof(ffi.new("char**"))}
 
     def test_raise_exception_if_datafield_looks_unacceptable(self):
         """Raise GwyfilleError if gwyfile_object_datafield_get returns False"""
@@ -203,10 +205,10 @@ class Gwyfile__gwydf_get_metadata(unittest.TestCase):
         self.mock_lib.gwyfile_object_datafield_get.return_value = self.falsep[0]
         self.assertRaises(GwyfileError, self.gwyfile._gwydf_get_metadata,
                           self.gwyfile, self.test_key)
-        
+
     def test_libgwyfile_function_args(self):
         """Test args of gwyfile_object_datafield_get C function """
-        
+
         self.mock_lib.gwyfile_object_datafield_get.side_effect = self._side_effect_check_args
         self.gwyfile._gwydf_get_metadata(self.gwyfile, self.test_key)
 
@@ -222,37 +224,14 @@ class Gwyfile__gwydf_get_metadata(unittest.TestCase):
         # last arg in Null
         self.assertEqual(args[-1], ffi.NULL)
 
-        # check that 3rd, 5th ... args (except last one) are acceptable keys
-        for key in args[2:-1:2]:
-            self.assertIn(ffi.string(key).decode('utf-8'),
-                          self.acceptable_keys)
-            
+        # create dict from names and types of pointers in args
+        arg_keys = [ffi.string(key).decode('utf-8') for key in args[2:-1:2]]
+        arg_pointer_types = [ffi.typeof(pointer) for pointer in args[3:-1:2]]
+        arg_dict = dict(zip(arg_keys, arg_pointer_types))
+
+        self.assertDictEqual(arg_dict, self.metadata_dict)
+
         return self.truep[0]
-    
-class Gwyfile_TestCase(unittest.TestCase):
-    """Test methods of the Gwyfile class"""
-
-    def setUp(self):
-        self.gwyfileobj = Mock(spec=Gwyfile)
-        self.gwyfileobj.c_gwyfile = Mock()
-        patcher_lib = patch('gwydb.gwy.gwyfile.lib', autospec=True)
-        self.addCleanup(patcher_lib.stop)
-        self.mock_lib = patcher_lib.start()
-        self.test_key = '/0/data'
-
-
-    def test__gwydf_get_metadata_check_keys_in_result_dic(self):
-        """Check keys in returned dictionary"""
-
-        self.gwyfileobj._gwydf_get_metadata = Gwyfile._gwydf_get_metadata
-        metadata_dic = self.gwyfileobj._gwydf_get_metadata(self.gwyfileobj,
-                                                           self.test_key)
-        self.assertIn('xres', metadata_dic)
-        self.assertIn('yres', metadata_dic)
-        self.assertIn('xreal', metadata_dic)
-        self.assertIn('yres', metadata_dic)
-        self.assertIn('xyunit', metadata_dic)
-        self.assertIn('zunit', metadata_dic)
 
 
 if __name__ == '__main__':
