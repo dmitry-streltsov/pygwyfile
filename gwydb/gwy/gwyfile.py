@@ -21,7 +21,7 @@ class Gwyfile():
                                            Libgwyfile C library
 
     """
-    
+
     def __init__(self, c_gwyfile):
         """
         Args:
@@ -96,12 +96,12 @@ class Gwyfile():
                                  'yoff' (double): Vertical offset of
                                                   the top-left corner
                                                   in physical units.
-                                 'xyunit' (str): Physical units of lateral
-                                                 dimensions, base SI units,
-                                                 e.g. "m"
-                                 'zunit' (str): Physical unit of vertical
-                                                dimension, base SI unit,
-                                                e.g. "m"
+                                 'si_unit_xy' (str): Physical units of lateral
+                                                     dimensions, base SI units,
+                                                     e.g. "m"
+                                 'si_unit_z' (str): Physical unit of vertical
+                                                    dimension, base SI unit,
+                                                    e.g. "m"
 
         """
 
@@ -143,10 +143,10 @@ class Gwyfile():
                   'yoff' (double): Vertical offset of
                                    the top-left corner
                                    in physical units.
-                  'xyunit' (str): Physical units of lateral dimensions,
-                                  base SI units, e.g. "m"
-                  'zunit' (str): Physical unit of vertical dimension,
-                                 base SI unit, e.g. "m"
+                  'si_unit_xy' (str): Physical units of lateral dimensions,
+                                      base SI units, e.g. "m"
+                  'si_unit_z' (str): Physical unit of vertical dimension,
+                                     base SI unit, e.g. "m"
 
         """
 
@@ -188,10 +188,10 @@ class Gwyfile():
                     'yoff' (double): Vertical offset of
                                      the top-left corner
                                      in physical units.
-                    'xyunit' (str): Physical units of lateral dimensions,
-                                    base SI units, e.g. "m"
-                    'zunit' (str): Physical unit of vertical dimension,
-                                   base SI unit, e.g. "m"
+                    'si_unit_xy' (str): Physical units of lateral dimensions,
+                                        base SI units, e.g. "m"
+                    'si_unit_z' (str): Physical unit of vertical dimension,
+                                       base SI unit, e.g. "m"
 
         """
 
@@ -258,12 +258,14 @@ class Gwyfile():
                                       'yoff' (double): Vertical offset of
                                                        the top-left corner
                                                        in physical units.
-                                      'xyunit' (str): Physical units of lateral
-                                                      dimensions,
-                                                      base SI units, e.g. "m"
-                                      'zunit' (str): Physical unit of vertical
-                                                     dimension, base SI unit,
-                                                     e.g. "m"
+                                      'si_unit_xy' (str): Physical units of
+                                                          lateral dimensions,
+                                                          base SI units,
+                                                          e.g. "m"
+                                      'si_unit_z' (str): Physical unit of
+                                                         vertical dimension,
+                                                         base SI unit,
+                                                         e.g. "m"
 
         """
 
@@ -273,7 +275,7 @@ class Gwyfile():
         xrealp = ffi.new("double*")
         yrealp = ffi.new("double*")
         xoffp = ffi.new("double*")
-        yoffp =ffi.new("double*")
+        yoffp = ffi.new("double*")
         xyunitp = ffi.new("char**")
         zunitp = ffi.new("char**")
 
@@ -299,13 +301,13 @@ class Gwyfile():
             metadata['xoff'] = xoffp[0]
             metadata['yoff'] = yoffp[0]
             if xyunitp[0]:
-                metadata['xyunit'] = ffi.string(xyunitp[0]).decode('utf-8')
+                metadata['si_unit_xy'] = ffi.string(xyunitp[0]).decode('utf-8')
             else:
-                metadata['xyunit'] = ''
+                metadata['si_unit_xy'] = ''
             if zunitp[0]:
-                metadata['zunit'] = ffi.string(zunitp[0]).decode('utf-8')
+                metadata['si_unit_z'] = ffi.string(zunitp[0]).decode('utf-8')
             else:
-                metadata['zunit'] = ''
+                metadata['si_unit_z'] = ''
             return metadata
         else:
             if errorp[0]:
@@ -425,12 +427,14 @@ class GwyDatafield():
         yres (int): Vertical dimension of the data field in pixels
         xreal (float): Horizontal size of the data field in physical units
         yreal (float): Vertical size of the data field in physical units
-        xoff (double): Horizontal offset of the top-left corner in physical units.
-        yoff (double): Vertical offset of the top-left corner in physical units.
-        xyunit (str): Physical unit of lateral dimensions,
-                      base SI unit, e.g. 'm'
-        zunit (str): Physical unit of vertical dimension,
-                     base SI unit, e.g. 'm'
+        xoff (double): Horizontal offset of the top-left corner
+                       in physical units.
+        yoff (double): Vertical offset of the top-left corner
+                       in physical units.
+        si_unit_xy (str): Physical unit of lateral dimensions,
+                          base SI unit, e.g. 'm'
+        si_unit_z (str): Physical unit of vertical dimension,
+                         base SI unit, e.g. 'm'
 
     """
 

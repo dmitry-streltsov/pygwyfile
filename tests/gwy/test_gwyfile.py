@@ -62,7 +62,7 @@ class Gwyfile_init_TestCase(unittest.TestCase):
     """Test constructor of the Gwyfile class
 
        Gwyfile class is initialized by passing <cdata GwyfileObject*>
-       to its constuctor
+       to its constructor
     """
 
     def test_raise_exception_if_c_gwyfile_is_empty(self):
@@ -175,7 +175,7 @@ class Gwyfile__gwyfile_get_object_TestCase(unittest.TestCase):
 
 
 class Gwyfile__gwydf_get_metadata(unittest.TestCase):
-    """Test __gwydf_get_metadata in Gwyfile class"""
+    """Test __gwydf_get_metadata method in Gwyfile class"""
 
     def setUp(self):
         self.gwyfile = Mock(spec=Gwyfile)
@@ -210,13 +210,16 @@ class Gwyfile__gwydf_get_metadata(unittest.TestCase):
         """Test args of gwyfile_object_datafield_get C function """
 
         self.mock_lib.gwyfile_object_datafield_get.side_effect = self._side_effect_check_args
+        self.df = self.gwyfile._gwyfile_get_object.return_value
         self.gwyfile._gwydf_get_metadata(self.gwyfile, self.test_key)
+        self.gwyfile._gwyfile_get_object.assert_has_calls(
+            [call(self.test_key)])
 
     def _side_effect_check_args(self, *args):
         """Check args passing to gwyfile_object_datafield_get C function"""
 
-        # first arg is GwyDataField object
-        self.assertIsInstance(args[0], Mock)
+        # first arg is GwyDatafield returned by _gwyfile_get_object
+        self.assertEqual(args[0], self.df)
 
         # second arg is GwyfileError**
         assert ffi.typeof(args[1]) == ffi.typeof(self.errorp)
@@ -232,6 +235,79 @@ class Gwyfile__gwydf_get_metadata(unittest.TestCase):
         self.assertDictEqual(arg_dict, self.metadata_dict)
 
         return self.truep[0]
+
+    def test_returned_metadata_dict(self):
+        """Returns dictionary with metadata"""
+
+        self.test_metadata_dict = {'xres': 256,
+                                   'yres': 256,
+                                   'xreal': 1e-6,
+                                   'yreal': 1e-6,
+                                   'xoff': 0,
+                                   'yoff': 0,
+                                   'si_unit_xy': 'm',
+                                   'si_unit_z': 'A'}
+        self.mock_lib.gwyfile_object_datafield_get.side_effect = self._side_effect_return_metadata
+
+        metadata = self.gwyfile._gwydf_get_metadata(self.gwyfile, self.test_key)
+        self.assertDictEqual(self.test_metadata_dict, metadata)
+
+    def _side_effect_return_metadata(self, *args):
+
+        arg_keys = [ffi.string(key).decode('utf-8') for key in args[2:-1:2]]
+        arg_pointers = [pointer for pointer in args[3:-1:2]]
+        arg_dict = dict(zip(arg_keys, arg_pointers))
+
+        for key in arg_dict:
+            if key not in ['si_unit_xy', 'si_unit_z']:
+                arg_dict[key][0] = self.test_metadata_dict[key]
+            else:
+                metadata_value = self.test_metadata_dict[key].encode('utf-8')
+                metadata_c_str = ffi.new("char[]", metadata_value)
+                arg_dict[key][0] = metadata_c_str
+        return self.truep[0]
+
+    def test_returned_min_metadata_dict(self):
+        """Every GwyDataField must contain only xres and yres"""
+
+        self.test_metadata_dict = {'xres': 256, 'yres': 256}
+        self.mock_lib.gwyfile_object_datafield_get.side_effect = self._side_effect_return_min_metadata
+
+        metadata = self.gwyfile._gwydf_get_metadata(self.gwyfile, self.test_key)
+
+        expected_metadata = {'xres': self.test_metadata_dict['xres'],
+                             'yres': self.test_metadata_dict['yres'],
+                             'xreal': 0,
+                             'yreal': 0,
+                             'xoff': 0,
+                             'yoff': 0,
+                             'si_unit_xy': '',
+                             'si_unit_z': ''}
+
+        self.assertDictEqual(metadata, expected_metadata)
+
+    def _side_effect_return_min_metadata(self, *args):
+
+        arg_keys = [ffi.string(key).decode('utf-8') for key in args[2:-1:2]]
+        arg_pointers = [pointer for pointer in args[3:-1:2]]
+        arg_dict = dict(zip(arg_keys, arg_pointers))
+
+        arg_dict['xres'][0] = self.test_metadata_dict['xres']
+        arg_dict['yres'][0] = self.test_metadata_dict['yres']
+
+        return self.truep[0]
+
+
+class Gwyfile__gwydf_get_data(unittest.TestCase):
+    """Test _gwydf_get_data method in Gwyfile class"""
+
+    def test_raise_exception_if_datafield_looks_unacceptable(self):
+
+        pass
+
+    def test_returned_data(self):
+
+        pass
 
 
 if __name__ == '__main__':
