@@ -12,8 +12,6 @@ _*.c
 testdatafiles/
 
 # Temporary ipython notebooks
-gwyio_build.ipynb
-gwyio.ipynb
 Untitled.ipynb
 
 # Ipython notebooks checkpoints
@@ -23,3 +21,6 @@ Untitled.ipynb
 *~
 \#*
 .\#*
+
+# Coverage file
+.coverage

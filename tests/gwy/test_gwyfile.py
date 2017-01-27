@@ -1,6 +1,8 @@
 import unittest
 from unittest.mock import patch, call, ANY, Mock
 
+import numpy as np
+
 from gwydb.gwy.gwyfile import read_gwyfile
 from gwydb.gwy.gwyfile import GwyfileError
 from gwydb.gwy.gwyfile import Gwyfile
@@ -94,7 +96,7 @@ class Gwyfile_init_TestCase(unittest.TestCase):
 
 
 class Gwyfile_get_channels_ids_TestCase(unittest.TestCase):
-    """Test get_channels_ids function in Gwyfile class """
+    """Test get_channels_ids method in Gwyfile class """
 
     def setUp(self):
         self.gwyfile = Mock(spec=Gwyfile)
@@ -124,8 +126,34 @@ class Gwyfile_get_channels_ids_TestCase(unittest.TestCase):
         self.assertEqual(ids, [])
 
 
+class Gwyfile_get_title(unittest.TestCase):
+    """Test get_title method in Gwyfile class"""
+
+    def setUp(self):
+        self.gwyfile = Mock(spec=Gwyfile)
+        self.gwyfile.get_title = Gwyfile.get_title
+        self.gwyfile._gwyfile_get_object = Mock(autospec=True)
+        self.gwyfile._gwyfile_get_object.return_value = ffi.new("char[]",
+                                                                b"Title")
+
+        self.channel_id = 0
+
+    def test_check_args_passing_to__gwyfile_get_object(self):
+        """Check args passing to _gwyfile_get_object method """
+
+        self.gwyfile.get_title(self.gwyfile, self.channel_id)
+        self.gwyfile._gwyfile_get_object.assert_has_calls(
+            [call("/{:d}/data/title".format(self.channel_id))])
+
+    def test_returned_value(self):
+        """Check returned value of get_title method"""
+
+        title = self.gwyfile.get_title(self.gwyfile, self.channel_id)
+        self.assertEqual(title, 'Title')
+
+
 class Gwyfile__gwyfile_get_object_TestCase(unittest.TestCase):
-    """Test _gwyfile_get_object function in Gwyfile class"""
+    """Test _gwyfile_get_object method in Gwyfile class"""
 
     def setUp(self):
         self.gwyfile = Mock(spec=Gwyfile)
@@ -179,7 +207,6 @@ class Gwyfile__gwydf_get_metadata(unittest.TestCase):
 
     def setUp(self):
         self.gwyfile = Mock(spec=Gwyfile)
-        self.gwyfile.c_gwyfile = Mock()
         self.gwyfile._gwydf_get_metadata = Gwyfile._gwydf_get_metadata
 
         patcher_lib = patch('gwydb.gwy.gwyfile.lib', autospec=True)
@@ -249,7 +276,8 @@ class Gwyfile__gwydf_get_metadata(unittest.TestCase):
                                    'si_unit_z': 'A'}
         self.mock_lib.gwyfile_object_datafield_get.side_effect = self._side_effect_return_metadata
 
-        metadata = self.gwyfile._gwydf_get_metadata(self.gwyfile, self.test_key)
+        metadata = self.gwyfile._gwydf_get_metadata(self.gwyfile,
+                                                    self.test_key)
         self.assertDictEqual(self.test_metadata_dict, metadata)
 
     def _side_effect_return_metadata(self, *args):
@@ -273,7 +301,8 @@ class Gwyfile__gwydf_get_metadata(unittest.TestCase):
         self.test_metadata_dict = {'xres': 256, 'yres': 256}
         self.mock_lib.gwyfile_object_datafield_get.side_effect = self._side_effect_return_min_metadata
 
-        metadata = self.gwyfile._gwydf_get_metadata(self.gwyfile, self.test_key)
+        metadata = self.gwyfile._gwydf_get_metadata(self.gwyfile,
+                                                    self.test_key)
 
         expected_metadata = {'xres': self.test_metadata_dict['xres'],
                              'yres': self.test_metadata_dict['yres'],
@@ -301,13 +330,288 @@ class Gwyfile__gwydf_get_metadata(unittest.TestCase):
 class Gwyfile__gwydf_get_data(unittest.TestCase):
     """Test _gwydf_get_data method in Gwyfile class"""
 
-    def test_raise_exception_if_datafield_looks_unacceptable(self):
+    def setUp(self):
+        self.gwyfile = Mock(spec=Gwyfile)
+        self.gwyfile._gwydf_get_data = Gwyfile._gwydf_get_data
 
-        pass
+        patcher_lib = patch('gwydb.gwy.gwyfile.lib', autospec=True)
+        self.addCleanup(patcher_lib.stop)
+        self.mock_lib = patcher_lib.start()
+
+        self.key = '/0/data'
+        self.xres = 256
+        self.yres = 256
+        self.data = np.random.rand(self.xres, self.yres)
+        self.falsep = ffi.new("bool*", False)
+        self.truep = ffi.new("bool*", True)
+        self.errorp = ffi.new("GwyfileError**")
+
+    def test_raise_exception_if_datafield_looks_unacceptable(self):
+        """Raise GwyfileError exception
+           if gwyfile_object_datafield_get returns False
+        """
+
+        self.mock_lib.gwyfile_object_datafield_get.return_value = self.falsep[0]
+        self.assertRaises(GwyfileError,
+                          self.gwyfile._gwydf_get_data,
+                          self.gwyfile,
+                          self.key,
+                          self.xres,
+                          self.yres)
 
     def test_returned_data(self):
+        """ Check returned data numpy array"""
 
-        pass
+        self.mock_lib.gwyfile_object_datafield_get.side_effect = self._side_effect
+        self.df = self.gwyfile._gwyfile_get_object.return_value
+
+        data = self.gwyfile._gwydf_get_data(self.gwyfile,
+                                            self.key,
+                                            self.xres,
+                                            self.yres)
+
+        np.testing.assert_almost_equal(self.data, data)
+
+    def _side_effect(self, *args):
+
+        # first arg is GwyDatafield returned by _gwyfile_get_object
+        self.assertEqual(args[0], self.df)
+
+        # second arg is GwyfileError**
+        assert ffi.typeof(args[1]) == ffi.typeof(self.errorp)
+
+        # last arg in Null
+        self.assertEqual(args[-1], ffi.NULL)
+
+        # create dict from names and types of pointers in args
+        arg_keys = [ffi.string(key).decode('utf-8') for key in args[2:-1:2]]
+        arg_pointers = [pointer for pointer in args[3:-1:2]]
+        arg_dict = dict(zip(arg_keys, arg_pointers))
+
+        datap = arg_dict['data']
+        datap[0] = ffi.cast("double*", self.data.ctypes.data)
+
+        return self.truep[0]
+
+
+class Gwyfile__getobject_check(unittest.TestCase):
+    """Test _getobject_check method in Gwyfile class"""
+
+    def setUp(self):
+        self.gwyfile = Mock(spec=Gwyfile)
+        self.gwyfile.c_gwyfile = Mock()
+        self.gwyfile._gwyobject_check = Gwyfile._gwyobject_check
+        self.key = '/0/mask'
+
+        patcher_lib = patch('gwydb.gwy.gwyfile.lib', autospec=True)
+        self.addCleanup(patcher_lib.stop)
+        self.mock_lib = patcher_lib.start()
+
+    def test_check_libgwyfile_function_args(self):
+        """Check args passed to gwyfile_object_get function"""
+
+        self.gwyfile._gwyobject_check(self.gwyfile, self.key)
+        self.mock_lib.gwyfile_object_get.assert_has_calls(
+            [call(self.gwyfile.c_gwyfile, self.key.encode('utf-8'))])
+
+    def test_return_False_if_libgwyfile_func_returns_NULL(self):
+        """Return False if gwyfile_object_get returns NULL"""
+
+        self.mock_lib.gwyfile_object_get.return_value = ffi.NULL
+        value = self.gwyfile._gwyobject_check(self.gwyfile, self.key)
+        self.assertIs(value, False)
+
+    def test_return_True_if_libgwyfile_func_returns_nonNULL(self):
+        """Return True if gwyfile_object_get returns not NULL"""
+
+        value = self.gwyfile._gwyobject_check(self.gwyfile, self.key)
+        self.assertIs(value, True)
+
+
+class Gwyfile_get_metadata(unittest.TestCase):
+    """Test get_metadata method in Gwyfile class"""
+
+    def setUp(self):
+        self.gwyfile = Mock(spec=Gwyfile)
+        self.gwyfile.get_metadata = Gwyfile.get_metadata
+        self.gwyfile._gwydf_get_metadatadata = Mock(autospec=True)
+
+        self.channel_id = 1
+
+    def test_check_args_passing_to__gwydf_get_metadata(self):
+        """Check arguments passing to _gwydf_get_metadata method"""
+
+        self.gwyfile.get_metadata(self.gwyfile,
+                                  self.channel_id)
+        self.gwyfile._gwydf_get_metadata.assert_has_calls(
+            [call("/{:d}/data".format(self.channel_id))])
+
+    def test_check_returned_value(self):
+        """Check value returned by _get_data method"""
+
+        expected_return = self.gwyfile._gwydf_get_metadata.return_value
+        actual_return = self.gwyfile.get_metadata(self.gwyfile,
+                                                  self.channel_id)
+        self.assertEqual(actual_return, expected_return)
+
+
+class Gwyfile_get_data(unittest.TestCase):
+    """Test get_data method in Gwyfile class"""
+
+    def setUp(self):
+        self.gwyfile = Mock(spec=Gwyfile)
+        self.gwyfile.get_data = Gwyfile.get_data
+        self.gwyfile._gwydf_get_data = Mock(autospec=True)
+
+        self.channel_id = 1
+        self.xres = 256
+        self.yres = 256
+
+    def test_check_args_passing_to__gwydf_get_data(self):
+        """Check arguments passing to _gwydf_get_data method"""
+
+        self.gwyfile.get_data(self.gwyfile,
+                              self.channel_id,
+                              self.xres,
+                              self.yres)
+        self.gwyfile._gwydf_get_data.assert_has_calls(
+            [call("/{:d}/data".format(self.channel_id),
+                  self.xres,
+                  self.yres)])
+
+    def test_check_returned_value(self):
+        """Check value returned by get_data method"""
+
+        expected_return = self.gwyfile._gwydf_get_data.return_value
+        actual_return = self.gwyfile.get_data(self.gwyfile,
+                                              self.channel_id,
+                                              self.xres,
+                                              self.yres)
+        self.assertEqual(actual_return, expected_return)
+
+
+class Gwyfile_get_mask_metadata(unittest.TestCase):
+    """Test get_mask_metadata method in Gwyfile class"""
+
+    def setUp(self):
+        self.gwyfile = Mock(spec=Gwyfile)
+        self.gwyfile.get_mask_metadata = Gwyfile.get_mask_metadata
+        self.gwyfile._gwydf_get_metadatadata = Mock(autospec=True)
+
+        self.channel_id = 1
+
+    def test_check_args_passing_to__gwydf_get_metadata(self):
+        """Check arguments passing to _gwydf_get_metadata method"""
+
+        self.gwyfile.get_mask_metadata(self.gwyfile,
+                                       self.channel_id)
+        self.gwyfile._gwydf_get_metadata.assert_has_calls(
+            [call("/{:d}/mask".format(self.channel_id))])
+
+    def test_check_returned_value(self):
+        """Check value returned by get_mask_metadata method"""
+
+        expected_return = self.gwyfile._gwydf_get_metadata.return_value
+        actual_return = self.gwyfile.get_mask_metadata(self.gwyfile,
+                                                       self.channel_id)
+        self.assertEqual(actual_return, expected_return)
+
+
+class Gwyfile_get_mask_data(unittest.TestCase):
+    """Test get_mask_data method in Gwyfile class"""
+
+    def setUp(self):
+        self.gwyfile = Mock(spec=Gwyfile)
+        self.gwyfile.get_mask_data = Gwyfile.get_mask_data
+        self.gwyfile._gwydf_get_data = Mock(autospec=True)
+
+        self.channel_id = 1
+        self.xres = 256
+        self.yres = 256
+
+    def test_check_args_passing_to__gwydf_get_data(self):
+        """Check arguments passing to _gwydf_get_data method"""
+
+        self.gwyfile.get_mask_data(self.gwyfile,
+                                   self.channel_id,
+                                   self.xres,
+                                   self.yres)
+        self.gwyfile._gwydf_get_data.assert_has_calls(
+            [call("/{:d}/mask".format(self.channel_id),
+                  self.xres,
+                  self.yres)])
+
+    def test_check_returned_value(self):
+        """Check value returned by get_mask_data method"""
+
+        expected_return = self.gwyfile._gwydf_get_data.return_value
+        actual_return = self.gwyfile.get_mask_data(self.gwyfile,
+                                                   self.channel_id,
+                                                   self.xres,
+                                                   self.yres)
+        self.assertEqual(actual_return, expected_return)
+
+
+class Gwyfile_get_presentation_metadata(unittest.TestCase):
+    """Test get_presentation_metadata method in Gwyfile class"""
+
+    def setUp(self):
+        self.gwyfile = Mock(spec=Gwyfile)
+        self.gwyfile.get_presentation_metadata = Gwyfile.get_presentation_metadata
+        self.gwyfile._gwydf_get_metadatadata = Mock(autospec=True)
+
+        self.channel_id = 1
+
+    def test_check_args_passing_to__gwydf_get_metadata(self):
+        """Check arguments passing to _gwydf_get_metadata method"""
+
+        self.gwyfile.get_presentation_metadata(self.gwyfile,
+                                               self.channel_id)
+        self.gwyfile._gwydf_get_metadata.assert_has_calls(
+            [call("/{:d}/show".format(self.channel_id))])
+
+    def test_check_returned_value(self):
+        """Check value returned by get_presentation_metadata method"""
+
+        expected_return = self.gwyfile._gwydf_get_metadata.return_value
+        actual_return = self.gwyfile.get_presentation_metadata(self.gwyfile,
+                                                               self.channel_id)
+        self.assertEqual(actual_return, expected_return)
+
+
+class Gwyfile_get_presentation_data(unittest.TestCase):
+    """Test get_presentation_data method in Gwyfile class"""
+
+    def setUp(self):
+        self.gwyfile = Mock(spec=Gwyfile)
+        self.gwyfile.get_presentation_data = Gwyfile.get_presentation_data
+        self.gwyfile._gwydf_get_data = Mock(autospec=True)
+
+        self.channel_id = 1
+        self.xres = 256
+        self.yres = 256
+
+    def test_check_args_passing_to__gwydf_get_data(self):
+        """Check arguments passing to _gwydf_get_data method"""
+
+        self.gwyfile.get_presentation_data(self.gwyfile,
+                                           self.channel_id,
+                                           self.xres,
+                                           self.yres)
+        self.gwyfile._gwydf_get_data.assert_has_calls(
+            [call("/{:d}/show".format(self.channel_id),
+                  self.xres,
+                  self.yres)])
+
+    def test_check_returned_value(self):
+        """Check value returned by get_mask_data method"""
+
+        expected_return = self.gwyfile._gwydf_get_data.return_value
+        actual_return = self.gwyfile.get_presentation_data(self.gwyfile,
+                                                           self.channel_id,
+                                                           self.xres,
+                                                           self.yres)
+        self.assertEqual(actual_return, expected_return)
 
 
 if __name__ == '__main__':

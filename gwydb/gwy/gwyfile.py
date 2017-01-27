@@ -109,11 +109,13 @@ class Gwyfile():
         metadata = self._gwydf_get_metadata(key)
         return metadata
 
-    def get_data(self, channel_id):
+    def get_data(self, channel_id, xres, yres):
         """Get data from the channel data field
 
         Args:
             channel_id (int): id of the channel
+            xres (int): Horizontal dimension of the data field in pixels
+            yres (int): Vertical dimension of the data field in pixels
 
         Returns:
             data (2D numpy array, float64): data field from the channel
@@ -121,7 +123,7 @@ class Gwyfile():
         """
 
         key = "/{:d}/data".format(channel_id)
-        data = self._gwydf_get_data(key)
+        data = self._gwydf_get_data(key, xres, yres)
         return data
 
     def get_mask_metadata(self, channel_id):
@@ -154,11 +156,13 @@ class Gwyfile():
         metadata = self._gwydf_get_metadata(key)
         return metadata
 
-    def get_mask_data(self, channel_id):
+    def get_mask_data(self, channel_id, xres, yres):
         """Get data from the mask
 
         Args:
             channel_id (int): id of the channel
+            xres (int): Horizontal dimension of the data field in pixels
+            yres (int): Vertical dimension of the data field in pixels
 
         Returns:
             data (2D numpy array, float64): data field from the mask
@@ -166,7 +170,7 @@ class Gwyfile():
         """
 
         key = "/{:d}/mask".format(channel_id)
-        data = self._gwydf_get_data(key)
+        data = self._gwydf_get_data(key, xres, yres)
         return data
 
     def get_presentation_metadata(self, channel_id):
@@ -199,11 +203,13 @@ class Gwyfile():
         metadata = self._gwydf_get_metadata(key)
         return metadata
 
-    def get_presentation_data(self, channel_id):
+    def get_presentation_data(self, channel_id, xres, yres):
         """Get data from the presentation
 
         Args:
             channel_id (int): id of the channel
+            xres (int): Horizontal dimension of the data field in pixels
+            yres (int): Vertical dimension of the data field in pixels
 
         Returns:
             data (2D numpy array, float64): data field from the presentation
@@ -211,7 +217,7 @@ class Gwyfile():
         """
 
         key = "/{:d}/show".format(channel_id)
-        data = self._gwydf_get_data(key)
+        data = self._gwydf_get_data(key, xres, yres)
         return data
 
     def _gwyfile_get_object(self, key):
@@ -316,35 +322,24 @@ class Gwyfile():
             else:
                 raise GwyfileError
 
-    def _gwydf_get_data(self, key):
+    def _gwydf_get_data(self, key, xres, yres):
         """Get data array from the GWY data field (e.g. channel, mask, presentation)
 
         Args:
             key (str): name of the data field (e.g. "/0/data")
+            xres (int): Horizontal dimension of the data field in pixels
+            yres (int): Vertical dimension of the data field in pixels
 
         Returns:
             data (2D numpy array, float64): data from the data field
 
         """
 
-        xresp = ffi.new("int32_t*")
-        yresp = ffi.new("int32_t*")
+        # xresp = ffi.new("int32_t*")
+        # yresp = ffi.new("int32_t*")
         errorp = ffi.new("GwyfileError**")
 
         df = self._gwyfile_get_object(key)
-
-        if lib.gwyfile_object_datafield_get(df, errorp,
-                                            ffi.new("char[]", b'xres'), xresp,
-                                            ffi.new("char[]", b'yres'), yresp,
-                                            ffi.NULL):
-            xres = xresp[0]
-            yres = yresp[0]
-        else:
-            if errorp[0]:
-                error_msg = ffi.string(errorp[0].message).decode('utf-8')
-                raise GwyfileError(error_msg)
-            else:
-                raise GwyfileError
 
         data = ffi.new("double[]", xres*yres)
         datap = ffi.new("double**", data)
@@ -369,6 +364,9 @@ class Gwyfile():
         Args:
             key(str): object key
 
+        Returns:
+            True if object exists, otherwise False
+
         """
 
         item = lib.gwyfile_object_get(self.c_gwyfile, key.encode('utf-8'))
@@ -376,112 +374,6 @@ class Gwyfile():
             return False
         else:
             return True
-
-    def get_channel(self, channel_id):
-        """Return channel data as GwyChannel object
-
-        Args:
-            channel_id (int): id of the channels
-        """
-
-        title = self.get_title(channel_id)
-
-        data = self.get_data(channel_id)
-        metadata = self.get_metadata(channel_id)
-        channel_df = GwyDatafield(data, metadata)
-
-        if self._gwyobject_check("/{:d}/mask".format(channel_id)):
-            mask_metadata = self.get_mask_metadata(channel_id)
-            mask_data = self.get_mask_data(channel_id)
-            mask_df = GwyDatafield(mask_data, mask_metadata)
-        else:
-            mask_df = None
-
-        if self._gwyobject_check("/{:d}/show".format(channel_id)):
-            presentation_data = self.get_presentation_data(channel_id)
-            presentation_metadata = self.get_presentation_metadata(channel_id)
-            presentation_df = GwyDatafield(presentation_data,
-                                           presentation_metadata)
-        else:
-            presentation_df = None
-
-        channel = GwyChannel(title, channel_df, mask_df, presentation_df)
-        return channel
-
-    def get_container(self):
-        """Return GwyContainer object
-
-        """
-
-        ids = self.get_channels_ids()
-        channels = [self.get_channel(channel_id) for channel_id in ids]
-        return GwyContainer(channels)
-
-
-class GwyDatafield():
-    """Class for Gwy Datafield representation
-
-    Attributes:
-        data (np.float64 array): 2D numpy array with the datafield
-        xres (int): Horizontal dimension of the data field in pixels
-        yres (int): Vertical dimension of the data field in pixels
-        xreal (float): Horizontal size of the data field in physical units
-        yreal (float): Vertical size of the data field in physical units
-        xoff (double): Horizontal offset of the top-left corner
-                       in physical units.
-        yoff (double): Vertical offset of the top-left corner
-                       in physical units.
-        si_unit_xy (str): Physical unit of lateral dimensions,
-                          base SI unit, e.g. 'm'
-        si_unit_z (str): Physical unit of vertical dimension,
-                         base SI unit, e.g. 'm'
-
-    """
-
-    def __init__(self, data, metadata):
-        """
-        Args:
-            data (np.float64 array): 2D numpy array with GWY data field
-            metadata (dictionary): Python dictionary with
-                                   GWY datafield metadata
-
-        """
-
-        self.data = data
-        for key in metadata:
-            setattr(self, key, metadata[key])
-
-
-class GwyChannel():
-    """Class for Gwy channel representation.
-    Contains at least one datafield.
-    Could also contain Mask or Presentation datafields.
-
-    Attributes:
-        title (str): Title of the GWY channel
-        datafield (GwyDatafield): Datafield of the channel
-        mask (GwyDatafield): Mask of the channel
-        presentation (GwyDatafield): Presentation of the channel
-
-    """
-
-    def __init__(self, title, datafield, mask=None, presentation=None):
-        self.title = title
-        self.datafield = datafield
-        self.mask = mask
-        self.presentation = presentation
-
-
-class GwyContainer():
-    """Class for Gwy container representation.
-
-    Attributes:
-        channels (list): list of GwyChannel objects
-
-    """
-
-    def __init__(self, channels):
-        self.channels = channels
 
 
 def read_gwyfile(filename):
