@@ -13,7 +13,6 @@ class Func_read_gwy_TestCase(unittest.TestCase):
     """Test read_gwyfile function"""
 
     def setUp(self):
-
         self.filename = 'test.gwy'
 
         patcher_isfile = patch('gwydb.gwy.gwyfile.os.path.isfile',
@@ -25,6 +24,8 @@ class Func_read_gwy_TestCase(unittest.TestCase):
                             autospec=True)
         self.addCleanup(patcher_lib.stop)
         self.mock_lib = patcher_lib.start()
+
+        self.error_msg = "Test error message"
 
     def test_raise_exception_if_file_doesnt_exist(self):
         """Raise OSError exception if file does not exist"""
@@ -44,12 +45,40 @@ class Func_read_gwy_TestCase(unittest.TestCase):
         self.mock_lib.gwyfile_read_file.assert_has_calls(
             [call(self.filename.encode('utf-8'), ANY)])
 
-    def test_gwyfile_read_file_fails(self):
-        """Raise GwyError exception if file reading fails"""
+    def test_gwyfile_read_file_fails_without_message(self):
+        """Raise GwyfileError exception without message
+        
+        Raise GwyfileError exception without message
+        if gwyfile_read_file returns NULL and
+        if GwyfileError** is NULL
+        """
 
         self.mock_isfile.return_value = True
         self.mock_lib.gwyfile_read_file.return_value = ffi.NULL
         self.assertRaises(GwyfileError, read_gwyfile, self.filename)
+
+    def test_gwyfile_read_file_fails_with_message(self):
+        """Raise GwyError exception with message
+
+        Raise GwyError exception with message
+        if gwyfile_read_file returns NULL and
+        is GwyfileError.message is not NULL
+        """
+
+        self.mock_isfile.return_value=True
+        self.mock_lib.gwyfile_read_file.side_effect = self._side_effect_with_msg
+        self.assertRaisesRegex(GwyfileError,
+                               self.error_msg,
+                               read_gwyfile,
+                               self.filename)
+
+    def _side_effect_with_msg(self, *args):
+        """gwyfile_read_file returns NULL with error_msg"""
+
+        errorp = args[1]
+        c_error_msg = ffi.new("char[]", self.error_msg.encode('utf-8'))
+        errorp[0].message = c_error_msg
+        return ffi.NULL
 
     def test_check_returned_value(self):
         """Return the object returned by gwyfile_read_file"""
@@ -72,6 +101,18 @@ class Gwyfile_init_TestCase(unittest.TestCase):
 
         c_gwyfile = ffi.NULL
         self.assertRaises(GwyfileError, Gwyfile, c_gwyfile)
+
+    @patch('gwydb.gwy.gwyfile.lib', autospec=True)
+    def test_raise_exception_if_top_level_object_is_empty(self, mock_lib):
+        """Raise GwyfileError exception if top-level object is empty"""
+
+        c_gwyfile = Mock()
+        mock_lib.gwyfile_object_name.return_value = ffi.NULL
+        error_msg = 'The top-level object of c_gwyfile is empty'
+        self.assertRaisesRegex(GwyfileError,
+                               error_msg,
+                               Gwyfile,
+                               c_gwyfile)
 
     @patch('gwydb.gwy.gwyfile.lib', autospec=True)
     def test_check_top_level_object_of_c_gwyfile(self, mock_lib):
@@ -115,6 +156,8 @@ class Gwyfile_get_channels_ids_TestCase(unittest.TestCase):
         self.assertEqual(ids, [0, 1, 2])
 
     def _side_effect_non_zero_channels(self, c_gwyfile, nchannelsp):
+        """Returns 3 channels with ids = 0, 1 and 2"""
+        
         nchannelsp[0] = 3
         ids = ffi.new("int[]", [0, 1, 2])
         return ids
@@ -168,6 +211,7 @@ class Gwyfile__gwyfile_get_object_TestCase(unittest.TestCase):
 
     def test_raise_exception_if_data_item_is_not_found(self):
         """Raise GwyfileError if data item is not found"""
+        
         self.mock_lib.gwyfile_object_get.return_value = ffi.NULL
         self.assertRaises(GwyfileError,
                           self.gwyfile._gwyfile_get_object,
@@ -175,6 +219,7 @@ class Gwyfile__gwyfile_get_object_TestCase(unittest.TestCase):
 
     def test_raise_exception_if_object_is_not_found(self):
         """Raise GwyfileError if object in the data item is empty"""
+        
         self.mock_lib.gwyfile_item_get_object.return_value = ffi.NULL
         mock_item = self.mock_lib.gwyfile_object_get.return_value
         self.assertRaises(GwyfileError,
@@ -183,7 +228,7 @@ class Gwyfile__gwyfile_get_object_TestCase(unittest.TestCase):
 
     def test_check_args_of_libgwyfile_functions(self):
         """Check arguments passed to Libgwyfile functions"""
-
+        
         mock_item = self.mock_lib.gwyfile_object_get.return_value
 
         self.gwyfile._gwyfile_get_object(self.gwyfile, self.test_key)
@@ -217,6 +262,7 @@ class Gwyfile__gwydf_get_metadata(unittest.TestCase):
         self.falsep = ffi.new("bool*", False)
         self.truep = ffi.new("bool*", True)
         self.errorp = ffi.new("GwyfileError**")
+        self.error_msg = "Test error message"
         self.metadata_dict = {'xres': ffi.typeof(ffi.new("int32_t*")),
                               'yres': ffi.typeof(ffi.new("int32_t*")),
                               'xreal': ffi.typeof(ffi.new("double*")),
@@ -226,12 +272,42 @@ class Gwyfile__gwydf_get_metadata(unittest.TestCase):
                               'si_unit_xy': ffi.typeof(ffi.new("char**")),
                               'si_unit_z': ffi.typeof(ffi.new("char**"))}
 
-    def test_raise_exception_if_datafield_looks_unacceptable(self):
-        """Raise GwyfilleError if gwyfile_object_datafield_get returns False"""
+    def test_raise_exception_without_msg_if_df_loock_unacceptable(self):
+        """Raise GywfileError exception without message
 
+        Raise GwyfileError exception without error message
+        if gwyfile_object_datafield_get returns False
+        and GwyfileError.message is NULL
+        """
+        
         self.mock_lib.gwyfile_object_datafield_get.return_value = self.falsep[0]
-        self.assertRaises(GwyfileError, self.gwyfile._gwydf_get_metadata,
-                          self.gwyfile, self.test_key)
+        self.assertRaises(GwyfileError,
+                              self.gwyfile._gwydf_get_metadata,
+                              self.gwyfile,
+                              self.test_key)
+    
+    def test_raise_exception_with_msg_if_df_looks_unacceptable(self):
+        """Raise GwyfileError exception with error message
+
+        Raise GwyfileError exception with error message
+        if gwyfile_object_datafield_get returns False
+        and GwyfileError.message is not NULL
+        """
+
+        self.mock_lib.gwyfile_object_datafield_get.side_effect = self._side_effect_with_msg
+        self.assertRaisesRegex(GwyfileError,
+                               self.error_msg,
+                               self.gwyfile._gwydf_get_metadata,
+                               self.gwyfile,
+                               self.test_key)
+
+    def _side_effect_with_msg(self, *args):
+        """gwyfile_object_datafield_get returns False with error_msg"""
+
+        errorp = args[1]
+        c_error_msg = ffi.new("char[]", self.error_msg.encode('utf-8'))
+        errorp[0].message = c_error_msg
+        return self.falsep[0]
 
     def test_libgwyfile_function_args(self):
         """Test args of gwyfile_object_datafield_get C function """
@@ -345,10 +421,14 @@ class Gwyfile__gwydf_get_data(unittest.TestCase):
         self.falsep = ffi.new("bool*", False)
         self.truep = ffi.new("bool*", True)
         self.errorp = ffi.new("GwyfileError**")
+        self.error_msg = "Test error message"
 
-    def test_raise_exception_if_datafield_looks_unacceptable(self):
-        """Raise GwyfileError exception
-           if gwyfile_object_datafield_get returns False
+    def test_raise_exception_without_msg_if_df_looks_unacceptable(self):
+        """Raise GwyfileError exception without error message
+
+        Raise GwyfileError exception with error message
+        if gwyfile_object_datafield_get returns False
+        and GwyfileError.message is NULL
         """
 
         self.mock_lib.gwyfile_object_datafield_get.return_value = self.falsep[0]
@@ -358,6 +438,31 @@ class Gwyfile__gwydf_get_data(unittest.TestCase):
                           self.key,
                           self.xres,
                           self.yres)
+        
+    def test_raise_exception_with_msg_if_df_looks_unacceptable(self):
+        """Raise GwyfileError exception with error message
+
+        Raise GwyfileError exception with error message
+        if gwyfile_object_datafield_get returns False
+        and GwyfileError.message is not NULL
+        """
+
+        self.mock_lib.gwyfile_object_datafield_get.side_effect = self._side_effect_with_msg
+        self.assertRaisesRegex(GwyfileError,
+                               self.error_msg,
+                               self.gwyfile._gwydf_get_data,
+                               self.gwyfile,
+                               self.key,
+                               self.xres,
+                               self.yres)
+
+    def _side_effect_with_msg(self, *args):
+        """gwyfile_object_datafield_get returns False with error_msg"""
+
+        errorp = args[1]
+        c_error_msg = ffi.new("char[]", self.error_msg.encode('utf-8'))
+        errorp[0].message = c_error_msg
+        return self.falsep[0]
 
     def test_returned_data(self):
         """ Check returned data numpy array"""
