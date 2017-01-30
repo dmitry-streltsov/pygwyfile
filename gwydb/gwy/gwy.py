@@ -164,5 +164,5 @@ def get_container(gwyfile):
         if not isinstance(gwyfile, Gwyfile):
             raise TypeError("gwyfile is not a Gwyfile instance")
         ids = gwyfile.get_channels_ids()
-        channels = [get_channel(channel_id) for channel_id in ids]
+        channels = [get_channel(gwyfile, channel_id) for channel_id in ids]
         return GwyContainer(channels)

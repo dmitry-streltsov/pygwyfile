@@ -1,5 +1,5 @@
 import unittest
-from unittest.mock import Mock, patch
+from unittest.mock import Mock, patch, call
 
 import numpy as np
 
@@ -362,6 +362,30 @@ class Func_get_container(unittest.TestCase):
     """Test get_container function"""
 
     def test_raise_TypeError_if_arg_not_Gwyfile_instance(self):
+        """Raise TypeError if arg is not Gwyfile instance """
+        
         self.assertRaises(TypeError,
                           get_container,
                           None)
+        
+    @patch('gwydb.gwy.gwy.get_channel', autospec=True)
+    @patch('gwydb.gwy.gwy.GwyContainer', autospec=True)
+    def test_args_of_gwycontainer_init(self,
+                                       mock_GwyContainer,
+                                       mock_get_channel):
+        """Returns GwyContainer containing all datafields"""
+
+        # Create list of GwyChannel objects
+        ids = [0, 1, 2]
+        channels = [Mock(spec=GwyChannel) for i in ids]
+        
+        gwyfile = Mock(spec=Gwyfile)
+        gwyfile.get_channels_ids.return_value = ids
+        mock_get_channel.side_effect = channels
+
+        expected_container = mock_GwyContainer.return_value
+        result_container = get_container(gwyfile)
+        
+        mock_GwyContainer.assert_has_calls(
+            [call(channels)])
+        self.assertEqual(expected_container, result_container)
