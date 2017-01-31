@@ -1,5 +1,5 @@
 import numpy as np
-from .gwyfile import Gwyfile
+from gwydb.gwy.gwyfile import Gwyfile
 
 
 class GwyDatafield():
@@ -28,7 +28,7 @@ class GwyDatafield():
             data (np.float64 array): 2D numpy array with GWY data field
             metadata: Python dictionary with GWY datafield metadata
                       or keyword arguments (e.g. xres = 256, yres = 256)
-        
+
             Shape of the data numpy array must be equal to (xres, yres)
 
         """
@@ -45,7 +45,7 @@ class GwyDatafield():
         if not isinstance(data, np.ndarray):
             raise TypeError("data is not a numpy array")
 
-        # initialize via dictionary 
+        # initialize via dictionary
         for dictionary in args:
             for key in dictionary:
                 setattr(self, key, dictionary[key])
@@ -82,7 +82,8 @@ class GwyChannel():
         if isinstance(datafield, GwyDatafield):
             self.datafield = datafield
         else:
-            raise TypeError("datafield is not an instance of GwyDatafield or None")
+            raise TypeError("datafield is not an instance of "
+                            "GwyDatafield or None")
 
         if isinstance(mask, GwyDatafield) or (mask is None):
             self.mask = mask
@@ -92,7 +93,8 @@ class GwyChannel():
         if isinstance(presentation, GwyDatafield) or (presentation is None):
             self.presentation = presentation
         else:
-            raise TypeError("presentation is not an instance of GwyDatafield or None")
+            raise TypeError("presentation is not an instance of "
+                            "GwyDatafield or None")
 
 
 class GwyContainer():
@@ -109,7 +111,7 @@ class GwyContainer():
             if isinstance(channel, GwyChannel):
                 self.channels.append(channel)
             else:
-                raise TypeError("One element is not a GwyChannel instance") 
+                raise TypeError("One element is not a GwyChannel instance")
 
 
 def get_channel(gwyfile, channel_id):
@@ -121,8 +123,8 @@ def get_channel(gwyfile, channel_id):
     """
 
     if not isinstance(gwyfile, Gwyfile):
-        raise TypeError("gwyfile is not a Gwyfile instance") 
-        
+        raise TypeError("gwyfile is not a Gwyfile instance")
+
     title = gwyfile.get_title(channel_id)
 
     metadata = gwyfile.get_metadata(channel_id)
@@ -159,8 +161,16 @@ def get_channel(gwyfile, channel_id):
 
 
 def get_container(gwyfile):
-        """Return GwyContainer object """
-        
+        """Return GwyContainer object
+
+        Args:
+            gwyfile (Gwyfile object)
+
+        Returns:
+           GwyContainer object
+
+        """
+
         if not isinstance(gwyfile, Gwyfile):
             raise TypeError("gwyfile is not a Gwyfile instance")
         ids = gwyfile.get_channels_ids()

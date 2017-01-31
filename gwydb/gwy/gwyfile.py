@@ -1,14 +1,18 @@
-""" Wrapper for GwyfileObject from Libgwyfile C library """
+"""
+Wrapper for GwyfileObject from Libgwyfile C library
+"""
 
 import os.path
 
 import numpy as np
 
-from ._libgwyfile import ffi, lib
+from gwydb.gwy._libgwyfile import ffi, lib
 
 
 class GwyfileError(Exception):
-    """ Class for Gwyfile C library errors"""
+    """
+    Class for Gwyfile C library errors
+    """
 
     pass
 
@@ -19,7 +23,6 @@ class Gwyfile():
     Attributes:
         c_gwyfile (cdata  GwyfileObject*): gwyfile object from
                                            Libgwyfile C library
-
     """
 
     def __init__(self, c_gwyfile):
@@ -30,6 +33,7 @@ class Gwyfile():
 
         The top-level object of the c_gwyfile must be 'GwyContainer'
         """
+
         if not c_gwyfile:
             raise GwyfileError("c_gwyfile object is empty")
 
@@ -313,17 +317,16 @@ class Gwyfile():
             metadata['yreal'] = yrealp[0]
             metadata['xoff'] = xoffp[0]
             metadata['yoff'] = yoffp[0]
-            
+
             if xyunitp[0]:
                 metadata['si_unit_xy'] = ffi.string(xyunitp[0]).decode('utf-8')
             else:
                 metadata['si_unit_xy'] = ''
-                
             if zunitp[0]:
                 metadata['si_unit_z'] = ffi.string(zunitp[0]).decode('utf-8')
             else:
                 metadata['si_unit_z'] = ''
-                
+
             return metadata
         else:
             if errorp[0].message:
@@ -384,6 +387,65 @@ class Gwyfile():
         else:
             return True
 
+    def get_pointsel(self, channel_id):
+        """Get point selections from the channel
+
+        Args:
+            channel_id(int): id of the channel
+
+        Returns:
+            [(x1, y1), ..., (xN, yN)]: list of tuples with point coordinates
+                                       or None if there are no point selections
+        """
+
+        error = ffi.new("GwyfileError*")
+        errorp = ffi.new("GwyfileError**", error)
+        nselp = ffi.new("int32_t*")
+
+        key = "/{:d}/select/pointer".format(channel_id)
+        if not self._gwyobject_check(key):
+            return None
+
+        psel = self._gwyfile_get_object(key)
+
+        if lib.gwyfile_object_selectionpoint_get(psel,
+                                                 errorp,
+                                                 ffi.new("char[]",
+                                                         b'nsel'),
+                                                 nselp,
+                                                 ffi.NULL):
+            nsel = nselp[0]
+        else:
+            if errorp[0].message:
+                error_msg = ffi.string(errorp[0].message).decode('utf-8')
+                raise GwyfileError(error_msg)
+            else:
+                raise GwyfileError
+
+        if nsel == 0:
+            return None
+        else:
+            data = ffi.new("double[]", 2*nsel)
+            datap = ffi.new("double**", data)
+
+        if lib.gwyfile_object_selectionpoint_get(psel,
+                                                 errorp,
+                                                 ffi.new("char[]",
+                                                         b'data'),
+                                                 datap,
+                                                 ffi.NULL):
+            data = datap[0]
+            points = [(data[i * 2], data[i * 2 + 1])
+                      for i in range(nsel)]
+        else:
+            if errorp[0].message:
+                error_msg = ffi.string(errorp[0].message).decode('utf-8')
+                raise GwyfileError(error_msg)
+            else:
+                raise GwyfileError
+
+        return points
+
 
 def read_gwyfile(filename):
     """Read gwy file
@@ -410,4 +472,4 @@ def read_gwyfile(filename):
         else:
             raise GwyfileError
 
-    return c_gwyfile
+    return Gwyfile(c_gwyfile)

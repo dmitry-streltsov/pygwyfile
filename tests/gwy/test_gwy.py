@@ -10,8 +10,11 @@ from gwydb.gwy.gwy import get_channel
 from gwydb.gwy.gwy import get_container
 from gwydb.gwy.gwyfile import Gwyfile
 
+
 class GwyDatafield_init(unittest.TestCase):
-    """Test constructor of GwyDatafield class"""
+    """
+    Test constructor of GwyDatafield class
+    """
 
     def setUp(self):
         self.xres = 256
@@ -19,7 +22,9 @@ class GwyDatafield_init(unittest.TestCase):
         self.data = np.random.rand(self.xres, self.yres)
 
     def test_init_via_dict(self):
-        """Test initialization via python dictionary"""
+        """
+        Test initialization via python dictionary
+        """
         
         metadata = {'xres': self.xres, 'yres': self.yres}
         datafield = GwyDatafield(self.data, metadata)
@@ -28,7 +33,9 @@ class GwyDatafield_init(unittest.TestCase):
         self.assertEqual(datafield.yres, self.yres)
 
     def test_init_via_kwargs(self):
-        """Test initialization via keyword arguments"""
+        """
+        Test initialization via keyword arguments
+        """
 
         datafield = GwyDatafield(self.data,
                                  xres=self.xres,
@@ -38,7 +45,9 @@ class GwyDatafield_init(unittest.TestCase):
         self.assertEqual(datafield.yres, self.yres)
 
     def test_raise_ValueError_if_data_is_not_ndarray(self):
-        """Raise ValueError if data is not a numpy array"""
+        """
+        Raise ValueError if data is not a numpy array
+        """
 
         self.assertRaises(TypeError,
                           GwyDatafield,
@@ -47,7 +56,9 @@ class GwyDatafield_init(unittest.TestCase):
                           yres=self.yres)
 
     def test_raise_ValueError_if_no_obligatory_args(self):
-        """Raise AttributeError if there is no xres or yres args"""
+        """
+        Raise AttributeError if there is no xres or yres args
+        """
 
         self.assertRaises(ValueError,
                           GwyDatafield,
@@ -62,7 +73,9 @@ class GwyDatafield_init(unittest.TestCase):
                           data=self.data)
 
     def test_raise_ValueError_if_data_shape_is_wrong(self):
-        """Raise ValueError if data.shape is not (xres, yres)"""
+        """
+        Raise ValueError if data.shape is not (xres, yres)
+        """
 
         self.xres = 128 # not 256
         self.assertRaises(ValueError,
@@ -73,7 +86,9 @@ class GwyDatafield_init(unittest.TestCase):
 
 
 class GwyChannel_init(unittest.TestCase):
-    """Test constructor of GwyChannel class"""
+    """
+    Test constructor of GwyChannel class
+    """
 
     def setUp(self):
         self.title = "Title"
@@ -82,7 +97,9 @@ class GwyChannel_init(unittest.TestCase):
         self.presentation = Mock(spec=GwyDatafield)
 
     def test_raise_TypeError_if_wrong_datafields_type(self):
-        """Raise TypeError if any datafield is of wrong type"""
+        """
+        Raise TypeError if any datafield is of wrong type
+        """
 
         self.assertRaises(TypeError,
                           GwyChannel,
@@ -107,7 +124,9 @@ class GwyChannel_init(unittest.TestCase):
                           presentation=wrong_presentation)
 
     def test_if_all_datafields_are_exist(self):
-        """datafield, mask and presentation are not None"""
+        """
+        datafield, mask and presentation are not None
+        """
 
         gwychannel = GwyChannel(title=self.title,
                                 datafield=self.datafield,
@@ -119,7 +138,9 @@ class GwyChannel_init(unittest.TestCase):
         self.assertEqual(gwychannel.presentation, self.presentation)
 
     def test_if_mask_is_none(self):
-        """datafield and presentation are not None, but mask is None"""
+        """
+        datafield and presentation are not None, but mask is None
+        """
 
         gwychannel = GwyChannel(title=self.title,
                                 datafield=self.datafield,
@@ -131,7 +152,9 @@ class GwyChannel_init(unittest.TestCase):
         self.assertIsNone(gwychannel.mask)
 
     def test_if_presentation_is_none(self):
-        """datafield and mask are not None, but presentation is None"""
+        """
+        datafield and mask are not None, but presentation is None
+        """
 
         gwychannel = GwyChannel(title=self.title,
                                 datafield=self.datafield,
@@ -143,7 +166,9 @@ class GwyChannel_init(unittest.TestCase):
         self.assertIsNone(gwychannel.presentation)
 
     def test_if_mask_and_presentation_are_none(self):
-        """datafield and mask are both None"""
+        """
+        datafield and mask are both None
+        """
 
         gwychannel = GwyChannel(title=self.title,
                                 datafield=self.datafield,
@@ -155,7 +180,9 @@ class GwyChannel_init(unittest.TestCase):
         self.assertIsNone(gwychannel.presentation)
 
     def test_default_args(self):
-        """Test behavior with default arguments"""
+        """
+        Test behavior with default arguments
+        """
 
         gwychannel = GwyChannel(title=self.title,
                                 datafield=self.datafield)
@@ -166,7 +193,9 @@ class GwyChannel_init(unittest.TestCase):
 
 
 class GwyContainer_init(unittest.TestCase):
-    """Test constructor of GwyContainer"""
+    """
+    Test constructor of GwyContainer
+    """
 
     def setUp(self):
         channel1 = Mock(spec=GwyChannel)
@@ -176,13 +205,17 @@ class GwyContainer_init(unittest.TestCase):
 
 
     def test_check_initialization_with_list(self):
-        """Test initialization with list of GwyChannel instances"""
+        """
+        Test initialization with list of GwyChannel instances
+        """
         
         container = GwyContainer(self.channels)
         self.assertEqual(container.channels, self.channels)
 
     def test_raise_TypeError_if_wrong_type_of_args(self):
-        """Raise TypeError if not all elements of list are GwyChannel"""
+        """
+        Raise TypeError if not all elements of list are GwyChannel
+        """
         
         self.channels.append(Mock(spec=GwyDatafield))
         self.assertRaises(TypeError,
@@ -190,7 +223,9 @@ class GwyContainer_init(unittest.TestCase):
                           self.channels)
 
     def test_raise_TypeError_if_arg_is_not_iterable(self):
-        """Raise TypeError if trying initialize with non-iterable object"""
+        """
+        Raise TypeError if trying initialize with non-iterable object
+        """
         
         self.assertRaises(TypeError,
                           GwyContainer,
@@ -198,7 +233,9 @@ class GwyContainer_init(unittest.TestCase):
 
 
 class Func_get_channel(unittest.TestCase):
-    """Test get_channel function"""
+    """
+    Test get_channel function
+    """
 
     def setUp(self):
         self.gwyfile = Mock(spec=Gwyfile)
@@ -234,7 +271,9 @@ class Func_get_channel(unittest.TestCase):
         self.gwyfile._gwyobject_check.side_effect = self._gwyobject_check
 
     def test_raise_TypeError_if_gwyfile_is_not_a_Gwyfile_instance(self):
-        """Raise TypeError exception if gwyfile is not a Gwyfile instance"""
+        """
+        Raise TypeError exception if gwyfile is not a Gwyfile instance
+        """
 
         self.assertRaises(TypeError,
                           get_channel,
@@ -243,7 +282,9 @@ class Func_get_channel(unittest.TestCase):
                           
         
     def test_only_datafield_exists(self):
-        """No mask or presentation datafields in the channel"""
+        """
+        No mask or presentation datafields in the channel
+        """
 
         result = get_channel(self.gwyfile, self.channel_id)
 
@@ -258,7 +299,9 @@ class Func_get_channel(unittest.TestCase):
         self.assertIsNone(result.presentation)
 
     def test_datafield_and_mask_exist(self):
-        """There is datafield and mask in the channel"""
+        """
+        There is datafield and mask in the channel
+        """
         
         self.is_mask_exists = True
         self.gwyfile.get_mask_metadata.return_value = self.mask_metadata
@@ -283,7 +326,9 @@ class Func_get_channel(unittest.TestCase):
         self.assertIsNone(result.presentation)
 
     def test_datafield_and_presentation_exist(self):
-        """There are datafield and presentation in the channel"""
+        """
+        There are datafield and presentation in the channel
+        """
         
         self.is_show_exists = True
         self.gwyfile.get_presentation_metadata.return_value = self.show_metadata
@@ -309,7 +354,9 @@ class Func_get_channel(unittest.TestCase):
         self.assertIsNone(result.mask)
 
     def test_datafield_mask_presentation_exist(self):
-        """There are datafield, mask and presentation in the channel"""
+        """
+        There are datafield, mask and presentation in the channel
+        """
         
         self.is_show_exists = True
         self.is_mask_exists = True
@@ -343,7 +390,9 @@ class Func_get_channel(unittest.TestCase):
 
 
     def _gwyobject_check(self, key):
-        """Return if the Mask or Presentation datafield exists"""
+        """
+        Return if the Mask or Presentation datafield exists
+        """
         
         # Datafield always exists in the channel
         if key == "/{:d}/data".format(self.channel_id):
@@ -359,33 +408,82 @@ class Func_get_channel(unittest.TestCase):
 
 
 class Func_get_container(unittest.TestCase):
-    """Test get_container function"""
+    """
+    Test get_container function
+    """
+
+    def setUp(self):
+        # Create list of GwyChannel objects
+        self.ids = [0, 1, 2] # ids of GwyChannel objects
+        # Create mocks of gwychannel objects
+        self.channels = [Mock(spec=GwyChannel) for i in self.ids]
+
+        # Mock Gwyfile object
+        self.gwyfile = Mock(spec=Gwyfile)
+        self.gwyfile.get_channels_ids.return_value = self.ids
+
+        # Patch GwyContainer class
+        patcher_GwyContainer = patch('gwydb.gwy.gwy.GwyContainer',
+                                     autospec=True)
+        self.addCleanup(patcher_GwyContainer.stop)
+        self.mock_GwyContainer = patcher_GwyContainer.start()
+
+        # Patch get_channel function
+        patcher_get_channel = patch('gwydb.gwy.gwy.get_channel',
+                                    autospec=True)
+        self.addCleanup(patcher_get_channel.stop)
+        self.mock_get_channel = patcher_get_channel.start()
+        self.mock_get_channel.side_effect = self.channels
+        
+        
 
     def test_raise_TypeError_if_arg_not_Gwyfile_instance(self):
-        """Raise TypeError if arg is not Gwyfile instance """
+        """
+        Raise TypeError if arg is not a Gwyfile instance
+        """
         
         self.assertRaises(TypeError,
                           get_container,
                           None)
-        
-    @patch('gwydb.gwy.gwy.get_channel', autospec=True)
-    @patch('gwydb.gwy.gwy.GwyContainer', autospec=True)
-    def test_args_of_gwycontainer_init(self,
-                                       mock_GwyContainer,
-                                       mock_get_channel):
-        """Returns GwyContainer containing all datafields"""
 
-        # Create list of GwyChannel objects
-        ids = [0, 1, 2]
-        channels = [Mock(spec=GwyChannel) for i in ids]
-        
-        gwyfile = Mock(spec=Gwyfile)
-        gwyfile.get_channels_ids.return_value = ids
-        mock_get_channel.side_effect = channels
+    def test_get_channels_ids(self):
+        """
+        Get list of channels ids from Gwyfile instance
+        """
 
-        expected_container = mock_GwyContainer.return_value
-        result_container = get_container(gwyfile)
-        
-        mock_GwyContainer.assert_has_calls(
-            [call(channels)])
-        self.assertEqual(expected_container, result_container)
+        get_container(self.gwyfile)
+        self.gwyfile.get_channels_ids.assert_has_calls(
+            [call()])
+
+    def test_get_channels_knowing_their_ids(self):
+        """
+        Get channels objects from Gwyfile knowing their ids
+        """
+
+        get_container(self.gwyfile)
+        self.mock_get_channel.assert_has_calls(
+            [call(self.gwyfile, self.ids[0]),
+             call(self.gwyfile, self.ids[1]),
+             call(self.gwyfile, self.ids[2])])
+
+    def test_args_of_gwycontainer_init(self):
+        """
+        Pass channels objects to GwyContainer constructor
+        """
+
+        get_container(self.gwyfile)
+        self.mock_GwyContainer.assert_has_calls(
+            [call(self.channels)])
+
+    def test_returns(self):
+        """
+        Return GwyContainer object
+        """
+
+        expected_return = self.mock_GwyContainer.return_value
+        actual_return = get_container(self.gwyfile)
+        self.assertEqual(expected_return, actual_return)
+
+
+if __name__ == '__main__':
+    unittest.main()

@@ -10,7 +10,9 @@ from gwydb.gwy.gwyfile import ffi
 
 
 class Func_read_gwy_TestCase(unittest.TestCase):
-    """Test read_gwyfile function"""
+    """
+    Test read_gwyfile function
+    """
 
     def setUp(self):
         self.filename = 'test.gwy'
@@ -25,17 +27,25 @@ class Func_read_gwy_TestCase(unittest.TestCase):
         self.addCleanup(patcher_lib.stop)
         self.mock_lib = patcher_lib.start()
 
+        patcher_Gwyfile = patch('gwydb.gwy.gwyfile.Gwyfile',
+                                autospec=True)
+        self.addCleanup(patcher_Gwyfile.stop)
+        self.mock_Gwyfile = patcher_Gwyfile.start()
+
         self.error_msg = "Test error message"
 
     def test_raise_exception_if_file_doesnt_exist(self):
-        """Raise OSError exception if file does not exist"""
+        """
+        Raise OSError exception if file does not exist
+        """
 
         self.mock_isfile.return_value = False
         self.assertRaises(OSError, read_gwyfile, self.filename)
 
-    def test_function_args(self):
+    def test_args_of_gwyfile_read_file(self):
         """If file exists call gwyfile_read_file function.
-           Check arguments passed to this function
+
+        Check arguments passed to this function
         """
 
         self.mock_isfile.return_value = True
@@ -47,10 +57,9 @@ class Func_read_gwy_TestCase(unittest.TestCase):
 
     def test_gwyfile_read_file_fails_without_message(self):
         """Raise GwyfileError exception without message
-        
-        Raise GwyfileError exception without message
-        if gwyfile_read_file returns NULL and
-        if GwyfileError** is NULL
+
+        Raise GwyfileError exception without message if
+        gwyfile_read_file returns NULL and if GwyfileError** is NULL
         """
 
         self.mock_isfile.return_value = True
@@ -60,9 +69,8 @@ class Func_read_gwy_TestCase(unittest.TestCase):
     def test_gwyfile_read_file_fails_with_message(self):
         """Raise GwyError exception with message
 
-        Raise GwyError exception with message
-        if gwyfile_read_file returns NULL and
-        is GwyfileError.message is not NULL
+        Raise GwyError exception with message if gwyfile_read_file
+        returns NULL and is GwyfileError.message is not NULL
         """
 
         self.mock_isfile.return_value=True
@@ -73,7 +81,9 @@ class Func_read_gwy_TestCase(unittest.TestCase):
                                self.filename)
 
     def _side_effect_with_msg(self, *args):
-        """gwyfile_read_file returns NULL with error_msg"""
+        """
+        gwyfile_read_file returns NULL with error_msg
+        """
 
         errorp = args[1]
         c_error_msg = ffi.new("char[]", self.error_msg.encode('utf-8'))
@@ -81,30 +91,36 @@ class Func_read_gwy_TestCase(unittest.TestCase):
         return ffi.NULL
 
     def test_check_returned_value(self):
-        """Return the object returned by gwyfile_read_file"""
+        """
+        Return the object returned by gwyfile_read_file
+        """
 
         self.mock_isfile.return_value = True
-        c_gwyfile = self.mock_lib.gwyfile_read_file.return_value
-        returned_object = read_gwyfile(self.filename)
-        self.assertIs(c_gwyfile, returned_object)
+        expected_return = self.mock_Gwyfile.return_value
+        actual_return = read_gwyfile(self.filename)
+        self.assertIs(expected_return, actual_return)
 
 
 class Gwyfile_init_TestCase(unittest.TestCase):
     """Test constructor of the Gwyfile class
 
-       Gwyfile class is initialized by passing <cdata GwyfileObject*>
-       to its constructor
+    Gwyfile class is initialized by passing <cdata GwyfileObject*> to
+    its constructor
     """
 
     def test_raise_exception_if_c_gwyfile_is_empty(self):
-        """Raise GwyfileError exception if <cdata GwyfileObject*> is empty"""
+        """
+        Raise GwyfileError exception if <GwyfileObject*> is empty
+        """
 
         c_gwyfile = ffi.NULL
         self.assertRaises(GwyfileError, Gwyfile, c_gwyfile)
 
     @patch('gwydb.gwy.gwyfile.lib', autospec=True)
     def test_raise_exception_if_top_level_object_is_empty(self, mock_lib):
-        """Raise GwyfileError exception if top-level object is empty"""
+        """
+        Raise GwyfileError exception if top-level object is empty
+        """
 
         c_gwyfile = Mock()
         mock_lib.gwyfile_object_name.return_value = ffi.NULL
@@ -117,7 +133,7 @@ class Gwyfile_init_TestCase(unittest.TestCase):
     @patch('gwydb.gwy.gwyfile.lib', autospec=True)
     def test_check_top_level_object_of_c_gwyfile(self, mock_lib):
         """Raise GwyfileError exception if top-level object is not
-           'GwyContainer' C string
+        'GwyContainer' C string
         """
 
         c_gwyfile = Mock()
@@ -127,7 +143,9 @@ class Gwyfile_init_TestCase(unittest.TestCase):
 
     @patch('gwydb.gwy.gwyfile.lib', autospec=True)
     def test_attribute_of_GwyFile_instance(self, mock_lib):
-        """Create self.c_gwyfile attribute"""
+        """
+        Create self.c_gwyfile attribute
+        """
 
         c_gwyfile = Mock()
         test_name = ffi.new("char[]", b"GwyContainer")
@@ -137,7 +155,9 @@ class Gwyfile_init_TestCase(unittest.TestCase):
 
 
 class Gwyfile_get_channels_ids_TestCase(unittest.TestCase):
-    """Test get_channels_ids method in Gwyfile class """
+    """
+    Test get_channels_ids method in Gwyfile class
+    """
 
     def setUp(self):
         self.gwyfile = Mock(spec=Gwyfile)
@@ -149,28 +169,36 @@ class Gwyfile_get_channels_ids_TestCase(unittest.TestCase):
         self.mock_lib = patcher_lib.start()
 
     def test_libgwyfile_function_returns_non_zero_channels(self):
-        """Returns list of channels ids if their number is not zero"""
+        """
+        Returns list of channels ids if their number is not zero
+        """
 
         self.mock_lib.gwyfile_object_container_enumerate_channels.side_effect = self._side_effect_non_zero_channels
         ids = self.gwyfile.get_channels_ids(self.gwyfile)
         self.assertEqual(ids, [0, 1, 2])
 
     def _side_effect_non_zero_channels(self, c_gwyfile, nchannelsp):
-        """Returns 3 channels with ids = 0, 1 and 2"""
+        """
+        Returns 3 channels with ids = 0, 1 and 2
+        """
         
         nchannelsp[0] = 3
         ids = ffi.new("int[]", [0, 1, 2])
         return ids
 
     def test_libgwyfile_function_returns_null(self):
-        """Returns empty list if libgwyfile function returns NULL"""
+        """
+        Returns empty list if libgwyfile function returns NULL
+        """
         self.mock_lib.gwyfile_object_container_enumerate_channels.return_value = ffi.NULL
         ids = self.gwyfile.get_channels_ids(self.gwyfile)
         self.assertEqual(ids, [])
 
 
 class Gwyfile_get_title(unittest.TestCase):
-    """Test get_title method in Gwyfile class"""
+    """
+    Test get_title method in Gwyfile class
+    """
 
     def setUp(self):
         self.gwyfile = Mock(spec=Gwyfile)
@@ -182,21 +210,27 @@ class Gwyfile_get_title(unittest.TestCase):
         self.channel_id = 0
 
     def test_check_args_passing_to__gwyfile_get_object(self):
-        """Check args passing to _gwyfile_get_object method """
+        """
+        Check args passing to _gwyfile_get_object method
+        """
 
         self.gwyfile.get_title(self.gwyfile, self.channel_id)
         self.gwyfile._gwyfile_get_object.assert_has_calls(
             [call("/{:d}/data/title".format(self.channel_id))])
 
     def test_returned_value(self):
-        """Check returned value of get_title method"""
+        """
+        Check returned value of get_title method
+        """
 
         title = self.gwyfile.get_title(self.gwyfile, self.channel_id)
         self.assertEqual(title, 'Title')
 
 
 class Gwyfile__gwyfile_get_object_TestCase(unittest.TestCase):
-    """Test _gwyfile_get_object method in Gwyfile class"""
+    """
+    Test _gwyfile_get_object method in Gwyfile class
+    """
 
     def setUp(self):
         self.gwyfile = Mock(spec=Gwyfile)
@@ -210,7 +244,9 @@ class Gwyfile__gwyfile_get_object_TestCase(unittest.TestCase):
         self.test_key = '/0/data'
 
     def test_raise_exception_if_data_item_is_not_found(self):
-        """Raise GwyfileError if data item is not found"""
+        """
+        Raise GwyfileError if data item is not found
+        """
         
         self.mock_lib.gwyfile_object_get.return_value = ffi.NULL
         self.assertRaises(GwyfileError,
@@ -218,7 +254,9 @@ class Gwyfile__gwyfile_get_object_TestCase(unittest.TestCase):
                           self.gwyfile, self.test_key)
 
     def test_raise_exception_if_object_is_not_found(self):
-        """Raise GwyfileError if object in the data item is empty"""
+        """
+        Raise GwyfileError if object in the data item is empty
+        """
         
         self.mock_lib.gwyfile_item_get_object.return_value = ffi.NULL
         mock_item = self.mock_lib.gwyfile_object_get.return_value
@@ -227,7 +265,9 @@ class Gwyfile__gwyfile_get_object_TestCase(unittest.TestCase):
                           self.gwyfile, mock_item)
 
     def test_check_args_of_libgwyfile_functions(self):
-        """Check arguments passed to Libgwyfile functions"""
+        """
+        Check arguments passed to Libgwyfile functions
+        """
         
         mock_item = self.mock_lib.gwyfile_object_get.return_value
 
@@ -239,7 +279,9 @@ class Gwyfile__gwyfile_get_object_TestCase(unittest.TestCase):
             [call(mock_item)])
 
     def test_check_returned_value(self):
-        """Function returns object returned by gwyfile_item_get_object"""
+        """
+        Function returns object returned by gwyfile_item_get_object
+        """
 
         mock_object = self.mock_lib.gwyfile_item_get_object.return_value
         returned_object = self.gwyfile._gwyfile_get_object(self.gwyfile,
@@ -248,7 +290,9 @@ class Gwyfile__gwyfile_get_object_TestCase(unittest.TestCase):
 
 
 class Gwyfile__gwydf_get_metadata(unittest.TestCase):
-    """Test __gwydf_get_metadata method in Gwyfile class"""
+    """
+    Test __gwydf_get_metadata method in Gwyfile class
+    """
 
     def setUp(self):
         self.gwyfile = Mock(spec=Gwyfile)
@@ -278,6 +322,7 @@ class Gwyfile__gwydf_get_metadata(unittest.TestCase):
         Raise GwyfileError exception without error message
         if gwyfile_object_datafield_get returns False
         and GwyfileError.message is NULL
+
         """
         
         self.mock_lib.gwyfile_object_datafield_get.return_value = self.falsep[0]
@@ -289,9 +334,9 @@ class Gwyfile__gwydf_get_metadata(unittest.TestCase):
     def test_raise_exception_with_msg_if_df_looks_unacceptable(self):
         """Raise GwyfileError exception with error message
 
-        Raise GwyfileError exception with error message
-        if gwyfile_object_datafield_get returns False
-        and GwyfileError.message is not NULL
+        Raise GwyfileError exception with error message if
+        gwyfile_object_datafield_get returns False and
+        GwyfileError.message is not NULL
         """
 
         self.mock_lib.gwyfile_object_datafield_get.side_effect = self._side_effect_with_msg
@@ -302,7 +347,9 @@ class Gwyfile__gwydf_get_metadata(unittest.TestCase):
                                self.test_key)
 
     def _side_effect_with_msg(self, *args):
-        """gwyfile_object_datafield_get returns False with error_msg"""
+        """
+        gwyfile_object_datafield_get returns False with error_msg
+        """
 
         errorp = args[1]
         c_error_msg = ffi.new("char[]", self.error_msg.encode('utf-8'))
@@ -310,7 +357,9 @@ class Gwyfile__gwydf_get_metadata(unittest.TestCase):
         return self.falsep[0]
 
     def test_libgwyfile_function_args(self):
-        """Test args of gwyfile_object_datafield_get C function """
+        """
+        Test args of gwyfile_object_datafield_get C function
+        """
 
         self.mock_lib.gwyfile_object_datafield_get.side_effect = self._side_effect_check_args
         self.df = self.gwyfile._gwyfile_get_object.return_value
@@ -319,7 +368,9 @@ class Gwyfile__gwydf_get_metadata(unittest.TestCase):
             [call(self.test_key)])
 
     def _side_effect_check_args(self, *args):
-        """Check args passing to gwyfile_object_datafield_get C function"""
+        """
+        Check args passing to gwyfile_object_datafield_get C function
+        """
 
         # first arg is GwyDatafield returned by _gwyfile_get_object
         self.assertEqual(args[0], self.df)
@@ -340,7 +391,9 @@ class Gwyfile__gwydf_get_metadata(unittest.TestCase):
         return self.truep[0]
 
     def test_returned_metadata_dict(self):
-        """Returns dictionary with metadata"""
+        """
+        Returns dictionary with metadata
+        """
 
         self.test_metadata_dict = {'xres': 256,
                                    'yres': 256,
@@ -372,7 +425,9 @@ class Gwyfile__gwydf_get_metadata(unittest.TestCase):
         return self.truep[0]
 
     def test_returned_min_metadata_dict(self):
-        """Every GwyDataField must contain only xres and yres"""
+        """
+        Every GwyDataField must contain xres and yres
+        """
 
         self.test_metadata_dict = {'xres': 256, 'yres': 256}
         self.mock_lib.gwyfile_object_datafield_get.side_effect = self._side_effect_return_min_metadata
@@ -404,7 +459,9 @@ class Gwyfile__gwydf_get_metadata(unittest.TestCase):
 
 
 class Gwyfile__gwydf_get_data(unittest.TestCase):
-    """Test _gwydf_get_data method in Gwyfile class"""
+    """
+    Test _gwydf_get_data method in Gwyfile class
+    """
 
     def setUp(self):
         self.gwyfile = Mock(spec=Gwyfile)
@@ -426,9 +483,9 @@ class Gwyfile__gwydf_get_data(unittest.TestCase):
     def test_raise_exception_without_msg_if_df_looks_unacceptable(self):
         """Raise GwyfileError exception without error message
 
-        Raise GwyfileError exception with error message
-        if gwyfile_object_datafield_get returns False
-        and GwyfileError.message is NULL
+        Raise GwyfileError exception with error message if
+        gwyfile_object_datafield_get returns False and
+        GwyfileError.message is NULL
         """
 
         self.mock_lib.gwyfile_object_datafield_get.return_value = self.falsep[0]
@@ -442,9 +499,9 @@ class Gwyfile__gwydf_get_data(unittest.TestCase):
     def test_raise_exception_with_msg_if_df_looks_unacceptable(self):
         """Raise GwyfileError exception with error message
 
-        Raise GwyfileError exception with error message
-        if gwyfile_object_datafield_get returns False
-        and GwyfileError.message is not NULL
+        Raise GwyfileError exception with error message if
+        gwyfile_object_datafield_get returns False and
+        GwyfileError.message is not NULL
         """
 
         self.mock_lib.gwyfile_object_datafield_get.side_effect = self._side_effect_with_msg
@@ -457,7 +514,9 @@ class Gwyfile__gwydf_get_data(unittest.TestCase):
                                self.yres)
 
     def _side_effect_with_msg(self, *args):
-        """gwyfile_object_datafield_get returns False with error_msg"""
+        """
+        gwyfile_object_datafield_get returns False with error_msg
+        """
 
         errorp = args[1]
         c_error_msg = ffi.new("char[]", self.error_msg.encode('utf-8'))
@@ -465,7 +524,9 @@ class Gwyfile__gwydf_get_data(unittest.TestCase):
         return self.falsep[0]
 
     def test_returned_data(self):
-        """ Check returned data numpy array"""
+        """
+        Check returned data numpy array
+        """
 
         self.mock_lib.gwyfile_object_datafield_get.side_effect = self._side_effect
         self.df = self.gwyfile._gwyfile_get_object.return_value
@@ -500,7 +561,9 @@ class Gwyfile__gwydf_get_data(unittest.TestCase):
 
 
 class Gwyfile__getobject_check(unittest.TestCase):
-    """Test _getobject_check method in Gwyfile class"""
+    """
+    Test _getobject_check method in Gwyfile class
+    """
 
     def setUp(self):
         self.gwyfile = Mock(spec=Gwyfile)
@@ -513,28 +576,36 @@ class Gwyfile__getobject_check(unittest.TestCase):
         self.mock_lib = patcher_lib.start()
 
     def test_check_libgwyfile_function_args(self):
-        """Check args passed to gwyfile_object_get function"""
+        """
+        Check args passed to gwyfile_object_get function
+        """
 
         self.gwyfile._gwyobject_check(self.gwyfile, self.key)
         self.mock_lib.gwyfile_object_get.assert_has_calls(
             [call(self.gwyfile.c_gwyfile, self.key.encode('utf-8'))])
 
     def test_return_False_if_libgwyfile_func_returns_NULL(self):
-        """Return False if gwyfile_object_get returns NULL"""
+        """
+        Return False if gwyfile_object_get returns NULL
+        """
 
         self.mock_lib.gwyfile_object_get.return_value = ffi.NULL
         value = self.gwyfile._gwyobject_check(self.gwyfile, self.key)
         self.assertIs(value, False)
 
     def test_return_True_if_libgwyfile_func_returns_nonNULL(self):
-        """Return True if gwyfile_object_get returns not NULL"""
+        """
+        Return True if gwyfile_object_get returns not NULL
+        """
 
         value = self.gwyfile._gwyobject_check(self.gwyfile, self.key)
         self.assertIs(value, True)
 
 
 class Gwyfile_get_metadata(unittest.TestCase):
-    """Test get_metadata method in Gwyfile class"""
+    """
+    Test get_metadata method in Gwyfile class
+    """
 
     def setUp(self):
         self.gwyfile = Mock(spec=Gwyfile)
@@ -544,7 +615,9 @@ class Gwyfile_get_metadata(unittest.TestCase):
         self.channel_id = 1
 
     def test_check_args_passing_to__gwydf_get_metadata(self):
-        """Check arguments passing to _gwydf_get_metadata method"""
+        """
+        Check arguments passing to _gwydf_get_metadata method
+        """
 
         self.gwyfile.get_metadata(self.gwyfile,
                                   self.channel_id)
@@ -552,7 +625,9 @@ class Gwyfile_get_metadata(unittest.TestCase):
             [call("/{:d}/data".format(self.channel_id))])
 
     def test_check_returned_value(self):
-        """Check value returned by _get_data method"""
+        """
+        Check value returned by _get_data method
+        """
 
         expected_return = self.gwyfile._gwydf_get_metadata.return_value
         actual_return = self.gwyfile.get_metadata(self.gwyfile,
@@ -561,7 +636,9 @@ class Gwyfile_get_metadata(unittest.TestCase):
 
 
 class Gwyfile_get_data(unittest.TestCase):
-    """Test get_data method in Gwyfile class"""
+    """
+    Test get_data method in Gwyfile class
+    """
 
     def setUp(self):
         self.gwyfile = Mock(spec=Gwyfile)
@@ -573,7 +650,9 @@ class Gwyfile_get_data(unittest.TestCase):
         self.yres = 256
 
     def test_check_args_passing_to__gwydf_get_data(self):
-        """Check arguments passing to _gwydf_get_data method"""
+        """
+        Check arguments passing to _gwydf_get_data method
+        """
 
         self.gwyfile.get_data(self.gwyfile,
                               self.channel_id,
@@ -585,7 +664,9 @@ class Gwyfile_get_data(unittest.TestCase):
                   self.yres)])
 
     def test_check_returned_value(self):
-        """Check value returned by get_data method"""
+        """
+        Check value returned by get_data method
+        """
 
         expected_return = self.gwyfile._gwydf_get_data.return_value
         actual_return = self.gwyfile.get_data(self.gwyfile,
@@ -596,7 +677,9 @@ class Gwyfile_get_data(unittest.TestCase):
 
 
 class Gwyfile_get_mask_metadata(unittest.TestCase):
-    """Test get_mask_metadata method in Gwyfile class"""
+    """
+    Test get_mask_metadata method in Gwyfile class
+    """
 
     def setUp(self):
         self.gwyfile = Mock(spec=Gwyfile)
@@ -606,7 +689,9 @@ class Gwyfile_get_mask_metadata(unittest.TestCase):
         self.channel_id = 1
 
     def test_check_args_passing_to__gwydf_get_metadata(self):
-        """Check arguments passing to _gwydf_get_metadata method"""
+        """
+        Check arguments passing to _gwydf_get_metadata method
+        """
 
         self.gwyfile.get_mask_metadata(self.gwyfile,
                                        self.channel_id)
@@ -614,7 +699,9 @@ class Gwyfile_get_mask_metadata(unittest.TestCase):
             [call("/{:d}/mask".format(self.channel_id))])
 
     def test_check_returned_value(self):
-        """Check value returned by get_mask_metadata method"""
+        """
+        Check value returned by get_mask_metadata method
+        """
 
         expected_return = self.gwyfile._gwydf_get_metadata.return_value
         actual_return = self.gwyfile.get_mask_metadata(self.gwyfile,
@@ -623,7 +710,9 @@ class Gwyfile_get_mask_metadata(unittest.TestCase):
 
 
 class Gwyfile_get_mask_data(unittest.TestCase):
-    """Test get_mask_data method in Gwyfile class"""
+    """
+    Test get_mask_data method in Gwyfile class
+    """
 
     def setUp(self):
         self.gwyfile = Mock(spec=Gwyfile)
@@ -635,7 +724,9 @@ class Gwyfile_get_mask_data(unittest.TestCase):
         self.yres = 256
 
     def test_check_args_passing_to__gwydf_get_data(self):
-        """Check arguments passing to _gwydf_get_data method"""
+        """
+        Check arguments passing to _gwydf_get_data method
+        """
 
         self.gwyfile.get_mask_data(self.gwyfile,
                                    self.channel_id,
@@ -647,7 +738,9 @@ class Gwyfile_get_mask_data(unittest.TestCase):
                   self.yres)])
 
     def test_check_returned_value(self):
-        """Check value returned by get_mask_data method"""
+        """
+        Check value returned by get_mask_data method
+        """
 
         expected_return = self.gwyfile._gwydf_get_data.return_value
         actual_return = self.gwyfile.get_mask_data(self.gwyfile,
@@ -658,7 +751,9 @@ class Gwyfile_get_mask_data(unittest.TestCase):
 
 
 class Gwyfile_get_presentation_metadata(unittest.TestCase):
-    """Test get_presentation_metadata method in Gwyfile class"""
+    """
+    Test get_presentation_metadata method in Gwyfile class
+    """
 
     def setUp(self):
         self.gwyfile = Mock(spec=Gwyfile)
@@ -668,7 +763,9 @@ class Gwyfile_get_presentation_metadata(unittest.TestCase):
         self.channel_id = 1
 
     def test_check_args_passing_to__gwydf_get_metadata(self):
-        """Check arguments passing to _gwydf_get_metadata method"""
+        """
+        Check arguments passing to _gwydf_get_metadata method
+        """
 
         self.gwyfile.get_presentation_metadata(self.gwyfile,
                                                self.channel_id)
@@ -676,7 +773,9 @@ class Gwyfile_get_presentation_metadata(unittest.TestCase):
             [call("/{:d}/show".format(self.channel_id))])
 
     def test_check_returned_value(self):
-        """Check value returned by get_presentation_metadata method"""
+        """
+        Check value returned by get_presentation_metadata method
+        """
 
         expected_return = self.gwyfile._gwydf_get_metadata.return_value
         actual_return = self.gwyfile.get_presentation_metadata(self.gwyfile,
@@ -685,7 +784,9 @@ class Gwyfile_get_presentation_metadata(unittest.TestCase):
 
 
 class Gwyfile_get_presentation_data(unittest.TestCase):
-    """Test get_presentation_data method in Gwyfile class"""
+    """
+    Test get_presentation_data method in Gwyfile class
+    """
 
     def setUp(self):
         self.gwyfile = Mock(spec=Gwyfile)
@@ -697,7 +798,9 @@ class Gwyfile_get_presentation_data(unittest.TestCase):
         self.yres = 256
 
     def test_check_args_passing_to__gwydf_get_data(self):
-        """Check arguments passing to _gwydf_get_data method"""
+        """
+        Check arguments passing to _gwydf_get_data method
+        """
 
         self.gwyfile.get_presentation_data(self.gwyfile,
                                            self.channel_id,
@@ -709,7 +812,9 @@ class Gwyfile_get_presentation_data(unittest.TestCase):
                   self.yres)])
 
     def test_check_returned_value(self):
-        """Check value returned by get_mask_data method"""
+        """
+        Check value returned by get_mask_data method
+        """
 
         expected_return = self.gwyfile._gwydf_get_data.return_value
         actual_return = self.gwyfile.get_presentation_data(self.gwyfile,
