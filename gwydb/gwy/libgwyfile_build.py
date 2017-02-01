@@ -40,6 +40,9 @@ ffibuilder.cdef("""
     bool gwyfile_object_selectionrectangle_get(const GwyfileObject* object,
                                                GwyfileError** error,
                                                ...);
+    bool gwyfile_object_selectionellipse_get(const GwyfileObject* object,
+                                             GwyfileError** error,
+                                             ...);
 """)
 
 

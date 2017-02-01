@@ -11,10 +11,23 @@ from gwydb.gwy._libgwyfile import ffi, lib
 
 class GwyfileError(Exception):
     """
-    Class for Gwyfile C library errors
+    Exceptions during operations with gwy files
     """
 
     pass
+
+
+class GwyfileErrorCMsg(GwyfileError):
+    """
+    Class for libgwyfile C library exceptions
+    """
+
+    def __init__(self, c_error_msg):
+        if c_error_msg:
+            error_msg = ffi.string(c_error_msg).decode('utf-8')
+            super(GwyfileErrorCMsg, self).__init__(error_msg)
+        else:
+            super(GwyfileErrorCMsg, self).__init__()
 
 
 class Gwyfile():
@@ -329,11 +342,7 @@ class Gwyfile():
 
             return metadata
         else:
-            if errorp[0].message:
-                error_msg = ffi.string(errorp[0].message).decode('utf-8')
-                raise GwyfileError(error_msg)
-            else:
-                raise GwyfileError
+            raise GwyfileErrorCMsg(errorp[0].message)
 
     def _gwydf_get_data(self, key, xres, yres):
         """Get data array from the GWY data field (e.g. channel, mask, presentation)
@@ -364,11 +373,7 @@ class Gwyfile():
                                        count=xres*yres).reshape((xres, yres))
             return data_array
         else:
-            if errorp[0].message:
-                error_msg = ffi.string(errorp[0].message).decode('utf-8')
-                raise GwyfileError(error_msg)
-            else:
-                raise GwyfileError
+            raise GwyfileErrorCMsg(errorp[0].message)
 
     def _gwyobject_check(self, key):
         """Check the presence of the object
@@ -387,7 +392,22 @@ class Gwyfile():
         else:
             return True
 
-    def get_pointsel(self, channel_id):
+    def get_pointer_sel(self, channel_id):
+        """Get pointer selections from the channel
+
+        Args:
+            channel_id(int): id of the channel
+
+        Returns:
+            [(x1, y1), ..., (xN, yN)]: list of tuples with point coordinates
+
+            or None :                  if there are no pointer selections
+        """
+
+        points = self._get_selection(channel_id, 'pointer')
+        return points
+
+    def get_point_sel(self, channel_id):
         """Get point selections from the channel
 
         Args:
@@ -395,54 +415,147 @@ class Gwyfile():
 
         Returns:
             [(x1, y1), ..., (xN, yN)]: list of tuples with point coordinates
-                                       or None if there are no point selections
+
+            or None :                  if there are no point selections
+
+        """
+
+        points = self._get_selection(channel_id, 'point')
+        return points
+
+    def get_line_sel(self, channel_id):
+        """Get line selections from the channel
+
+        Args:
+             channel_id(int): id of the channel
+
+        Returns:
+            [((x1, y1), (x2, y2)) ...]: list, which elements are tuples
+                                        with end points coordinates of lines
+                                        in line selection
+
+            or None:                    if there are no line selections
+
+        """
+
+        points = self._get_selection(channel_id, 'line')
+        # combine points in pairs
+        lines = list(zip(tuple(points[::2]),    # first point of each line
+                         tuple(points[1::2])))  # last point of each line
+        return lines
+
+    def get_rectangle_sel(self, channel_id):
+        """Get rectangle selections from the channel
+
+        Args:
+            channel_id (int) : id of the channel
+
+        Returns:
+            [((x1, y1), (x2, y2)) ...]: list, which elements are tuples
+                                        with top-left and bottom-right points
+                                        coordinates of rectangle in selection
+
+
+            or None:                    if there are no point selections
+        """
+
+        points = self._get_selection(channel_id, 'rectangle')
+        # combine points in pairs
+        rectangles = list(zip(tuple(points[::2]),    # top-left point
+                              tuple(points[1::2])))  # bottom-right point
+        return rectangles
+
+    def get_ellipse_sel(self, channel_id):
+        """Get ellipse selections from the channel
+
+        Args:
+            channel_id (int) : id of the channel
+
+        Returns:
+            [((x1, y1), (x2, y2)) ...]: list, which elements are tuples
+                                        with two points
+                                        of ellipse in selection
+
+
+            or None:                    if there are no point selections
+        """
+
+        points = self._get_selection(channel_id, 'ellipse')
+        # combine points in pairs
+        ellipse = list(zip(tuple(points[::2]),
+                           tuple(points[1::2])))
+        return ellipse
+
+    def _get_selection(self, channel_id, seltype):
+        """Get selection from the channel
+
+        Args:
+            channel_id (int): id of the channel
+            seltype (str): selection type (e.g. 'pointer', 'point')
+
+        Returns:
+            [(x1, y1), ..., (xN, yN)]: list of tuples with point coordinates
+
+            or None :                  if there are no point selections
         """
 
         error = ffi.new("GwyfileError*")
         errorp = ffi.new("GwyfileError**", error)
         nselp = ffi.new("int32_t*")
 
-        key = "/{:d}/select/pointer".format(channel_id)
+        if seltype == 'pointer':
+            pt_sel = 1  # number of points for one pointer
+            func_sel = lib.gwyfile_object_selectionpoint_get
+            key = "/{:d}/select/pointer".format(channel_id)
+        elif seltype == 'point':
+            pt_sel = 1  # number of points for one point
+            func_sel = lib.gwyfile_object_selectionpoint_get
+            key = "/{:d}/select/point".format(channel_id)
+        elif seltype == 'line':
+            pt_sel = 2  # number of points for one line
+            func_sel = lib.gwyfile_object_selectionline_get
+            key = "/{:d}/select/line".format(channel_id)
+        elif seltype == 'rectangle':
+            pt_sel = 2  # number of points for one rectangle
+            func_sel = lib.gwyfile_object_selectionrectangle_get
+            key = "/{:d}/select/rectangle".format(channel_id)
+        elif seltype == 'ellipse':
+            pt_sel = 2  # number of points for one ellipse
+            func_sel = lib.gwyfile_object_selectionellipse_get
+            key = "/{:d}/select/ellipse".format(channel_id)
+        else:
+            raise NotImplementedError
+
         if not self._gwyobject_check(key):
             return None
 
         psel = self._gwyfile_get_object(key)
 
-        if lib.gwyfile_object_selectionpoint_get(psel,
-                                                 errorp,
-                                                 ffi.new("char[]",
-                                                         b'nsel'),
-                                                 nselp,
-                                                 ffi.NULL):
+        if func_sel(psel,
+                    errorp,
+                    ffi.new("char[]", b'nsel'),
+                    nselp,
+                    ffi.NULL):
             nsel = nselp[0]
         else:
-            if errorp[0].message:
-                error_msg = ffi.string(errorp[0].message).decode('utf-8')
-                raise GwyfileError(error_msg)
-            else:
-                raise GwyfileError
+            raise GwyfileErrorCMsg(errorp[0].message)
 
         if nsel == 0:
             return None
         else:
-            data = ffi.new("double[]", 2*nsel)
+            data = ffi.new("double[]", 2*pt_sel*nsel)
             datap = ffi.new("double**", data)
 
-        if lib.gwyfile_object_selectionpoint_get(psel,
-                                                 errorp,
-                                                 ffi.new("char[]",
-                                                         b'data'),
-                                                 datap,
-                                                 ffi.NULL):
+        if func_sel(psel,
+                    errorp,
+                    ffi.new("char[]", b'data'),
+                    datap,
+                    ffi.NULL):
             data = datap[0]
             points = [(data[i * 2], data[i * 2 + 1])
-                      for i in range(nsel)]
+                      for i in range(nsel*pt_sel)]
         else:
-            if errorp[0].message:
-                error_msg = ffi.string(errorp[0].message).decode('utf-8')
-                raise GwyfileError(error_msg)
-            else:
-                raise GwyfileError
+            raise GwyfileErrorCMsg(errorp[0].message)
 
         return points
 
@@ -457,6 +570,7 @@ def read_gwyfile(filename):
         Object of the Gwyfile class
 
     """
+
     error = ffi.new("GwyfileError*")
     errorp = ffi.new("GwyfileError**", error)
 
@@ -466,10 +580,6 @@ def read_gwyfile(filename):
     c_gwyfile = lib.gwyfile_read_file(filename.encode('utf-8'), errorp)
 
     if not c_gwyfile:
-        if errorp[0].message:
-            error_msg = ffi.string(errorp[0].message).decode('utf-8')
-            raise GwyfileError(error_msg)
-        else:
-            raise GwyfileError
+        raise GwyfileErrorCMsg(errorp[0].message)
 
     return Gwyfile(c_gwyfile)

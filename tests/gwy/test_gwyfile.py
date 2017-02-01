@@ -4,12 +4,12 @@ from unittest.mock import patch, call, ANY, Mock
 import numpy as np
 
 from gwydb.gwy.gwyfile import read_gwyfile
-from gwydb.gwy.gwyfile import GwyfileError
+from gwydb.gwy.gwyfile import GwyfileError, GwyfileErrorCMsg
 from gwydb.gwy.gwyfile import Gwyfile
 from gwydb.gwy.gwyfile import ffi
 
 
-class Func_read_gwy_TestCase(unittest.TestCase):
+class Func_read_gwyfile_TestCase(unittest.TestCase):
     """
     Test read_gwyfile function
     """
@@ -75,7 +75,7 @@ class Func_read_gwy_TestCase(unittest.TestCase):
 
         self.mock_isfile.return_value=True
         self.mock_lib.gwyfile_read_file.side_effect = self._side_effect_with_msg
-        self.assertRaisesRegex(GwyfileError,
+        self.assertRaisesRegex(GwyfileErrorCMsg,
                                self.error_msg,
                                read_gwyfile,
                                self.filename)
@@ -340,7 +340,7 @@ class Gwyfile__gwydf_get_metadata(unittest.TestCase):
         """
 
         self.mock_lib.gwyfile_object_datafield_get.side_effect = self._side_effect_with_msg
-        self.assertRaisesRegex(GwyfileError,
+        self.assertRaisesRegex(GwyfileErrorCMsg,
                                self.error_msg,
                                self.gwyfile._gwydf_get_metadata,
                                self.gwyfile,
@@ -505,7 +505,7 @@ class Gwyfile__gwydf_get_data(unittest.TestCase):
         """
 
         self.mock_lib.gwyfile_object_datafield_get.side_effect = self._side_effect_with_msg
-        self.assertRaisesRegex(GwyfileError,
+        self.assertRaisesRegex(GwyfileErrorCMsg,
                                self.error_msg,
                                self.gwyfile._gwydf_get_data,
                                self.gwyfile,
@@ -822,6 +822,107 @@ class Gwyfile_get_presentation_data(unittest.TestCase):
                                                            self.xres,
                                                            self.yres)
         self.assertEqual(actual_return, expected_return)
+
+
+class Gwyfile_test__get_selection(unittest.TestCase):
+    """
+    Test _get_selection method in Gwyfile class
+    """
+
+    def setUp(self):
+        self.gwyfile = Mock(spec=Gwyfile)
+        self.gwyfile._get_selection = Gwyfile._get_selection
+        self.gwyfile._gwyobject_check = Mock(autospec=True)
+        self.channel_id = 0
+
+        patcher_lib = patch('gwydb.gwy.gwyfile.lib', autospec=True)
+        self.addCleanup(patcher_lib.stop)
+        self.mock_lib = patcher_lib.start()
+
+    def test_raise_exception_if_wrong_seltype_arg(self):
+        """
+        Raise NotImplemented exception if selftype is of wrong type
+        """
+
+        self.assertRaises(NotImplementedError,
+                          self.gwyfile._get_selection,
+                          self.gwyfile,
+                          self.channel_id,
+                          'ring')
+
+    def test_check_pointer_object_if_seltype_is_pointer(self):
+        """
+        If seltype='pointer', check '/{:d}/select/pointer' object
+        """
+
+        key = "/{:d}/select/pointer".format(self.channel_id)
+        self.gwyfile._get_selection(self.gwyfile,
+                                    self.channel_id,
+                                    'pointer')
+
+        self.gwyfile._gwyobject_check.assert_has_calls(
+            [call(key)])
+
+    def test_check_pointer_object_if_seltype_is_point(self):
+        """
+        If seltype='point', check '/{:d}/select/point' object
+        """
+
+        key = "/{:d}/select/point".format(self.channel_id)
+        self.gwyfile._get_selection(self.gwyfile,
+                                    self.channel_id,
+                                    'point')
+
+        self.gwyfile._gwyobject_check.assert_has_calls(
+            [call(key)])
+
+    def test_check_pointer_object_if_seltype_is_line(self):
+        """
+        If seltype='line', check '/{:d}/select/line' object
+        """
+
+        key = "/{:d}/select/line".format(self.channel_id)
+        self.gwyfile._get_selection(self.gwyfile,
+                                    self.channel_id,
+                                    'line')
+
+        self.gwyfile._gwyobject_check.assert_has_calls(
+            [call(key)])
+
+    def test_check_pointer_object_if_seltype_is_rectangle(self):
+        """
+        If seltype='rectangle', check '/{:d}/select/rectangle' object
+        """
+
+        key = "/{:d}/select/rectangle".format(self.channel_id)
+        self.gwyfile._get_selection(self.gwyfile,
+                                    self.channel_id,
+                                    'rectangle')
+
+        self.gwyfile._gwyobject_check.assert_has_calls(
+            [call(key)])
+
+    def test_check_pointer_object_if_seltype_is_ellipse(self):
+        """
+        If seltype='ellipse', check '/{:d}/select/ellipse' object
+        """
+
+        key = "/{:d}/select/ellipse".format(self.channel_id)
+        self.gwyfile._get_selection(self.gwyfile,
+                                    self.channel_id,
+                                    'ellipse')
+
+        self.gwyfile._gwyobject_check.assert_has_calls(
+            [call(key)])
+
+    def test_return_None_if_selection_object_does_not_exist(self):
+
+        self.gwyfile._gwyobject_check.return_value = False
+
+        actual_return = self.gwyfile._get_selection(self.gwyfile,
+                                                    self.channel_id,
+                                                    'point')
+        self.assertIsNone(actual_return)
 
 
 if __name__ == '__main__':
