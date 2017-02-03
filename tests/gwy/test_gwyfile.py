@@ -73,7 +73,7 @@ class Func_read_gwyfile_TestCase(unittest.TestCase):
         returns NULL and is GwyfileError.message is not NULL
         """
 
-        self.mock_isfile.return_value=True
+        self.mock_isfile.return_value = True
         self.mock_lib.gwyfile_read_file.side_effect = self._side_effect_with_msg
         self.assertRaisesRegex(GwyfileErrorCMsg,
                                self.error_msg,
@@ -247,7 +247,7 @@ class Gwyfile__gwyfile_get_object_TestCase(unittest.TestCase):
         """
         Raise GwyfileError if data item is not found
         """
-        
+
         self.mock_lib.gwyfile_object_get.return_value = ffi.NULL
         self.assertRaises(GwyfileError,
                           self.gwyfile._gwyfile_get_object,
@@ -257,7 +257,7 @@ class Gwyfile__gwyfile_get_object_TestCase(unittest.TestCase):
         """
         Raise GwyfileError if object in the data item is empty
         """
-        
+
         self.mock_lib.gwyfile_item_get_object.return_value = ffi.NULL
         mock_item = self.mock_lib.gwyfile_object_get.return_value
         self.assertRaises(GwyfileError,
@@ -268,7 +268,7 @@ class Gwyfile__gwyfile_get_object_TestCase(unittest.TestCase):
         """
         Check arguments passed to Libgwyfile functions
         """
-        
+
         mock_item = self.mock_lib.gwyfile_object_get.return_value
 
         self.gwyfile._gwyfile_get_object(self.gwyfile, self.test_key)
@@ -324,13 +324,13 @@ class Gwyfile__gwydf_get_metadata(unittest.TestCase):
         and GwyfileError.message is NULL
 
         """
-        
+
         self.mock_lib.gwyfile_object_datafield_get.return_value = self.falsep[0]
         self.assertRaises(GwyfileError,
-                              self.gwyfile._gwydf_get_metadata,
-                              self.gwyfile,
-                              self.test_key)
-    
+                          self.gwyfile._gwydf_get_metadata,
+                          self.gwyfile,
+                          self.test_key)
+
     def test_raise_exception_with_msg_if_df_looks_unacceptable(self):
         """Raise GwyfileError exception with error message
 
@@ -495,7 +495,7 @@ class Gwyfile__gwydf_get_data(unittest.TestCase):
                           self.key,
                           self.xres,
                           self.yres)
-        
+
     def test_raise_exception_with_msg_if_df_looks_unacceptable(self):
         """Raise GwyfileError exception with error message
 
@@ -923,6 +923,166 @@ class Gwyfile_test__get_selection(unittest.TestCase):
                                                     self.channel_id,
                                                     'point')
         self.assertIsNone(actual_return)
+
+
+class Gwyfile_get_pointer_sel(unittest.TestCase):
+    """Test get_pointer_sel method of Gwyfile class
+    """
+
+    def setUp(self):
+        self.gwyfile = Mock(spec=Gwyfile)
+        self.gwyfile.get_pointer_sel = Gwyfile.get_pointer_sel
+        self.channel_id = 0
+
+    def test__get_selection_call(self):
+        """Test args of _get_selection call
+        """
+
+        self.gwyfile.get_pointer_sel(self.gwyfile, self.channel_id)
+        self.gwyfile._get_selection.assert_has_calls(
+            [call(self.channel_id, 'pointer')])
+
+    def test_returned_value(self):
+        """Test returned value of the function
+        """
+        expected_return = self.gwyfile._get_selection.return_value
+        actual_return = self.gwyfile.get_pointer_sel(self.gwyfile,
+                                                     self.channel_id)
+        self.assertEqual(expected_return, actual_return)
+
+
+class Gwyfile_get_point_sel(unittest.TestCase):
+    """Test get_point_sel method of Gwyfile class
+    """
+
+    def setUp(self):
+        self.gwyfile = Mock(spec=Gwyfile)
+        self.gwyfile.get_point_sel = Gwyfile.get_point_sel
+        self.channel_id = 0
+
+    def test__get_selection_call(self):
+        """Test args of _get_selection call
+        """
+
+        self.gwyfile.get_point_sel(self.gwyfile, self.channel_id)
+        self.gwyfile._get_selection.assert_has_calls(
+            [call(self.channel_id, 'point')])
+
+    def test_returned_value(self):
+        """Test returned value of the function
+        """
+        expected_return = self.gwyfile._get_selection.return_value
+        actual_return = self.gwyfile.get_point_sel(self.gwyfile,
+                                                   self.channel_id)
+        self.assertEqual(expected_return, actual_return)
+
+
+class Gwyfile_get_line_sel(unittest.TestCase):
+    """Test get_line_sel_method of Gwyfile class
+    """
+
+    def setUp(self):
+        self.gwyfile = Mock(spec=Gwyfile)
+        self.gwyfile.get_line_sel = Gwyfile.get_line_sel
+        self.channel_id = 0
+        self.point1 = (0.0, 0.0)  # line 1
+        self.point2 = (0.0, 1.0)  # line 1
+        self.point3 = (1.0, 1.0)  # line 2
+        self.point4 = (1.1, 1.1)  # line 2
+        self.gwyfile._get_selection.return_value = [self.point1,
+                                                    self.point2,
+                                                    self.point3,
+                                                    self.point4]
+
+    def test__get_selection_call(self):
+        """Test args of _get_selection call
+        """
+
+        self.gwyfile.get_line_sel(self.gwyfile, self.channel_id)
+        self.gwyfile._get_selection.assert_has_calls(
+            [call(self.channel_id, 'line')])
+
+    def test_returned_value(self):
+        """Test returned value of the function
+        """
+
+        expected_value = [(self.point1, self.point2),
+                          (self.point3, self.point4)]
+        returned_value = self.gwyfile.get_line_sel(self.gwyfile,
+                                                   self.channel_id)
+        self.assertListEqual(expected_value, returned_value)
+
+
+class Gwyfile_get_rectangle_sel(unittest.TestCase):
+    """Test get_rectangle_sel_method of Gwyfile class
+    """
+
+    def setUp(self):
+        self.gwyfile = Mock(spec=Gwyfile)
+        self.gwyfile.get_rectangle_sel = Gwyfile.get_rectangle_sel
+        self.channel_id = 0
+        self.point1 = (0.0, 0.0)  # rectangle 1
+        self.point2 = (0.0, 1.0)  # rectangle 1
+        self.point3 = (1.0, 1.0)  # rectangle 2
+        self.point4 = (1.1, 1.1)  # rectangle 2
+        self.gwyfile._get_selection.return_value = [self.point1,
+                                                    self.point2,
+                                                    self.point3,
+                                                    self.point4]
+
+    def test__get_selection_call(self):
+        """Test args of _get_selection call
+        """
+
+        self.gwyfile.get_rectangle_sel(self.gwyfile, self.channel_id)
+        self.gwyfile._get_selection.assert_has_calls(
+            [call(self.channel_id, 'rectangle')])
+
+    def test_returned_value(self):
+        """Test returned value of the function
+        """
+
+        expected_value = [(self.point1, self.point2),
+                          (self.point3, self.point4)]
+        returned_value = self.gwyfile.get_rectangle_sel(self.gwyfile,
+                                                        self.channel_id)
+        self.assertListEqual(expected_value, returned_value)
+
+
+class Gwyfile_get_ellipse_sel(unittest.TestCase):
+    """Test get_ellipse_sel_method of Gwyfile class
+    """
+
+    def setUp(self):
+        self.gwyfile = Mock(spec=Gwyfile)
+        self.gwyfile.get_ellipse_sel = Gwyfile.get_ellipse_sel
+        self.channel_id = 0
+        self.point1 = (0.0, 0.0)  # ellipse 1
+        self.point2 = (0.0, 1.0)  # ellipse 1
+        self.point3 = (1.0, 1.0)  # ellipse 2
+        self.point4 = (1.1, 1.1)  # ellipse 2
+        self.gwyfile._get_selection.return_value = [self.point1,
+                                                    self.point2,
+                                                    self.point3,
+                                                    self.point4]
+
+    def test__get_selection_call(self):
+        """Test args of _get_selection call
+        """
+
+        self.gwyfile.get_ellipse_sel(self.gwyfile, self.channel_id)
+        self.gwyfile._get_selection.assert_has_calls(
+            [call(self.channel_id, 'ellipse')])
+
+    def test_returned_value(self):
+        """Test returned value of the function
+        """
+
+        expected_value = [(self.point1, self.point2),
+                          (self.point3, self.point4)]
+        returned_value = self.gwyfile.get_ellipse_sel(self.gwyfile,
+                                                      self.channel_id)
+        self.assertListEqual(expected_value, returned_value)
 
 
 if __name__ == '__main__':
