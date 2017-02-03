@@ -25,6 +25,8 @@ ffibuilder.cdef("""
     const char* gwyfile_object_name(const GwyfileObject* object);
     int* gwyfile_object_container_enumerate_channels(const GwyfileObject* object,
                                                      unsigned int* nchannels);
+    int* gwyfile_object_container_enumerate_graphs(const GwyfileObject* object,
+                                                   unsigned int* ngraphs);
     GwyfileItem* gwyfile_object_get(const GwyfileObject* object,
                                     const char* name);
     GwyfileObject* gwyfile_item_get_object(const GwyfileItem* item);
@@ -43,6 +45,12 @@ ffibuilder.cdef("""
     bool gwyfile_object_selectionellipse_get(const GwyfileObject* object,
                                              GwyfileError** error,
                                              ...);
+    bool gwyfile_object_graphmodel_get(const GwyfileObject* object,
+                                       GwyfileError** error,
+                                       ...);
+    bool gwyfile_object_graphcurvemodel_get(const GwyfileObject* object,
+                                            GwyfileError** error,
+                                            ...);
 """)
 
 
