@@ -603,7 +603,6 @@ class Gwyfile():
 
         error = ffi.new("GwyfileError*")
         errorp = ffi.new("GwyfileError**", error)
-        nselp = ffi.new("int32_t*")
 
         if not self._gwyobject_check(key):
             return None

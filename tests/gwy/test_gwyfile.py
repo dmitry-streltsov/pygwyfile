@@ -74,7 +74,8 @@ class Func_read_gwyfile_TestCase(unittest.TestCase):
         """
 
         self.mock_isfile.return_value = True
-        self.mock_lib.gwyfile_read_file.side_effect = self._side_effect_with_msg
+        gwyfile_read_file = self.mock_lib.gwyfile_read_file
+        gwyfile_read_file.side_effect = self._side_effect_with_msg
         self.assertRaisesRegex(GwyfileErrorCMsg,
                                self.error_msg,
                                read_gwyfile,
@@ -173,7 +174,8 @@ class Gwyfile_get_channels_ids_TestCase(unittest.TestCase):
         Returns list of channels ids if their number is not zero
         """
 
-        self.mock_lib.gwyfile_object_container_enumerate_channels.side_effect = self._side_effect_non_zero_channels
+        enum_chs = self.mock_lib.gwyfile_object_container_enumerate_channels
+        enum_chs.side_effect = self._side_effect_non_zero_channels
         ids = self.gwyfile.get_channels_ids(self.gwyfile)
         self.assertEqual(ids, [0, 1, 2])
 
@@ -190,7 +192,9 @@ class Gwyfile_get_channels_ids_TestCase(unittest.TestCase):
         """
         Returns empty list if libgwyfile function returns NULL
         """
-        self.mock_lib.gwyfile_object_container_enumerate_channels.return_value = ffi.NULL
+
+        enum_ch = self.mock_lib.gwyfile_object_container_enumerate_channels
+        enum_ch.return_value = ffi.NULL
         ids = self.gwyfile.get_channels_ids(self.gwyfile)
         self.assertEqual(ids, [])
 
@@ -340,7 +344,8 @@ class Gwyfile__gwydf_get_metadata(unittest.TestCase):
         GwyfileError.message is not NULL
         """
 
-        self.mock_lib.gwyfile_object_datafield_get.side_effect = self._side_effect_with_msg
+        gwyfile_object_df_get = self.mock_lib.gwyfile_object_datafield_get
+        gwyfile_object_df_get.side_effect = self._side_effect_with_msg
         self.assertRaisesRegex(GwyfileErrorCMsg,
                                self.error_msg,
                                self.gwyfile._gwydf_get_metadata,
@@ -362,7 +367,8 @@ class Gwyfile__gwydf_get_metadata(unittest.TestCase):
         Test args of gwyfile_object_datafield_get C function
         """
 
-        self.mock_lib.gwyfile_object_datafield_get.side_effect = self._side_effect_check_args
+        gwyfile_object_df_get = self.mock_lib.gwyfile_object_datafield_get
+        gwyfile_object_df_get.side_effect = self._side_effect_check_args
         self.df = self.gwyfile._gwyfile_get_object.return_value
         self.gwyfile._gwydf_get_metadata(self.gwyfile, self.test_key)
         self.gwyfile._gwyfile_get_object.assert_has_calls(
@@ -404,7 +410,8 @@ class Gwyfile__gwydf_get_metadata(unittest.TestCase):
                                    'yoff': 0,
                                    'si_unit_xy': 'm',
                                    'si_unit_z': 'A'}
-        self.mock_lib.gwyfile_object_datafield_get.side_effect = self._side_effect_return_metadata
+        gwyfile_object_df_get = self.mock_lib.gwyfile_object_datafield_get
+        gwyfile_object_df_get.side_effect = self._side_effect_return_metadata
 
         metadata = self.gwyfile._gwydf_get_metadata(self.gwyfile,
                                                     self.test_key)
@@ -431,7 +438,8 @@ class Gwyfile__gwydf_get_metadata(unittest.TestCase):
         """
 
         self.test_metadata_dict = {'xres': 256, 'yres': 256}
-        self.mock_lib.gwyfile_object_datafield_get.side_effect = self._side_effect_return_min_metadata
+        gwyfile_obj_df_get = self.mock_lib.gwyfile_object_datafield_get
+        gwyfile_obj_df_get.side_effect = self._side_effect_return_min_metadata
 
         metadata = self.gwyfile._gwydf_get_metadata(self.gwyfile,
                                                     self.test_key)
@@ -506,7 +514,8 @@ class Gwyfile__gwydf_get_data(unittest.TestCase):
         GwyfileError.message is not NULL
         """
 
-        self.mock_lib.gwyfile_object_datafield_get.side_effect = self._side_effect_with_msg
+        gwyfile_object_df_get = self.mock_lib.gwyfile_object_datafield_get
+        gwyfile_object_df_get.side_effect = self._side_effect_with_msg
         self.assertRaisesRegex(GwyfileErrorCMsg,
                                self.error_msg,
                                self.gwyfile._gwydf_get_data,
@@ -530,7 +539,8 @@ class Gwyfile__gwydf_get_data(unittest.TestCase):
         Check returned data numpy array
         """
 
-        self.mock_lib.gwyfile_object_datafield_get.side_effect = self._side_effect
+        gwyfile_object_df_get = self.mock_lib.gwyfile_object_datafield_get
+        gwyfile_object_df_get.side_effect = self._side_effect
         self.df = self.gwyfile._gwyfile_get_object.return_value
 
         data = self.gwyfile._gwydf_get_data(self.gwyfile,
@@ -843,7 +853,7 @@ class Gwyfile__get_selection_nsel(unittest.TestCase):
 
     def test_return_None_is_there_is_no_selection(self):
         """
-        Return None if there is no such selection 
+        Return None if there is no such selection
         """
 
         self.gwyfile._gwyobject_check.return_value = None
@@ -906,7 +916,7 @@ class Gwyfile__get_selection_data(unittest.TestCase):
 
     def test_return_None_is_there_is_no_selection(self):
         """
-        Return None if there is no such selection 
+        Return None if there is no such selection
         """
 
         self.gwyfile._gwyobject_check.return_value = None
@@ -1191,7 +1201,7 @@ class Gwyfile_get_rectangle_sel(unittest.TestCase):
         """
 
         self.gwyfile._get_selection_nsel.return_value = self.nsel
-        npoints = 2 * self.nsel  # there are 2 points in one rectangle selection
+        npoints = 2 * self.nsel  # there are 2 pts in one rectangle selection
         expected_key = "/{:d}/select/rectangle".format(self.channel_id)
         expected_sel_func = lib.gwyfile_object_selectionrectangle_get
         self.gwyfile.get_rectangle_sel(self.gwyfile, self.channel_id)
