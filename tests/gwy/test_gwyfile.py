@@ -181,7 +181,7 @@ class Gwyfile_get_channels_ids_TestCase(unittest.TestCase):
         """
         Returns 3 channels with ids = 0, 1 and 2
         """
-        
+
         nchannelsp[0] = 3
         ids = ffi.new("int[]", [0, 1, 2])
         return ids
@@ -325,7 +325,8 @@ class Gwyfile__gwydf_get_metadata(unittest.TestCase):
 
         """
 
-        self.mock_lib.gwyfile_object_datafield_get.return_value = self.falsep[0]
+        self.mock_lib.gwyfile_object_datafield_get.return_value = self.falsep[
+            0]
         self.assertRaises(GwyfileError,
                           self.gwyfile._gwydf_get_metadata,
                           self.gwyfile,
@@ -488,7 +489,8 @@ class Gwyfile__gwydf_get_data(unittest.TestCase):
         GwyfileError.message is NULL
         """
 
-        self.mock_lib.gwyfile_object_datafield_get.return_value = self.falsep[0]
+        self.mock_lib.gwyfile_object_datafield_get.return_value = self.falsep[
+            0]
         self.assertRaises(GwyfileError,
                           self.gwyfile._gwydf_get_data,
                           self.gwyfile,
@@ -884,7 +886,7 @@ class Gwyfile__get_selection_nsel(unittest.TestCase):
         nselp = args[3]
         nselp[0] = self.nsel
         return truep[0]
-        
+
 
 class Gwyfile__get_selection_data(unittest.TestCase):
     """
@@ -960,16 +962,17 @@ class Gwyfile__get_selection_data(unittest.TestCase):
         """
         truep = ffi.new("bool*", True)
 
-        # convert self.points to list 
+        # convert self.points to list
         points_list = []
         for point in self.points:
             points_list.append(point[0])
             points_list.append(point[1])
-            
+
         datap = args[3]
         datap[0] = ffi.new("double[]", points_list)
 
         return truep[0]
+
 
 class Gwyfile_get_pointer_sel(unittest.TestCase):
     """
@@ -989,7 +992,7 @@ class Gwyfile_get_pointer_sel(unittest.TestCase):
         Get number of pointer selections using _get_selection_nsel method
         """
 
-        expected_key  = "/{:d}/select/pointer".format(self.channel_id)
+        expected_key = "/{:d}/select/pointer".format(self.channel_id)
         expected_sel_func = lib.gwyfile_object_selectionpoint_get
         self.gwyfile.get_pointer_sel(self.gwyfile, self.channel_id)
         self.gwyfile._get_selection_nsel.assert_has_calls(
@@ -1011,7 +1014,7 @@ class Gwyfile_get_pointer_sel(unittest.TestCase):
         """
 
         self.gwyfile._get_selection_nsel.return_value = self.nsel
-        expected_key  = "/{:d}/select/pointer".format(self.channel_id)
+        expected_key = "/{:d}/select/pointer".format(self.channel_id)
         expected_sel_func = lib.gwyfile_object_selectionpoint_get
         self.gwyfile.get_pointer_sel(self.gwyfile, self.channel_id)
         self.gwyfile._get_selection_data.assert_has_calls(
@@ -1046,7 +1049,7 @@ class Gwyfile_get_point_sel(unittest.TestCase):
         Get number of point selections using _get_selection_nsel method
         """
 
-        expected_key  = "/{:d}/select/point".format(self.channel_id)
+        expected_key = "/{:d}/select/point".format(self.channel_id)
         expected_sel_func = lib.gwyfile_object_selectionpoint_get
         self.gwyfile.get_point_sel(self.gwyfile, self.channel_id)
         self.gwyfile._get_selection_nsel.assert_has_calls(
@@ -1068,7 +1071,7 @@ class Gwyfile_get_point_sel(unittest.TestCase):
         """
 
         self.gwyfile._get_selection_nsel.return_value = self.nsel
-        expected_key  = "/{:d}/select/point".format(self.channel_id)
+        expected_key = "/{:d}/select/point".format(self.channel_id)
         expected_sel_func = lib.gwyfile_object_selectionpoint_get
         self.gwyfile.get_point_sel(self.gwyfile, self.channel_id)
         self.gwyfile._get_selection_data.assert_has_calls(
@@ -1105,7 +1108,7 @@ class Gwyfile_get_line_sel(unittest.TestCase):
         Get number of line selections using _get_selection_nsel method
         """
 
-        expected_key  = "/{:d}/select/line".format(self.channel_id)
+        expected_key = "/{:d}/select/line".format(self.channel_id)
         expected_sel_func = lib.gwyfile_object_selectionline_get
         self.gwyfile.get_line_sel(self.gwyfile, self.channel_id)
         self.gwyfile._get_selection_nsel.assert_has_calls(
@@ -1128,7 +1131,7 @@ class Gwyfile_get_line_sel(unittest.TestCase):
 
         self.gwyfile._get_selection_nsel.return_value = self.nsel
         npoints = 2 * self.nsel  # there are 2 points in one line selection
-        expected_key  = "/{:d}/select/line".format(self.channel_id)
+        expected_key = "/{:d}/select/line".format(self.channel_id)
         expected_sel_func = lib.gwyfile_object_selectionline_get
         self.gwyfile.get_line_sel(self.gwyfile, self.channel_id)
         self.gwyfile._get_selection_data.assert_has_calls(
@@ -1166,7 +1169,7 @@ class Gwyfile_get_rectangle_sel(unittest.TestCase):
         Get number of rectangle selections using _get_selection_nsel method
         """
 
-        expected_key  = "/{:d}/select/rectangle".format(self.channel_id)
+        expected_key = "/{:d}/select/rectangle".format(self.channel_id)
         expected_sel_func = lib.gwyfile_object_selectionrectangle_get
         self.gwyfile.get_rectangle_sel(self.gwyfile, self.channel_id)
         self.gwyfile._get_selection_nsel.assert_has_calls(
@@ -1189,7 +1192,7 @@ class Gwyfile_get_rectangle_sel(unittest.TestCase):
 
         self.gwyfile._get_selection_nsel.return_value = self.nsel
         npoints = 2 * self.nsel  # there are 2 points in one rectangle selection
-        expected_key  = "/{:d}/select/rectangle".format(self.channel_id)
+        expected_key = "/{:d}/select/rectangle".format(self.channel_id)
         expected_sel_func = lib.gwyfile_object_selectionrectangle_get
         self.gwyfile.get_rectangle_sel(self.gwyfile, self.channel_id)
         self.gwyfile._get_selection_data.assert_has_calls(
@@ -1227,7 +1230,7 @@ class Gwyfile_get_ellipse_sel(unittest.TestCase):
         Get number of ellipse selections using _get_selection_nsel method
         """
 
-        expected_key  = "/{:d}/select/ellipse".format(self.channel_id)
+        expected_key = "/{:d}/select/ellipse".format(self.channel_id)
         expected_sel_func = lib.gwyfile_object_selectionellipse_get
         self.gwyfile.get_ellipse_sel(self.gwyfile, self.channel_id)
         self.gwyfile._get_selection_nsel.assert_has_calls(
@@ -1250,7 +1253,7 @@ class Gwyfile_get_ellipse_sel(unittest.TestCase):
 
         self.gwyfile._get_selection_nsel.return_value = self.nsel
         npoints = 2 * self.nsel  # there are 2 points in one ellipse selection
-        expected_key  = "/{:d}/select/ellipse".format(self.channel_id)
+        expected_key = "/{:d}/select/ellipse".format(self.channel_id)
         expected_sel_func = lib.gwyfile_object_selectionellipse_get
         self.gwyfile.get_ellipse_sel(self.gwyfile, self.channel_id)
         self.gwyfile._get_selection_data.assert_has_calls(

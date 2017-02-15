@@ -25,3 +25,6 @@ Untitled.ipynb
 # Coverage file
 .coverage
 cover/
+
+# Emacs dir-local-variables
+.dir-locals.el

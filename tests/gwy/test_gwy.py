@@ -25,7 +25,7 @@ class GwyDatafield_init(unittest.TestCase):
         """
         Test initialization via python dictionary
         """
-        
+
         metadata = {'xres': self.xres, 'yres': self.yres}
         datafield = GwyDatafield(self.data, metadata)
         np.testing.assert_equal(datafield.data, self.data)
@@ -77,7 +77,7 @@ class GwyDatafield_init(unittest.TestCase):
         Raise ValueError if data.shape is not (xres, yres)
         """
 
-        self.xres = 128 # not 256
+        self.xres = 128  # not 256
         self.assertRaises(ValueError,
                           GwyDatafield,
                           data=self.data,
@@ -107,7 +107,7 @@ class GwyChannel_init(unittest.TestCase):
                           datafield=None,
                           mask=self.mask,
                           presentation=self.mask)
-        
+
         wrong_mask = np.array([1, 0, 1], dtype=np.float64)
         self.assertRaises(TypeError,
                           GwyChannel,
@@ -203,12 +203,11 @@ class GwyContainer_init(unittest.TestCase):
         channel3 = Mock(spec=GwyChannel)
         self.channels = [channel1, channel2, channel3]
 
-
     def test_check_initialization_with_list(self):
         """
         Test initialization with list of GwyChannel instances
         """
-        
+
         container = GwyContainer(self.channels)
         self.assertEqual(container.channels, self.channels)
 
@@ -216,7 +215,7 @@ class GwyContainer_init(unittest.TestCase):
         """
         Raise TypeError if not all elements of list are GwyChannel
         """
-        
+
         self.channels.append(Mock(spec=GwyDatafield))
         self.assertRaises(TypeError,
                           GwyContainer,
@@ -226,7 +225,7 @@ class GwyContainer_init(unittest.TestCase):
         """
         Raise TypeError if trying initialize with non-iterable object
         """
-        
+
         self.assertRaises(TypeError,
                           GwyContainer,
                           None)
@@ -251,7 +250,7 @@ class Func_get_channel(unittest.TestCase):
                          'si_unit_z': 'm'}
         self.data = np.random.rand(self.metadata['xres'],
                                    self.metadata['yres'])
-        
+
         self.is_mask_exists = False
         self.is_show_exists = False
 
@@ -264,7 +263,7 @@ class Func_get_channel(unittest.TestCase):
                               'yres': 256}
         self.show_data = np.random.rand(self.show_metadata['xres'],
                                         self.show_metadata['yres'])
-        
+
         self.gwyfile.get_title.return_value = self.title
         self.gwyfile.get_metadata.return_value = self.metadata
         self.gwyfile.get_data.return_value = self.data
@@ -279,8 +278,7 @@ class Func_get_channel(unittest.TestCase):
                           get_channel,
                           gwyfile=None,
                           channel_id=self.channel_id)
-                          
-        
+
     def test_only_datafield_exists(self):
         """
         No mask or presentation datafields in the channel
@@ -302,7 +300,7 @@ class Func_get_channel(unittest.TestCase):
         """
         There is datafield and mask in the channel
         """
-        
+
         self.is_mask_exists = True
         self.gwyfile.get_mask_metadata.return_value = self.mask_metadata
         self.gwyfile.get_mask_data.return_value = self.mask_data
@@ -329,7 +327,7 @@ class Func_get_channel(unittest.TestCase):
         """
         There are datafield and presentation in the channel
         """
-        
+
         self.is_show_exists = True
         self.gwyfile.get_presentation_metadata.return_value = self.show_metadata
         self.gwyfile.get_presentation_data.return_value = self.show_data
@@ -357,7 +355,7 @@ class Func_get_channel(unittest.TestCase):
         """
         There are datafield, mask and presentation in the channel
         """
-        
+
         self.is_show_exists = True
         self.is_mask_exists = True
         self.gwyfile.get_mask_metadata.return_value = self.mask_metadata
@@ -388,12 +386,11 @@ class Func_get_channel(unittest.TestCase):
             self.assertEqual(getattr(result.presentation, key),
                              self.show_metadata[key])
 
-
     def _gwyobject_check(self, key):
         """
         Return if the Mask or Presentation datafield exists
         """
-        
+
         # Datafield always exists in the channel
         if key == "/{:d}/data".format(self.channel_id):
             return True
@@ -414,7 +411,7 @@ class Func_get_container(unittest.TestCase):
 
     def setUp(self):
         # Create list of GwyChannel objects
-        self.ids = [0, 1, 2] # ids of GwyChannel objects
+        self.ids = [0, 1, 2]  # ids of GwyChannel objects
         # Create mocks of gwychannel objects
         self.channels = [Mock(spec=GwyChannel) for i in self.ids]
 
@@ -434,14 +431,12 @@ class Func_get_container(unittest.TestCase):
         self.addCleanup(patcher_get_channel.stop)
         self.mock_get_channel = patcher_get_channel.start()
         self.mock_get_channel.side_effect = self.channels
-        
-        
 
     def test_raise_TypeError_if_arg_not_Gwyfile_instance(self):
         """
         Raise TypeError if arg is not a Gwyfile instance
         """
-        
+
         self.assertRaises(TypeError,
                           get_container,
                           None)

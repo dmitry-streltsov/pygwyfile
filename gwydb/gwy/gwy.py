@@ -161,18 +161,18 @@ def get_channel(gwyfile, channel_id):
 
 
 def get_container(gwyfile):
-        """Return GwyContainer object
+    """Return GwyContainer object
 
-        Args:
-            gwyfile (Gwyfile object)
+    Args:
+        gwyfile (Gwyfile object)
 
-        Returns:
-           GwyContainer object
+    Returns:
+       GwyContainer object
 
-        """
+    """
 
-        if not isinstance(gwyfile, Gwyfile):
-            raise TypeError("gwyfile is not a Gwyfile instance")
-        ids = gwyfile.get_channels_ids()
-        channels = [get_channel(gwyfile, channel_id) for channel_id in ids]
-        return GwyContainer(channels)
+    if not isinstance(gwyfile, Gwyfile):
+        raise TypeError("gwyfile is not a Gwyfile instance")
+    ids = gwyfile.get_channels_ids()
+    channels = [get_channel(gwyfile, channel_id) for channel_id in ids]
+    return GwyContainer(channels)

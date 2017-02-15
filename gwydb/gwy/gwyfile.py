@@ -380,15 +380,15 @@ class Gwyfile():
 
         df = self._gwyfile_get_object(key)
 
-        data = ffi.new("double[]", xres*yres)
+        data = ffi.new("double[]", xres * yres)
         datap = ffi.new("double**", data)
 
         if lib.gwyfile_object_datafield_get(df, errorp,
                                             ffi.new("char[]", b'data'), datap,
                                             ffi.NULL):
-            data_buf = ffi.buffer(datap[0], xres*yres*ffi.sizeof(data))
+            data_buf = ffi.buffer(datap[0], xres * yres * ffi.sizeof(data))
             data_array = np.frombuffer(data_buf, dtype=np.float64,
-                                       count=xres*yres).reshape((xres, yres))
+                                       count=xres * yres).reshape((xres, yres))
             return data_array
         else:
             raise GwyfileErrorCMsg(errorp[0].message)
@@ -428,7 +428,7 @@ class Gwyfile():
 
         if nsel is None:
             return None
-        
+
         npoints = nsel  # one point in one pointer selection
         points = self._get_selection_data(key, func, npoints)
         return points
@@ -445,14 +445,14 @@ class Gwyfile():
             or None :                  if there are no point selections
 
         """
-        
+
         key = "/{:d}/select/point".format(channel_id)
         func = lib.gwyfile_object_selectionpoint_get
         nsel = self._get_selection_nsel(key, func)
 
         if nsel is None:
             return None
-        
+
         npoints = nsel  # one point in one point selection
         points = self._get_selection_data(key, func, npoints)
         return points
@@ -478,7 +478,7 @@ class Gwyfile():
 
         if nsel is None:
             return None
-        
+
         npoints = nsel * 2  # two point in one line selection
         points = self._get_selection_data(key, func, npoints)
 
@@ -508,7 +508,7 @@ class Gwyfile():
 
         if nsel is None:
             return None
-        
+
         npoints = nsel * 2  # two point in one rectangle selection
         points = self._get_selection_data(key, func, npoints)
 
@@ -538,10 +538,10 @@ class Gwyfile():
 
         if nsel is None:
             return None
-        
+
         npoints = nsel * 2  # two point in one ellipse selection
         points = self._get_selection_data(key, func, npoints)
-        
+
         # combine points in pairs
         ellipse = list(zip(tuple(points[::2]),
                            tuple(points[1::2])))
@@ -549,7 +549,7 @@ class Gwyfile():
 
     def _get_selection_nsel(self, key, func):
         """Get number of selections from the object
-        
+
         Args:
             key (string):
                 key for the object, e.g. "/0/select/point"
@@ -584,7 +584,7 @@ class Gwyfile():
 
     def _get_selection_data(self, key, func, npoints):
         """Get all points of selection for the object
-        
+
         Args:
             key (string):
                 key for the object, e.g. "/0/select/point"
@@ -598,7 +598,7 @@ class Gwyfile():
             [(x1, y1), ..., (xN, yN)]: list of tuples with point coordinates
 
             or None :                  if there are no point selections
-    
+
         """
 
         error = ffi.new("GwyfileError*")
@@ -613,7 +613,7 @@ class Gwyfile():
         if npoints == 0:
             return None
         else:
-            data = ffi.new("double[]", 2*npoints)
+            data = ffi.new("double[]", 2 * npoints)
             datap = ffi.new("double**", data)
 
         if func(psel,
