@@ -795,33 +795,34 @@ class Gwyfile():
             else:
                 metadata["y_unit"] = ''
 
-            metadata["x_min"] = x_minp[0]
 
             if x_min_setp[0]:
                 metadata["x_min_set"] = True
+                metadata["x_min"] = x_minp[0]
             else:
                 metadata["x_min_set"] = False
-
-            metadata["x_max"] = x_maxp[0]
+                metadata["x_min"] = None
 
             if x_max_setp[0]:
                 metadata["x_max_set"] = True
+                metadata["x_max"] = x_maxp[0]
             else:
                 metadata["x_max_set"] = False
-
-            metadata["y_min"] = y_minp[0]
+                metadata["x_max"] = None
 
             if y_min_setp[0]:
                 metadata["y_min_set"] = True
+                metadata["y_min"] = y_minp[0]
             else:
                 metadata["y_min_set"] = False
-
-            metadata["y_max"] = y_maxp[0]
+                metadata["y_min"] = None
 
             if y_max_setp[0]:
                 metadata["y_max_set"] = True
+                metadata["y_max"] = y_maxp[0]
             else:
                 metadata["y_max_set"] = False
+                metadata["y_max"] = None
 
             if x_is_logarithmicp[0]:
                 metadata["x_is_logarithmic"] = True
@@ -839,7 +840,7 @@ class Gwyfile():
                 metadata["label.visible"] = False
 
             if label_has_framep[0]:
-                metadata["label.has_fame"] = True
+                metadata["label.has_frame"] = True
             else:
                 metadata["label.has_frame"] = False
 

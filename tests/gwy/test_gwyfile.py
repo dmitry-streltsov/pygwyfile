@@ -42,7 +42,7 @@ class Func_read_gwyfile_TestCase(unittest.TestCase):
         self.mock_isfile.return_value = False
         self.assertRaises(OSError, read_gwyfile, self.filename)
 
-    def test_args_of_gwyfile_read_file(self):
+    def test_arg_of_gwyfile_read_file(self):
         """If file exists call gwyfile_read_file function.
 
         Check arguments passed to this function
@@ -1279,6 +1279,1206 @@ class Gwyfile_get_ellipse_sel(unittest.TestCase):
         actual_return = self.gwyfile.get_ellipse_sel(self.gwyfile,
                                                      self.channel_id)
         self.assertEqual(expected_return, actual_return)
+
+
+class Gwyfile_get_graphmodel_metadata(unittest.TestCase):
+    """
+    Test get_graphmodel_metadata of Gwyfile class
+    """
+
+    def setUp(self):
+        self.gwyfile = Mock(spec=Gwyfile)
+        self.gwyfile.get_graphmodel_metadata = Gwyfile.get_graphmodel_metadata
+
+        patcher_lib = patch('gwydb.gwy.gwyfile.lib',
+                            autospec=True)
+        self.addCleanup(patcher_lib.stop)
+        self.mock_lib = patcher_lib.start()
+        
+        self.graph_id = 1
+        self.graphmodel = Mock()
+
+    def test_check_graphmodel_object_exists(self):
+        """
+        Check existence of the graphmodel object with the graph_id
+        """
+
+        key = "/0/graph/graph/{:d}".format(self.graph_id)
+        self.gwyfile.get_graphmodel_metadata(self.gwyfile,
+                                             self.graph_id)
+        self.gwyfile._gwyobject_check.assert_has_calls(
+            [call(key)])
+
+    def test_return_empty_dic_if_graphmodel_obj_does_not_exist(self):
+        """
+        Return empty dictionary if graphmodel object does not exist
+        """
+
+        self.gwyfile._gwyobject_check.return_value = False
+        actual_return = self.gwyfile.get_graphmodel_metadata(self.gwyfile,
+                                                             self.graph_id)
+        self.assertDictEqual(actual_return, {})
+
+    def test_arg_of_gwyfile_get_object_func(self):
+        """
+        Get graphmodel object with graph_id
+        """
+
+        key = "/0/graph/graph/{:d}".format(self.graph_id)
+        self.gwyfile.get_graphmodel_metadata(self.gwyfile,
+                                             self.graph_id)
+        self.gwyfile._gwyfile_get_object.assert_has_calls(
+            [call(key)])
+        
+    def test_positional_args_of_libgwyfile_func_call(self):
+        """
+        Call gwyfile_object_graphmodel_get C function.
+
+        First arg of the C func is graphmodel obj
+        Second arg of the C func is GwyfileError**
+        Last arg of the C func is NULL
+        """
+
+        graphmodel_get = self.mock_lib.gwyfile_object_graphmodel_get
+        graphmodel_get.side_effect = self._graphmodel_get_pos_args
+        self.gwyfile._gwyfile_get_object.return_value = self.graphmodel
+        self.gwyfile.get_graphmodel_metadata(self.gwyfile,
+                                             self.graph_id)
+
+    def _graphmodel_get_pos_args(self, *args):
+        """
+        Check first, second and last args of gwyfile_object_graphmodel_get
+
+        First arg of the C function is graphmodel obj
+        Second arg of the C function is GwyfileError**
+        Last arg of the C function is NULL
+        """
+
+        # first arg is graphmodel object returned by _gwyfile_get_object
+        self.assertEqual(args[0], self.graphmodel)
+
+        # second arg is GwyfileError**
+        assert ffi.typeof(args[1]) == ffi.typeof(ffi.new("GwyfileError**"))
+
+        # last arg in Null
+        self.assertEqual(args[-1], ffi.NULL)
+
+        # C func returns true if the graphmodel object loock acceptable
+        truep = ffi.new("bool*", True)
+        return truep[0]
+
+    def test_getting_number_of_curves(self):
+        """
+        Test getting number of curves from graphmodel object
+        """
+
+        graphmodel_get = self.mock_lib.gwyfile_object_graphmodel_get
+        graphmodel_get.side_effect = self._number_of_curves
+        metadata = self.gwyfile.get_graphmodel_metadata(self.gwyfile,
+                                                        self.graph_id)
+        self.assertEqual(metadata['ncurves'], 3)
+
+    def _number_of_curves(self, *args):
+        """
+        Return 3 as a number of curves in graphmodel object
+        """
+
+        # combine fields names and fields pointers in one dictionary
+        arg_keys = [ffi.string(key).decode('utf-8') for key in args[2:-1:2]]
+        arg_pointers = [pointer for pointer in args[3:-1:2]]
+        arg_dict = dict(zip(arg_keys, arg_pointers))
+
+        arg_dict['ncurves'][0] = 3
+        
+        # C func returns true if the graphmodel object loock acceptable
+        truep = ffi.new("bool*", True)
+        return truep[0]
+
+    def test_title_field_is_not_empty(self):
+        """
+        'title' field in graphmodel object is not empty
+        """
+
+        graphmodel_get = self.mock_lib.gwyfile_object_graphmodel_get
+        graphmodel_get.side_effect = self._title_is_not_empty
+        metadata = self.gwyfile.get_graphmodel_metadata(self.gwyfile,
+                                                        self.graph_id)
+        self.assertEqual(metadata['title'], "test title")
+
+        
+    def _title_is_not_empty(self, *args):
+        """
+        Write "test title" C string to title field
+        """
+
+        title = ffi.new("char[]", b"test title")
+
+        # combine fields names and fields pointers in one dictionary
+        arg_keys = [ffi.string(key).decode('utf-8') for key in args[2:-1:2]]
+        arg_pointers = [pointer for pointer in args[3:-1:2]]
+        arg_dict = dict(zip(arg_keys, arg_pointers))
+
+        arg_dict['title'][0] = title
+        
+        # C func returns true if the graphmodel object loock acceptable
+        truep = ffi.new("bool*", True)
+        return truep[0]
+
+    def test_title_field_is_empty(self):
+        """
+        'title' field in graphmodel object is empty
+        """
+
+        graphmodel_get = self.mock_lib.gwyfile_object_graphmodel_get
+        graphmodel_get.side_effect = self._title_is_empty
+        metadata = self.gwyfile.get_graphmodel_metadata(self.gwyfile,
+                                                        self.graph_id)
+        self.assertEqual(metadata['title'], '')
+
+    def _title_is_empty(self, *args):
+        """
+        Write NULL to title field
+        """
+
+        # combine fields names and fields pointers in one dictionary
+        arg_keys = [ffi.string(key).decode('utf-8') for key in args[2:-1:2]]
+        arg_pointers = [pointer for pointer in args[3:-1:2]]
+        arg_dict = dict(zip(arg_keys, arg_pointers))
+
+        arg_dict['title'][0] = ffi.NULL
+        
+        # C func returns true if the graphmodel object loock acceptable
+        truep = ffi.new("bool*", True)
+        return truep[0]
+
+    def test_top_label_field_is_not_empty(self):
+        """
+        'top_label' field in graphmodel object is not empty
+        """
+
+        graphmodel_get = self.mock_lib.gwyfile_object_graphmodel_get
+        graphmodel_get.side_effect = self._top_label_is_not_empty
+        metadata = self.gwyfile.get_graphmodel_metadata(self.gwyfile,
+                                                        self.graph_id)
+        self.assertEqual(metadata['top_label'], "test top label")
+
+        
+    def _top_label_is_not_empty(self, *args):
+        """
+        Write "test top label" C string to 'top_label' field
+        """
+
+        top_label = ffi.new("char[]", b"test top label")
+
+        # combine fields names and fields pointers in one dictionary
+        arg_keys = [ffi.string(key).decode('utf-8') for key in args[2:-1:2]]
+        arg_pointers = [pointer for pointer in args[3:-1:2]]
+        arg_dict = dict(zip(arg_keys, arg_pointers))
+
+        arg_dict['top_label'][0] = top_label
+        
+        # C func returns true if the graphmodel object loock acceptable
+        truep = ffi.new("bool*", True)
+        return truep[0]
+
+    def test_top_label_field_is_empty(self):
+        """
+        'top_label' field in graphmodel object is empty
+        """
+
+        graphmodel_get = self.mock_lib.gwyfile_object_graphmodel_get
+        graphmodel_get.side_effect = self._top_label_is_empty
+        metadata = self.gwyfile.get_graphmodel_metadata(self.gwyfile,
+                                                        self.graph_id)
+        self.assertEqual(metadata['top_label'], '')
+
+    def _top_label_is_empty(self, *args):
+        """
+        Write NULL to top_label field
+        """
+
+        # combine fields names and fields pointers in one dictionary
+        arg_keys = [ffi.string(key).decode('utf-8') for key in args[2:-1:2]]
+        arg_pointers = [pointer for pointer in args[3:-1:2]]
+        arg_dict = dict(zip(arg_keys, arg_pointers))
+
+        arg_dict['top_label'][0] = ffi.NULL
+        
+        # C func returns true if the graphmodel object loock acceptable
+        truep = ffi.new("bool*", True)
+        return truep[0]
+
+    def test_left_label_field_is_not_empty(self):
+        """
+        'left_label' field in graphmodel object is not empty
+        """
+
+        graphmodel_get = self.mock_lib.gwyfile_object_graphmodel_get
+        graphmodel_get.side_effect = self._left_label_is_not_empty
+        metadata = self.gwyfile.get_graphmodel_metadata(self.gwyfile,
+                                                        self.graph_id)
+        self.assertEqual(metadata['left_label'], "test left label")
+
+        
+    def _left_label_is_not_empty(self, *args):
+        """
+        Write "test left label" C string to 'left_label' field
+        """
+
+        left_label = ffi.new("char[]", b"test left label")
+
+        # combine fields names and fields pointers in one dictionary
+        arg_keys = [ffi.string(key).decode('utf-8') for key in args[2:-1:2]]
+        arg_pointers = [pointer for pointer in args[3:-1:2]]
+        arg_dict = dict(zip(arg_keys, arg_pointers))
+
+        arg_dict['left_label'][0] = left_label
+        
+        # C func returns true if the graphmodel object loock acceptable
+        truep = ffi.new("bool*", True)
+        return truep[0]
+
+    def test_left_label_field_is_empty(self):
+        """
+        'left_label' field in graphmodel object is empty
+        """
+
+        graphmodel_get = self.mock_lib.gwyfile_object_graphmodel_get
+        graphmodel_get.side_effect = self._left_label_is_empty
+        metadata = self.gwyfile.get_graphmodel_metadata(self.gwyfile,
+                                                        self.graph_id)
+        self.assertEqual(metadata['left_label'], '')
+
+    def _left_label_is_empty(self, *args):
+        """
+        Write NULL to left_label field
+        """
+
+        # combine fields names and fields pointers in one dictionary
+        arg_keys = [ffi.string(key).decode('utf-8') for key in args[2:-1:2]]
+        arg_pointers = [pointer for pointer in args[3:-1:2]]
+        arg_dict = dict(zip(arg_keys, arg_pointers))
+
+        arg_dict['left_label'][0] = ffi.NULL
+        
+        # C func returns true if the graphmodel object loock acceptable
+        truep = ffi.new("bool*", True)
+        return truep[0]
+
+    def test_right_label_field_is_not_empty(self):
+        """
+        'right_label' field in graphmodel object is not empty
+        """
+
+        graphmodel_get = self.mock_lib.gwyfile_object_graphmodel_get
+        graphmodel_get.side_effect = self._right_label_is_not_empty
+        metadata = self.gwyfile.get_graphmodel_metadata(self.gwyfile,
+                                                        self.graph_id)
+        self.assertEqual(metadata['right_label'], "test right label")
+
+        
+    def _right_label_is_not_empty(self, *args):
+        """
+        Write "test right label" C string to 'right_label' field
+        """
+
+        right_label = ffi.new("char[]", b"test right label")
+
+        # combine fields names and fields pointers in one dictionary
+        arg_keys = [ffi.string(key).decode('utf-8') for key in args[2:-1:2]]
+        arg_pointers = [pointer for pointer in args[3:-1:2]]
+        arg_dict = dict(zip(arg_keys, arg_pointers))
+
+        arg_dict['right_label'][0] = right_label
+        
+        # C func returns true if the graphmodel object loock acceptable
+        truep = ffi.new("bool*", True)
+        return truep[0]
+
+    def test_right_label_field_is_empty(self):
+        """
+        'right_label' field in graphmodel object is empty
+        """
+
+        graphmodel_get = self.mock_lib.gwyfile_object_graphmodel_get
+        graphmodel_get.side_effect = self._right_label_is_empty
+        metadata = self.gwyfile.get_graphmodel_metadata(self.gwyfile,
+                                                        self.graph_id)
+        self.assertEqual(metadata['right_label'], '')
+
+    def _right_label_is_empty(self, *args):
+        """
+        Write NULL to right_label field
+        """
+
+        # combine fields names and fields pointers in one dictionary
+        arg_keys = [ffi.string(key).decode('utf-8') for key in args[2:-1:2]]
+        arg_pointers = [pointer for pointer in args[3:-1:2]]
+        arg_dict = dict(zip(arg_keys, arg_pointers))
+
+        arg_dict['right_label'][0] = ffi.NULL
+        
+        # C func returns true if the graphmodel object loock acceptable
+        truep = ffi.new("bool*", True)
+        return truep[0]
+
+    def test_bottom_label_field_is_not_empty(self):
+        """
+        'bottom_label' field in graphmodel object is not empty
+        """
+
+        graphmodel_get = self.mock_lib.gwyfile_object_graphmodel_get
+        graphmodel_get.side_effect = self._bottom_label_is_not_empty
+        metadata = self.gwyfile.get_graphmodel_metadata(self.gwyfile,
+                                                        self.graph_id)
+        self.assertEqual(metadata['bottom_label'], "test bottom label")
+
+        
+    def _bottom_label_is_not_empty(self, *args):
+        """
+        Write "test bottom label" C string to 'bottom_label' field
+        """
+
+        bottom_label = ffi.new("char[]", b"test bottom label")
+
+        # combine fields names and fields pointers in one dictionary
+        arg_keys = [ffi.string(key).decode('utf-8') for key in args[2:-1:2]]
+        arg_pointers = [pointer for pointer in args[3:-1:2]]
+        arg_dict = dict(zip(arg_keys, arg_pointers))
+
+        arg_dict['bottom_label'][0] = bottom_label
+        
+        # C func returns true if the graphmodel object loock acceptable
+        truep = ffi.new("bool*", True)
+        return truep[0]
+
+    def test_bottom_label_field_is_empty(self):
+        """
+        'bottom_label' field in graphmodel object is empty
+        """
+
+        graphmodel_get = self.mock_lib.gwyfile_object_graphmodel_get
+        graphmodel_get.side_effect = self._bottom_label_is_empty
+        metadata = self.gwyfile.get_graphmodel_metadata(self.gwyfile,
+                                                        self.graph_id)
+        self.assertEqual(metadata['bottom_label'], '')
+
+    def _bottom_label_is_empty(self, *args):
+        """
+        Write NULL to bottom_label field
+        """
+
+        # combine fields names and fields pointers in one dictionary
+        arg_keys = [ffi.string(key).decode('utf-8') for key in args[2:-1:2]]
+        arg_pointers = [pointer for pointer in args[3:-1:2]]
+        arg_dict = dict(zip(arg_keys, arg_pointers))
+
+        arg_dict['bottom_label'][0] = ffi.NULL
+        
+        # C func returns true if the graphmodel object loock acceptable
+        truep = ffi.new("bool*", True)
+        return truep[0]
+
+    def test_x_unit_field_is_not_empty(self):
+        """
+        'x_unit' field in graphmodel object is not empty
+        """
+
+        graphmodel_get = self.mock_lib.gwyfile_object_graphmodel_get
+        graphmodel_get.side_effect = self._x_unit_is_not_empty
+        metadata = self.gwyfile.get_graphmodel_metadata(self.gwyfile,
+                                                        self.graph_id)
+        self.assertEqual(metadata['x_unit'], 'm')
+
+        
+    def _x_unit_is_not_empty(self, *args):
+        """
+        Write "m" C string to 'x_unit' field
+        """
+
+        x_unit = ffi.new("char[]", b"m")
+
+        # combine fields names and fields pointers in one dictionary
+        arg_keys = [ffi.string(key).decode('utf-8') for key in args[2:-1:2]]
+        arg_pointers = [pointer for pointer in args[3:-1:2]]
+        arg_dict = dict(zip(arg_keys, arg_pointers))
+
+        arg_dict['x_unit'][0] = x_unit
+        
+        # C func returns true if the graphmodel object loock acceptable
+        truep = ffi.new("bool*", True)
+        return truep[0]
+
+    def test_x_unit_field_is_empty(self):
+        """
+        'x_unit' field in graphmodel object is empty
+        """
+
+        graphmodel_get = self.mock_lib.gwyfile_object_graphmodel_get
+        graphmodel_get.side_effect = self._x_unit_is_empty
+        metadata = self.gwyfile.get_graphmodel_metadata(self.gwyfile,
+                                                        self.graph_id)
+        self.assertEqual(metadata['x_unit'], '')
+
+    def _x_unit_is_empty(self, *args):
+        """
+        Write NULL to x_unit field
+        """
+
+        # combine fields names and fields pointers in one dictionary
+        arg_keys = [ffi.string(key).decode('utf-8') for key in args[2:-1:2]]
+        arg_pointers = [pointer for pointer in args[3:-1:2]]
+        arg_dict = dict(zip(arg_keys, arg_pointers))
+
+        arg_dict['x_unit'][0] = ffi.NULL
+        
+        # C func returns true if the graphmodel object loock acceptable
+        truep = ffi.new("bool*", True)
+        return truep[0]
+
+    def test_y_unit_field_is_not_empty(self):
+        """
+        'y_unit' field in graphmodel object is not empty
+        """
+
+        graphmodel_get = self.mock_lib.gwyfile_object_graphmodel_get
+        graphmodel_get.side_effect = self._y_unit_is_not_empty
+        metadata = self.gwyfile.get_graphmodel_metadata(self.gwyfile,
+                                                        self.graph_id)
+        self.assertEqual(metadata['y_unit'], 'm')
+
+        
+    def _y_unit_is_not_empty(self, *args):
+        """
+        Write "m" C string to 'y_unit' field
+        """
+
+        y_unit = ffi.new("char[]", b"m")
+
+        # combine fields names and fields pointers in one dictionary
+        arg_keys = [ffi.string(key).decode('utf-8') for key in args[2:-1:2]]
+        arg_pointers = [pointer for pointer in args[3:-1:2]]
+        arg_dict = dict(zip(arg_keys, arg_pointers))
+
+        arg_dict['y_unit'][0] = y_unit
+        
+        # C func returns true if the graphmodel object loock acceptable
+        truep = ffi.new("bool*", True)
+        return truep[0]
+
+    def test_y_unit_field_is_empty(self):
+        """
+        'y_unit' field in graphmodel object is empty
+        """
+
+        graphmodel_get = self.mock_lib.gwyfile_object_graphmodel_get
+        graphmodel_get.side_effect = self._y_unit_is_empty
+        metadata = self.gwyfile.get_graphmodel_metadata(self.gwyfile,
+                                                        self.graph_id)
+        self.assertEqual(metadata['y_unit'], '')
+
+    def _y_unit_is_empty(self, *args):
+        """
+        Write NULL to y_unit field
+        """
+
+        # combine fields names and fields pointers in one dictionary
+        arg_keys = [ffi.string(key).decode('utf-8') for key in args[2:-1:2]]
+        arg_pointers = [pointer for pointer in args[3:-1:2]]
+        arg_dict = dict(zip(arg_keys, arg_pointers))
+
+        arg_dict['y_unit'][0] = ffi.NULL
+        
+        # C func returns true if the graphmodel object loock acceptable
+        truep = ffi.new("bool*", True)
+        return truep[0]
+
+    def test_x_min_set_is_true(self):
+        """
+        Check metadata dictionary if 'x_min_set' is True
+        """
+
+        graphmodel_get = self.mock_lib.gwyfile_object_graphmodel_get
+        graphmodel_get.side_effect = self._x_min_set_is_true
+        metadata = self.gwyfile.get_graphmodel_metadata(self.gwyfile,
+                                                        self.graph_id)
+        self.assertIs(metadata['x_min_set'], True)
+        self.assertEqual(metadata['x_min'], 0.)
+
+    def _x_min_set_is_true(self, *args):
+        """
+        Write True in 'x_min_set' field and 0. in 'x_min' field
+        """
+
+        # combine fields names and fields pointers in one dictionary
+        arg_keys = [ffi.string(key).decode('utf-8') for key in args[2:-1:2]]
+        arg_pointers = [pointer for pointer in args[3:-1:2]]
+        arg_dict = dict(zip(arg_keys, arg_pointers))
+
+        truep = ffi.new("bool*", True)
+
+        arg_dict['x_min_set'][0] = truep[0]
+        arg_dict['x_min'][0] = 0.
+        
+        # C func returns true if the graphmodel object loock acceptable
+        return truep[0]
+
+    def test_x_min_set_is_false(self):
+        """
+        Check metadata dictionary if 'x_min_set' is False
+        """
+
+        graphmodel_get = self.mock_lib.gwyfile_object_graphmodel_get
+        graphmodel_get.side_effect = self._x_min_set_is_false
+        metadata = self.gwyfile.get_graphmodel_metadata(self.gwyfile,
+                                                        self.graph_id)
+        self.assertIs(metadata['x_min_set'], False)
+        self.assertIsNone(metadata['x_min'])
+
+    def _x_min_set_is_false(self, *args):
+        """
+        Write False in 'x_min_set' field and 0. in 'x_min' field
+        """
+
+        # combine fields names and fields pointers in one dictionary
+        arg_keys = [ffi.string(key).decode('utf-8') for key in args[2:-1:2]]
+        arg_pointers = [pointer for pointer in args[3:-1:2]]
+        arg_dict = dict(zip(arg_keys, arg_pointers))
+
+        truep = ffi.new("bool*", True)
+        falsep = ffi.new("bool*", False)
+
+        arg_dict['x_min_set'][0] = falsep[0]
+        arg_dict['x_min'][0] = 0.  # this value is not important
+                                   # metadata['x_min'] should be None
+        
+        # C func returns true if the graphmodel object loock acceptable
+        return truep[0]
+
+    def test_x_max_set_is_true(self):
+        """
+        Check metadata dictionary if 'x_max_set' is True
+        """
+
+        graphmodel_get = self.mock_lib.gwyfile_object_graphmodel_get
+        graphmodel_get.side_effect = self._x_max_set_is_true
+        metadata = self.gwyfile.get_graphmodel_metadata(self.gwyfile,
+                                                        self.graph_id)
+        self.assertIs(metadata['x_max_set'], True)
+        self.assertEqual(metadata['x_max'], 0.)
+
+    def _x_max_set_is_true(self, *args):
+        """
+        Write True in 'x_max_set' field and 0. in 'x_max' field
+        """
+
+        # combine fields names and fields pointers in one dictionary
+        arg_keys = [ffi.string(key).decode('utf-8') for key in args[2:-1:2]]
+        arg_pointers = [pointer for pointer in args[3:-1:2]]
+        arg_dict = dict(zip(arg_keys, arg_pointers))
+
+        truep = ffi.new("bool*", True)
+
+        arg_dict['x_max_set'][0] = truep[0]
+        arg_dict['x_max'][0] = 0.
+        
+        # C func returns true if the graphmodel object loock acceptable
+        return truep[0]
+
+    def test_x_max_set_is_false(self):
+        """
+        Check metadata dictionary if 'x_max_set' is False
+        """
+
+        graphmodel_get = self.mock_lib.gwyfile_object_graphmodel_get
+        graphmodel_get.side_effect = self._x_max_set_is_false
+        metadata = self.gwyfile.get_graphmodel_metadata(self.gwyfile,
+                                                        self.graph_id)
+        self.assertIs(metadata['x_max_set'], False)
+        self.assertIsNone(metadata['x_max'])
+
+    def _x_max_set_is_false(self, *args):
+        """
+        Write False in 'x_max_set' field and 0. in 'x_max' field
+        """
+
+        # combine fields names and fields pointers in one dictionary
+        arg_keys = [ffi.string(key).decode('utf-8') for key in args[2:-1:2]]
+        arg_pointers = [pointer for pointer in args[3:-1:2]]
+        arg_dict = dict(zip(arg_keys, arg_pointers))
+
+        truep = ffi.new("bool*", True)
+        falsep = ffi.new("bool*", False)
+
+        arg_dict['x_max_set'][0] = falsep[0]
+        arg_dict['x_max'][0] = 0.  # this value is not important
+                                   # metadata['x_max'] should be None
+        
+        # C func returns true if the graphmodel object loock acceptable
+        return truep[0]
+
+    def test_y_min_set_is_true(self):
+        """
+        Check metadata dictionary if 'y_min_set' is True
+        """
+
+        graphmodel_get = self.mock_lib.gwyfile_object_graphmodel_get
+        graphmodel_get.side_effect = self._y_min_set_is_true
+        metadata = self.gwyfile.get_graphmodel_metadata(self.gwyfile,
+                                                        self.graph_id)
+        self.assertIs(metadata['y_min_set'], True)
+        self.assertEqual(metadata['y_min'], 0.)
+
+    def _y_min_set_is_true(self, *args):
+        """
+        Write True in 'y_min_set' field and 0. in 'y_min' field
+        """
+
+        # combine fields names and fields pointers in one dictionary
+        arg_keys = [ffi.string(key).decode('utf-8') for key in args[2:-1:2]]
+        arg_pointers = [pointer for pointer in args[3:-1:2]]
+        arg_dict = dict(zip(arg_keys, arg_pointers))
+
+        truep = ffi.new("bool*", True)
+
+        arg_dict['y_min_set'][0] = truep[0]
+        arg_dict['y_min'][0] = 0.
+        
+        # C func returns true if the graphmodel object loock acceptable
+        return truep[0]
+
+    def test_y_min_set_is_false(self):
+        """
+        Check metadata dictionary if 'y_min_set' is False
+        """
+
+        graphmodel_get = self.mock_lib.gwyfile_object_graphmodel_get
+        graphmodel_get.side_effect = self._y_min_set_is_false
+        metadata = self.gwyfile.get_graphmodel_metadata(self.gwyfile,
+                                                        self.graph_id)
+        self.assertIs(metadata['y_min_set'], False)
+        self.assertIsNone(metadata['y_min'])
+
+    def _y_min_set_is_false(self, *args):
+        """
+        Write False in 'y_min_set' field and 0. in 'y_min' field
+        """
+
+        # combine fields names and fields pointers in one dictionary
+        arg_keys = [ffi.string(key).decode('utf-8') for key in args[2:-1:2]]
+        arg_pointers = [pointer for pointer in args[3:-1:2]]
+        arg_dict = dict(zip(arg_keys, arg_pointers))
+
+        truep = ffi.new("bool*", True)
+        falsep = ffi.new("bool*", False)
+
+        arg_dict['y_min_set'][0] = falsep[0]
+        arg_dict['y_min'][0] = 0.  # this value is not important
+                                   # metadata['y_min'] should be None
+        
+        # C func returns true if the graphmodel object loock acceptable
+        return truep[0]
+
+    def test_y_max_set_is_true(self):
+        """
+        Check metadata dictionary if 'y_max_set' is True
+        """
+
+        graphmodel_get = self.mock_lib.gwyfile_object_graphmodel_get
+        graphmodel_get.side_effect = self._y_max_set_is_true
+        metadata = self.gwyfile.get_graphmodel_metadata(self.gwyfile,
+                                                        self.graph_id)
+        self.assertIs(metadata['y_max_set'], True)
+        self.assertEqual(metadata['y_max'], 0.)
+
+    def _y_max_set_is_true(self, *args):
+        """
+        Write True in 'y_max_set' field and 0. in 'y_max' field
+        """
+
+        # combine fields names and fields pointers in one dictionary
+        arg_keys = [ffi.string(key).decode('utf-8') for key in args[2:-1:2]]
+        arg_pointers = [pointer for pointer in args[3:-1:2]]
+        arg_dict = dict(zip(arg_keys, arg_pointers))
+
+        truep = ffi.new("bool*", True)
+
+        arg_dict['y_max_set'][0] = truep[0]
+        arg_dict['y_max'][0] = 0.
+        
+        # C func returns true if the graphmodel object loock acceptable
+        return truep[0]
+
+    def test_y_max_set_is_false(self):
+        """
+        Check metadata dictionary if 'y_max_set' is False
+        """
+
+        graphmodel_get = self.mock_lib.gwyfile_object_graphmodel_get
+        graphmodel_get.side_effect = self._y_max_set_is_false
+        metadata = self.gwyfile.get_graphmodel_metadata(self.gwyfile,
+                                                        self.graph_id)
+        self.assertIs(metadata['y_max_set'], False)
+        self.assertIsNone(metadata['y_max'])
+
+    def _y_max_set_is_false(self, *args):
+        """
+        Write False in 'y_max_set' field and 0. in 'y_max' field
+        """
+
+        # combine fields names and fields pointers in one dictionary
+        arg_keys = [ffi.string(key).decode('utf-8') for key in args[2:-1:2]]
+        arg_pointers = [pointer for pointer in args[3:-1:2]]
+        arg_dict = dict(zip(arg_keys, arg_pointers))
+
+        truep = ffi.new("bool*", True)
+        falsep = ffi.new("bool*", False)
+
+        arg_dict['y_max_set'][0] = falsep[0]
+        arg_dict['y_max'][0] = 0.  # this value is not important
+                                   # metadata['y_min'] should be None
+        
+        # C func returns true if the graphmodel object loock acceptable
+        return truep[0]
+
+    def test_x_is_logarithmic_true(self):
+        """
+        'x_is_logarithmic' field is True
+        """
+
+        graphmodel_get = self.mock_lib.gwyfile_object_graphmodel_get
+        graphmodel_get.side_effect = self._x_is_logarithmic
+
+        self.x_is_logarithmic = True
+        
+        metadata = self.gwyfile.get_graphmodel_metadata(self.gwyfile,
+                                                        self.graph_id)
+        self.assertIs(metadata['x_is_logarithmic'], True)
+
+    def test_x_is_logarithmic_false(self):
+        """
+        'x_is_logarithmic' field is False
+        """
+
+        graphmodel_get = self.mock_lib.gwyfile_object_graphmodel_get
+        graphmodel_get.side_effect = self._x_is_logarithmic
+
+        self.x_is_logarithmic = False
+        
+        metadata = self.gwyfile.get_graphmodel_metadata(self.gwyfile,
+                                                        self.graph_id)
+        self.assertIs(metadata['x_is_logarithmic'], False)
+        
+    def _x_is_logarithmic(self, *args):
+        """
+        Write self.x_is_logarithmic in 'x_is_logarithmic' field
+        """
+
+        # combine fields names and fields pointers in one dictionary
+        arg_keys = [ffi.string(key).decode('utf-8') for key in args[2:-1:2]]
+        arg_pointers = [pointer for pointer in args[3:-1:2]]
+        arg_dict = dict(zip(arg_keys, arg_pointers))
+
+        truep = ffi.new("bool*", True)
+        falsep = ffi.new("bool*", False)
+
+        if self.x_is_logarithmic:
+            arg_dict['x_is_logarithmic'][0] = truep[0]
+        else:
+            arg_dict['x_is_logarithmic'][0] = falsep[0]
+
+        # C func returns true if the graphmodel object loock acceptable
+        return truep[0]
+
+    def test_y_is_logarithmic_true(self):
+        """
+        'y_is_logarithmic' field is True
+        """
+
+        graphmodel_get = self.mock_lib.gwyfile_object_graphmodel_get
+        graphmodel_get.side_effect = self._y_is_logarithmic
+
+        self.y_is_logarithmic = True
+        
+        metadata = self.gwyfile.get_graphmodel_metadata(self.gwyfile,
+                                                        self.graph_id)
+        self.assertIs(metadata['y_is_logarithmic'], True)
+
+    def test_y_is_logarithmic_false(self):
+        """
+        'y_is_logarithmic' field is False
+        """
+
+        graphmodel_get = self.mock_lib.gwyfile_object_graphmodel_get
+        graphmodel_get.side_effect = self._y_is_logarithmic
+
+        self.y_is_logarithmic = False
+        
+        metadata = self.gwyfile.get_graphmodel_metadata(self.gwyfile,
+                                                        self.graph_id)
+        self.assertIs(metadata['y_is_logarithmic'], False)
+        
+    def _y_is_logarithmic(self, *args):
+        """
+        Write self.y_is_logarithmic in 'y_is_logarithmic' field
+        """
+
+        # combine fields names and fields pointers in one dictionary
+        arg_keys = [ffi.string(key).decode('utf-8') for key in args[2:-1:2]]
+        arg_pointers = [pointer for pointer in args[3:-1:2]]
+        arg_dict = dict(zip(arg_keys, arg_pointers))
+
+        truep = ffi.new("bool*", True)
+        falsep = ffi.new("bool*", False)
+
+        if self.y_is_logarithmic:
+            arg_dict['y_is_logarithmic'][0] = truep[0]
+        else:
+            arg_dict['y_is_logarithmic'][0] = falsep[0]
+
+        # C func returns true if the graphmodel object loock acceptable
+        return truep[0]
+
+    def test_label_visible_is_true(self):
+        """
+        'label.visible' field is True
+        """
+
+        graphmodel_get = self.mock_lib.gwyfile_object_graphmodel_get
+        graphmodel_get.side_effect = self._label_visible
+
+        self.label_visible = True
+        
+        metadata = self.gwyfile.get_graphmodel_metadata(self.gwyfile,
+                                                        self.graph_id)
+        self.assertIs(metadata['label.visible'], True)
+
+    def test_label_visible_is_false(self):
+        """
+        'label.visible' field is False
+        """
+
+        graphmodel_get = self.mock_lib.gwyfile_object_graphmodel_get
+        graphmodel_get.side_effect = self._label_visible
+
+        self.label_visible = False
+        
+        metadata = self.gwyfile.get_graphmodel_metadata(self.gwyfile,
+                                                        self.graph_id)
+        self.assertIs(metadata['label.visible'], False)
+        
+    def _label_visible(self, *args):
+        """
+        Write self.label_visible in 'label.visible' field
+        """
+
+        # combine fields names and fields pointers in one dictionary
+        arg_keys = [ffi.string(key).decode('utf-8') for key in args[2:-1:2]]
+        arg_pointers = [pointer for pointer in args[3:-1:2]]
+        arg_dict = dict(zip(arg_keys, arg_pointers))
+
+        truep = ffi.new("bool*", True)
+        falsep = ffi.new("bool*", False)
+
+        if self.label_visible:
+            arg_dict['label.visible'][0] = truep[0]
+        else:
+            arg_dict['label.visible'][0] = falsep[0]
+
+        # C func returns true if the graphmodel object loock acceptable
+        return truep[0]
+
+    def test_label_has_frame_is_true(self):
+        """
+        'label.has_frame' field is True
+        """
+
+        graphmodel_get = self.mock_lib.gwyfile_object_graphmodel_get
+        graphmodel_get.side_effect = self._label_has_frame
+
+        self.label_has_frame = True
+        
+        metadata = self.gwyfile.get_graphmodel_metadata(self.gwyfile,
+                                                        self.graph_id)
+        self.assertIs(metadata['label.has_frame'], True)
+
+    def test_label_has_frame_is_false(self):
+        """
+        'label.has_frame' field is False
+        """
+
+        graphmodel_get = self.mock_lib.gwyfile_object_graphmodel_get
+        graphmodel_get.side_effect = self._label_has_frame
+
+        self.label_has_frame = False
+        
+        metadata = self.gwyfile.get_graphmodel_metadata(self.gwyfile,
+                                                        self.graph_id)
+        self.assertIs(metadata['label.has_frame'], False)
+        
+    def _label_has_frame(self, *args):
+        """
+        Write self.label_has_frame in 'label.has_frame' field
+        """
+
+        # combine fields names and fields pointers in one dictionary
+        arg_keys = [ffi.string(key).decode('utf-8') for key in args[2:-1:2]]
+        arg_pointers = [pointer for pointer in args[3:-1:2]]
+        arg_dict = dict(zip(arg_keys, arg_pointers))
+
+        truep = ffi.new("bool*", True)
+        falsep = ffi.new("bool*", False)
+
+        if self.label_has_frame:
+            arg_dict['label.has_frame'][0] = truep[0]
+        else:
+            arg_dict['label.has_frame'][0] = falsep[0]
+
+        # C func returns true if the graphmodel object loock acceptable
+        return truep[0]
+
+    def test_label_reverse_is_true(self):
+        """
+        'label.reverse' field is True
+        """
+
+        graphmodel_get = self.mock_lib.gwyfile_object_graphmodel_get
+        graphmodel_get.side_effect = self._label_reverse
+
+        self.label_reverse = True
+        
+        metadata = self.gwyfile.get_graphmodel_metadata(self.gwyfile,
+                                                        self.graph_id)
+        self.assertIs(metadata['label.reverse'], True)
+
+    def test_label_reverse_is_false(self):
+        """
+        'label.reverse' field is False
+        """
+
+        graphmodel_get = self.mock_lib.gwyfile_object_graphmodel_get
+        graphmodel_get.side_effect = self._label_reverse
+
+        self.label_reverse = False
+        
+        metadata = self.gwyfile.get_graphmodel_metadata(self.gwyfile,
+                                                        self.graph_id)
+        self.assertIs(metadata['label.reverse'], False)
+        
+    def _label_reverse(self, *args):
+        """
+        Write self.label_reverse in 'label.reverse' field
+        """
+
+        # combine fields names and fields pointers in one dictionary
+        arg_keys = [ffi.string(key).decode('utf-8') for key in args[2:-1:2]]
+        arg_pointers = [pointer for pointer in args[3:-1:2]]
+        arg_dict = dict(zip(arg_keys, arg_pointers))
+
+        truep = ffi.new("bool*", True)
+        falsep = ffi.new("bool*", False)
+
+        if self.label_reverse:
+            arg_dict['label.reverse'][0] = truep[0]
+        else:
+            arg_dict['label.reverse'][0] = falsep[0]
+
+        # C func returns true if the graphmodel object loock acceptable
+        return truep[0]
+
+    def test_label_frame_thickness(self):
+        """
+        Check 'label.frame_thickness' field in metadata dictionary
+        """
+
+        graphmodel_get = self.mock_lib.gwyfile_object_graphmodel_get
+        graphmodel_get.side_effect = self._label_frame_thickness
+
+        self.label_frame_thickness = 1
+
+        metadata = self.gwyfile.get_graphmodel_metadata(self.gwyfile,
+                                                        self.graph_id)
+        self.assertEqual(metadata['label.frame_thickness'],
+                         self.label_frame_thickness)
+
+    def _label_frame_thickness(self, *args):
+        """
+        Write self.label_frame_thickness in 'label.frame_thickness' field
+        """
+
+        # combine fields names and fields pointers in one dictionary
+        arg_keys = [ffi.string(key).decode('utf-8') for key in args[2:-1:2]]
+        arg_pointers = [pointer for pointer in args[3:-1:2]]
+        arg_dict = dict(zip(arg_keys, arg_pointers))
+
+        arg_dict['label.frame_thickness'][0] = self.label_frame_thickness
+        # C func returns true if the graphmodel object loock acceptable
+        truep = ffi.new("bool*", True)
+        return truep[0]
+
+    def test_label_position(self):
+        """
+        Check 'label.position' field in metadata dictionary
+        """
+
+        graphmodel_get = self.mock_lib.gwyfile_object_graphmodel_get
+        graphmodel_get.side_effect = self._label_position
+
+        self.label_position = 1
+
+        metadata = self.gwyfile.get_graphmodel_metadata(self.gwyfile,
+                                                        self.graph_id)
+        self.assertEqual(metadata['label.position'],
+                         self.label_position)
+
+    def _label_position(self, *args):
+        """
+        Write self.label_position in 'label.position' field
+        """
+
+        # combine fields names and fields pointers in one dictionary
+        arg_keys = [ffi.string(key).decode('utf-8') for key in args[2:-1:2]]
+        arg_pointers = [pointer for pointer in args[3:-1:2]]
+        arg_dict = dict(zip(arg_keys, arg_pointers))
+
+        arg_dict['label.position'][0] = self.label_position
+        # C func returns true if the graphmodel object loock acceptable
+        truep = ffi.new("bool*", True)
+        return truep[0]
+
+    def test_grid_type(self):
+        """
+        Check 'grid-type' field in metadata dictionary
+        """
+
+        graphmodel_get = self.mock_lib.gwyfile_object_graphmodel_get
+        graphmodel_get.side_effect = self._grid_type
+
+        self.grid_type = 1
+
+        metadata = self.gwyfile.get_graphmodel_metadata(self.gwyfile,
+                                                        self.graph_id)
+        self.assertEqual(metadata['grid-type'],
+                         self.grid_type)
+
+    def _grid_type(self, *args):
+        """
+        Write self.grid_type in 'grid-type' field
+        """
+
+        # combine fields names and fields pointers in one dictionary
+        arg_keys = [ffi.string(key).decode('utf-8') for key in args[2:-1:2]]
+        arg_pointers = [pointer for pointer in args[3:-1:2]]
+        arg_dict = dict(zip(arg_keys, arg_pointers))
+
+        arg_dict['grid-type'][0] = self.grid_type
+
+        # C func returns true if the graphmodel object loock acceptable
+        truep = ffi.new("bool*", True)
+        return truep[0]
+
+    def test_raise_exception_if_graphmodel_object_looks_unacceptable(self):
+        """
+        Raise GwyfileErrorCMsg if gwyfile_object_graphmodel_get returns False
+        """
+
+        falsep = ffi.new("bool*", False)
+        graphmodel_get = self.mock_lib.gwyfile_object_graphmodel_get
+        graphmodel_get.return_value = falsep[0]
+        self.assertRaises(GwyfileErrorCMsg,
+                          self.gwyfile.get_graphmodel_metadata,
+                          self.gwyfile,
+                          self.graph_id)
+
+
+class Gwyfile_get_graphmodel_curves(unittest.TestCase):
+    """
+    Test get_graphmodel_curves method of Gwyfile class
+    """
+
+    def setUp(self):
+        self.gwyfile = Mock(spec=Gwyfile)
+        self.gwyfile.get_graphmodel_curves = Gwyfile.get_graphmodel_curves
+        
+        self.graph_id = 1  # id of graphmodel object
+        self.ncurves = 3   # number of curves in graphmodel object
+        self.curves_array = ffi.new("GwyfileObject*[]", self.ncurves)
+        self.graphmodel = Mock()
+
+        patcher_lib = patch('gwydb.gwy.gwyfile.lib',
+                            autospec=True)
+        self.addCleanup(patcher_lib.stop)
+        self.mock_lib = patcher_lib.start()
+
+
+    def test_graphmodel_object_does_not_exist(self):
+        """
+        Return empty list if graphmodel object does not exist
+        """
+
+        key = "/0/graph/graph/{:d}".format(self.graph_id)
+        self.gwyfile._gwyobject_check.return_value = False
+        
+        curves = self.gwyfile.get_graphmodel_curves(self.gwyfile,
+                                                    self.graph_id,
+                                                    self.ncurves)
+        
+        self.gwyfile._gwyobject_check.assert_has_calls(
+            [call(key)])
+        
+        self.assertListEqual(curves, [])
+
+    def test_raise_exception_if_graphmodel_object_looks_unacceptable(self):
+        """
+        Raise GwyfileErrorCMsg if gwyfile_object_graphmodel_get returns False
+        """
+
+        falsep = ffi.new("bool*", False)
+        self.mock_lib.gwyfile_object_graphmodel_get.return_value = falsep[0]
+        self.assertRaises(GwyfileErrorCMsg,
+                          self.gwyfile.get_graphmodel_curves,
+                          self.gwyfile,
+                          self.graph_id,
+                          self.ncurves)
+
+    def test_get_curves_array(self):
+        """
+        Get array of curves (GwyfileObjects) from graphmodel object
+        """
+
+        self.gwyfile._gwyfile_get_object.return_value = self.graphmodel
+        graphmodel_get = self.mock_lib.gwyfile_object_graphmodel_get
+        graphmodel_get.side_effect = self._side_effect
+        curves = self.gwyfile.get_graphmodel_curves(self.gwyfile,
+                                                    self.graph_id,
+                                                    self.ncurves)
+        self.assertListEqual(curves, list(self.curves_array))
+
+    def _side_effect(self, *args):
+        """
+        Check args of gwyfile_object_graphmodel_get func
+        and write self.curves_array in 'curves' field
+        """
+
+        # first arg is GwyDatafield returned by _gwyfile_get_object
+        self.assertEqual(args[0], self.graphmodel)
+
+        # second arg is GwyfileError**
+        assert ffi.typeof(args[1]) == ffi.typeof(ffi.new("GwyfileError**"))
+
+        # last arg in Null
+        self.assertEqual(args[-1], ffi.NULL)
+
+        # combine fields names and fields pointers in one dictionary
+        arg_keys = [ffi.string(key).decode('utf-8') for key in args[2:-1:2]]
+        arg_pointers = [pointer for pointer in args[3:-1:2]]
+        arg_dict = dict(zip(arg_keys, arg_pointers))
+
+        arg_dict['curves'][0] = self.curves_array
+
+        # C func returns true if the graphmodel object loock acceptable
+        truep = ffi.new("bool*", True)
+        return truep[0]
 
 
 if __name__ == '__main__':
