@@ -795,7 +795,6 @@ class Gwyfile():
             else:
                 metadata["y_unit"] = ''
 
-
             if x_min_setp[0]:
                 metadata["x_min_set"] = True
                 metadata["x_min"] = x_minp[0]

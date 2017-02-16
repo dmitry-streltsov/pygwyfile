@@ -1294,7 +1294,7 @@ class Gwyfile_get_graphmodel_metadata(unittest.TestCase):
                             autospec=True)
         self.addCleanup(patcher_lib.stop)
         self.mock_lib = patcher_lib.start()
-        
+
         self.graph_id = 1
         self.graphmodel = Mock()
 
@@ -1329,7 +1329,7 @@ class Gwyfile_get_graphmodel_metadata(unittest.TestCase):
                                              self.graph_id)
         self.gwyfile._gwyfile_get_object.assert_has_calls(
             [call(key)])
-        
+
     def test_positional_args_of_libgwyfile_func_call(self):
         """
         Call gwyfile_object_graphmodel_get C function.
@@ -1389,7 +1389,7 @@ class Gwyfile_get_graphmodel_metadata(unittest.TestCase):
         arg_dict = dict(zip(arg_keys, arg_pointers))
 
         arg_dict['ncurves'][0] = 3
-        
+
         # C func returns true if the graphmodel object loock acceptable
         truep = ffi.new("bool*", True)
         return truep[0]
@@ -1405,7 +1405,6 @@ class Gwyfile_get_graphmodel_metadata(unittest.TestCase):
                                                         self.graph_id)
         self.assertEqual(metadata['title'], "test title")
 
-        
     def _title_is_not_empty(self, *args):
         """
         Write "test title" C string to title field
@@ -1419,7 +1418,7 @@ class Gwyfile_get_graphmodel_metadata(unittest.TestCase):
         arg_dict = dict(zip(arg_keys, arg_pointers))
 
         arg_dict['title'][0] = title
-        
+
         # C func returns true if the graphmodel object loock acceptable
         truep = ffi.new("bool*", True)
         return truep[0]
@@ -1446,7 +1445,7 @@ class Gwyfile_get_graphmodel_metadata(unittest.TestCase):
         arg_dict = dict(zip(arg_keys, arg_pointers))
 
         arg_dict['title'][0] = ffi.NULL
-        
+
         # C func returns true if the graphmodel object loock acceptable
         truep = ffi.new("bool*", True)
         return truep[0]
@@ -1462,7 +1461,6 @@ class Gwyfile_get_graphmodel_metadata(unittest.TestCase):
                                                         self.graph_id)
         self.assertEqual(metadata['top_label'], "test top label")
 
-        
     def _top_label_is_not_empty(self, *args):
         """
         Write "test top label" C string to 'top_label' field
@@ -1476,7 +1474,7 @@ class Gwyfile_get_graphmodel_metadata(unittest.TestCase):
         arg_dict = dict(zip(arg_keys, arg_pointers))
 
         arg_dict['top_label'][0] = top_label
-        
+
         # C func returns true if the graphmodel object loock acceptable
         truep = ffi.new("bool*", True)
         return truep[0]
@@ -1503,7 +1501,7 @@ class Gwyfile_get_graphmodel_metadata(unittest.TestCase):
         arg_dict = dict(zip(arg_keys, arg_pointers))
 
         arg_dict['top_label'][0] = ffi.NULL
-        
+
         # C func returns true if the graphmodel object loock acceptable
         truep = ffi.new("bool*", True)
         return truep[0]
@@ -1519,7 +1517,6 @@ class Gwyfile_get_graphmodel_metadata(unittest.TestCase):
                                                         self.graph_id)
         self.assertEqual(metadata['left_label'], "test left label")
 
-        
     def _left_label_is_not_empty(self, *args):
         """
         Write "test left label" C string to 'left_label' field
@@ -1533,7 +1530,7 @@ class Gwyfile_get_graphmodel_metadata(unittest.TestCase):
         arg_dict = dict(zip(arg_keys, arg_pointers))
 
         arg_dict['left_label'][0] = left_label
-        
+
         # C func returns true if the graphmodel object loock acceptable
         truep = ffi.new("bool*", True)
         return truep[0]
@@ -1560,7 +1557,7 @@ class Gwyfile_get_graphmodel_metadata(unittest.TestCase):
         arg_dict = dict(zip(arg_keys, arg_pointers))
 
         arg_dict['left_label'][0] = ffi.NULL
-        
+
         # C func returns true if the graphmodel object loock acceptable
         truep = ffi.new("bool*", True)
         return truep[0]
@@ -1576,7 +1573,6 @@ class Gwyfile_get_graphmodel_metadata(unittest.TestCase):
                                                         self.graph_id)
         self.assertEqual(metadata['right_label'], "test right label")
 
-        
     def _right_label_is_not_empty(self, *args):
         """
         Write "test right label" C string to 'right_label' field
@@ -1590,7 +1586,7 @@ class Gwyfile_get_graphmodel_metadata(unittest.TestCase):
         arg_dict = dict(zip(arg_keys, arg_pointers))
 
         arg_dict['right_label'][0] = right_label
-        
+
         # C func returns true if the graphmodel object loock acceptable
         truep = ffi.new("bool*", True)
         return truep[0]
@@ -1617,7 +1613,7 @@ class Gwyfile_get_graphmodel_metadata(unittest.TestCase):
         arg_dict = dict(zip(arg_keys, arg_pointers))
 
         arg_dict['right_label'][0] = ffi.NULL
-        
+
         # C func returns true if the graphmodel object loock acceptable
         truep = ffi.new("bool*", True)
         return truep[0]
@@ -1633,7 +1629,6 @@ class Gwyfile_get_graphmodel_metadata(unittest.TestCase):
                                                         self.graph_id)
         self.assertEqual(metadata['bottom_label'], "test bottom label")
 
-        
     def _bottom_label_is_not_empty(self, *args):
         """
         Write "test bottom label" C string to 'bottom_label' field
@@ -1647,7 +1642,7 @@ class Gwyfile_get_graphmodel_metadata(unittest.TestCase):
         arg_dict = dict(zip(arg_keys, arg_pointers))
 
         arg_dict['bottom_label'][0] = bottom_label
-        
+
         # C func returns true if the graphmodel object loock acceptable
         truep = ffi.new("bool*", True)
         return truep[0]
@@ -1674,7 +1669,7 @@ class Gwyfile_get_graphmodel_metadata(unittest.TestCase):
         arg_dict = dict(zip(arg_keys, arg_pointers))
 
         arg_dict['bottom_label'][0] = ffi.NULL
-        
+
         # C func returns true if the graphmodel object loock acceptable
         truep = ffi.new("bool*", True)
         return truep[0]
@@ -1690,7 +1685,6 @@ class Gwyfile_get_graphmodel_metadata(unittest.TestCase):
                                                         self.graph_id)
         self.assertEqual(metadata['x_unit'], 'm')
 
-        
     def _x_unit_is_not_empty(self, *args):
         """
         Write "m" C string to 'x_unit' field
@@ -1704,7 +1698,7 @@ class Gwyfile_get_graphmodel_metadata(unittest.TestCase):
         arg_dict = dict(zip(arg_keys, arg_pointers))
 
         arg_dict['x_unit'][0] = x_unit
-        
+
         # C func returns true if the graphmodel object loock acceptable
         truep = ffi.new("bool*", True)
         return truep[0]
@@ -1731,7 +1725,7 @@ class Gwyfile_get_graphmodel_metadata(unittest.TestCase):
         arg_dict = dict(zip(arg_keys, arg_pointers))
 
         arg_dict['x_unit'][0] = ffi.NULL
-        
+
         # C func returns true if the graphmodel object loock acceptable
         truep = ffi.new("bool*", True)
         return truep[0]
@@ -1747,7 +1741,6 @@ class Gwyfile_get_graphmodel_metadata(unittest.TestCase):
                                                         self.graph_id)
         self.assertEqual(metadata['y_unit'], 'm')
 
-        
     def _y_unit_is_not_empty(self, *args):
         """
         Write "m" C string to 'y_unit' field
@@ -1761,7 +1754,7 @@ class Gwyfile_get_graphmodel_metadata(unittest.TestCase):
         arg_dict = dict(zip(arg_keys, arg_pointers))
 
         arg_dict['y_unit'][0] = y_unit
-        
+
         # C func returns true if the graphmodel object loock acceptable
         truep = ffi.new("bool*", True)
         return truep[0]
@@ -1788,7 +1781,7 @@ class Gwyfile_get_graphmodel_metadata(unittest.TestCase):
         arg_dict = dict(zip(arg_keys, arg_pointers))
 
         arg_dict['y_unit'][0] = ffi.NULL
-        
+
         # C func returns true if the graphmodel object loock acceptable
         truep = ffi.new("bool*", True)
         return truep[0]
@@ -1819,7 +1812,7 @@ class Gwyfile_get_graphmodel_metadata(unittest.TestCase):
 
         arg_dict['x_min_set'][0] = truep[0]
         arg_dict['x_min'][0] = 0.
-        
+
         # C func returns true if the graphmodel object loock acceptable
         return truep[0]
 
@@ -1849,9 +1842,8 @@ class Gwyfile_get_graphmodel_metadata(unittest.TestCase):
         falsep = ffi.new("bool*", False)
 
         arg_dict['x_min_set'][0] = falsep[0]
-        arg_dict['x_min'][0] = 0.  # this value is not important
-                                   # metadata['x_min'] should be None
-        
+        arg_dict['x_min'][0] = 0.
+
         # C func returns true if the graphmodel object loock acceptable
         return truep[0]
 
@@ -1881,7 +1873,7 @@ class Gwyfile_get_graphmodel_metadata(unittest.TestCase):
 
         arg_dict['x_max_set'][0] = truep[0]
         arg_dict['x_max'][0] = 0.
-        
+
         # C func returns true if the graphmodel object loock acceptable
         return truep[0]
 
@@ -1911,9 +1903,8 @@ class Gwyfile_get_graphmodel_metadata(unittest.TestCase):
         falsep = ffi.new("bool*", False)
 
         arg_dict['x_max_set'][0] = falsep[0]
-        arg_dict['x_max'][0] = 0.  # this value is not important
-                                   # metadata['x_max'] should be None
-        
+        arg_dict['x_max'][0] = 0.
+
         # C func returns true if the graphmodel object loock acceptable
         return truep[0]
 
@@ -1943,7 +1934,7 @@ class Gwyfile_get_graphmodel_metadata(unittest.TestCase):
 
         arg_dict['y_min_set'][0] = truep[0]
         arg_dict['y_min'][0] = 0.
-        
+
         # C func returns true if the graphmodel object loock acceptable
         return truep[0]
 
@@ -1973,9 +1964,8 @@ class Gwyfile_get_graphmodel_metadata(unittest.TestCase):
         falsep = ffi.new("bool*", False)
 
         arg_dict['y_min_set'][0] = falsep[0]
-        arg_dict['y_min'][0] = 0.  # this value is not important
-                                   # metadata['y_min'] should be None
-        
+        arg_dict['y_min'][0] = 0.
+
         # C func returns true if the graphmodel object loock acceptable
         return truep[0]
 
@@ -2005,7 +1995,7 @@ class Gwyfile_get_graphmodel_metadata(unittest.TestCase):
 
         arg_dict['y_max_set'][0] = truep[0]
         arg_dict['y_max'][0] = 0.
-        
+
         # C func returns true if the graphmodel object loock acceptable
         return truep[0]
 
@@ -2035,9 +2025,8 @@ class Gwyfile_get_graphmodel_metadata(unittest.TestCase):
         falsep = ffi.new("bool*", False)
 
         arg_dict['y_max_set'][0] = falsep[0]
-        arg_dict['y_max'][0] = 0.  # this value is not important
-                                   # metadata['y_min'] should be None
-        
+        arg_dict['y_max'][0] = 0.
+
         # C func returns true if the graphmodel object loock acceptable
         return truep[0]
 
@@ -2050,7 +2039,7 @@ class Gwyfile_get_graphmodel_metadata(unittest.TestCase):
         graphmodel_get.side_effect = self._x_is_logarithmic
 
         self.x_is_logarithmic = True
-        
+
         metadata = self.gwyfile.get_graphmodel_metadata(self.gwyfile,
                                                         self.graph_id)
         self.assertIs(metadata['x_is_logarithmic'], True)
@@ -2064,11 +2053,11 @@ class Gwyfile_get_graphmodel_metadata(unittest.TestCase):
         graphmodel_get.side_effect = self._x_is_logarithmic
 
         self.x_is_logarithmic = False
-        
+
         metadata = self.gwyfile.get_graphmodel_metadata(self.gwyfile,
                                                         self.graph_id)
         self.assertIs(metadata['x_is_logarithmic'], False)
-        
+
     def _x_is_logarithmic(self, *args):
         """
         Write self.x_is_logarithmic in 'x_is_logarithmic' field
@@ -2099,7 +2088,7 @@ class Gwyfile_get_graphmodel_metadata(unittest.TestCase):
         graphmodel_get.side_effect = self._y_is_logarithmic
 
         self.y_is_logarithmic = True
-        
+
         metadata = self.gwyfile.get_graphmodel_metadata(self.gwyfile,
                                                         self.graph_id)
         self.assertIs(metadata['y_is_logarithmic'], True)
@@ -2113,11 +2102,11 @@ class Gwyfile_get_graphmodel_metadata(unittest.TestCase):
         graphmodel_get.side_effect = self._y_is_logarithmic
 
         self.y_is_logarithmic = False
-        
+
         metadata = self.gwyfile.get_graphmodel_metadata(self.gwyfile,
                                                         self.graph_id)
         self.assertIs(metadata['y_is_logarithmic'], False)
-        
+
     def _y_is_logarithmic(self, *args):
         """
         Write self.y_is_logarithmic in 'y_is_logarithmic' field
@@ -2148,7 +2137,7 @@ class Gwyfile_get_graphmodel_metadata(unittest.TestCase):
         graphmodel_get.side_effect = self._label_visible
 
         self.label_visible = True
-        
+
         metadata = self.gwyfile.get_graphmodel_metadata(self.gwyfile,
                                                         self.graph_id)
         self.assertIs(metadata['label.visible'], True)
@@ -2162,11 +2151,11 @@ class Gwyfile_get_graphmodel_metadata(unittest.TestCase):
         graphmodel_get.side_effect = self._label_visible
 
         self.label_visible = False
-        
+
         metadata = self.gwyfile.get_graphmodel_metadata(self.gwyfile,
                                                         self.graph_id)
         self.assertIs(metadata['label.visible'], False)
-        
+
     def _label_visible(self, *args):
         """
         Write self.label_visible in 'label.visible' field
@@ -2197,7 +2186,7 @@ class Gwyfile_get_graphmodel_metadata(unittest.TestCase):
         graphmodel_get.side_effect = self._label_has_frame
 
         self.label_has_frame = True
-        
+
         metadata = self.gwyfile.get_graphmodel_metadata(self.gwyfile,
                                                         self.graph_id)
         self.assertIs(metadata['label.has_frame'], True)
@@ -2211,11 +2200,11 @@ class Gwyfile_get_graphmodel_metadata(unittest.TestCase):
         graphmodel_get.side_effect = self._label_has_frame
 
         self.label_has_frame = False
-        
+
         metadata = self.gwyfile.get_graphmodel_metadata(self.gwyfile,
                                                         self.graph_id)
         self.assertIs(metadata['label.has_frame'], False)
-        
+
     def _label_has_frame(self, *args):
         """
         Write self.label_has_frame in 'label.has_frame' field
@@ -2246,7 +2235,7 @@ class Gwyfile_get_graphmodel_metadata(unittest.TestCase):
         graphmodel_get.side_effect = self._label_reverse
 
         self.label_reverse = True
-        
+
         metadata = self.gwyfile.get_graphmodel_metadata(self.gwyfile,
                                                         self.graph_id)
         self.assertIs(metadata['label.reverse'], True)
@@ -2260,11 +2249,11 @@ class Gwyfile_get_graphmodel_metadata(unittest.TestCase):
         graphmodel_get.side_effect = self._label_reverse
 
         self.label_reverse = False
-        
+
         metadata = self.gwyfile.get_graphmodel_metadata(self.gwyfile,
                                                         self.graph_id)
         self.assertIs(metadata['label.reverse'], False)
-        
+
     def _label_reverse(self, *args):
         """
         Write self.label_reverse in 'label.reverse' field
@@ -2399,7 +2388,7 @@ class Gwyfile_get_graphmodel_curves(unittest.TestCase):
     def setUp(self):
         self.gwyfile = Mock(spec=Gwyfile)
         self.gwyfile.get_graphmodel_curves = Gwyfile.get_graphmodel_curves
-        
+
         self.graph_id = 1  # id of graphmodel object
         self.ncurves = 3   # number of curves in graphmodel object
         self.curves_array = ffi.new("GwyfileObject*[]", self.ncurves)
@@ -2410,7 +2399,6 @@ class Gwyfile_get_graphmodel_curves(unittest.TestCase):
         self.addCleanup(patcher_lib.stop)
         self.mock_lib = patcher_lib.start()
 
-
     def test_graphmodel_object_does_not_exist(self):
         """
         Return empty list if graphmodel object does not exist
@@ -2418,14 +2406,14 @@ class Gwyfile_get_graphmodel_curves(unittest.TestCase):
 
         key = "/0/graph/graph/{:d}".format(self.graph_id)
         self.gwyfile._gwyobject_check.return_value = False
-        
+
         curves = self.gwyfile.get_graphmodel_curves(self.gwyfile,
                                                     self.graph_id,
                                                     self.ncurves)
-        
+
         self.gwyfile._gwyobject_check.assert_has_calls(
             [call(key)])
-        
+
         self.assertListEqual(curves, [])
 
     def test_raise_exception_if_graphmodel_object_looks_unacceptable(self):
