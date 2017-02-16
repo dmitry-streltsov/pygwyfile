@@ -3,10 +3,10 @@ from unittest.mock import patch, call, ANY, Mock, MagicMock
 
 import numpy as np
 
-from gwydb.gwy.gwyfile import read_gwyfile
-from gwydb.gwy.gwyfile import GwyfileError, GwyfileErrorCMsg
 from gwydb.gwy.gwyfile import Gwyfile
+from gwydb.gwy.gwyfile import GwyfileError, GwyfileErrorCMsg
 from gwydb.gwy.gwyfile import ffi, lib
+from gwydb.gwy.gwyfile import read_gwyfile
 
 
 class Func_read_gwyfile_TestCase(unittest.TestCase):
