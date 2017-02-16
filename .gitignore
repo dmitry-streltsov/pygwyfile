@@ -28,3 +28,7 @@ cover/
 
 # Emacs dir-local-variables
 .dir-locals.el
+
+# build artifacts
+*.egg-info/
+build/
