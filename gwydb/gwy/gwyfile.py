@@ -896,6 +896,98 @@ class Gwyfile():
         else:
             raise GwyfileErrorCMsg(errorp[0].message)
 
+    def get_graphcurvemodel_metadata(self, curve):
+        """
+        Get metadata from GwyGraphCurveModel object
+
+        Args:
+            curve (GwyfileObject*):
+                GwyGraphCurveModel object
+
+        Returns:
+            metadata (dict):
+                Python dictionary with keys:
+                    'ndata' (int): nummber of points in the curve
+                    'description' (string): curve label
+                    'type' (int): GwyGraphCurveType
+                    'point_type' (int): GwyGraphPointType
+                    'line_style' (int): GdkLineStyle
+                    'point_size' (int): Point size
+                    'line_size' (int):  Line width
+                    'color.red' (float): Red component from the interval [0, 1]
+                    'color.green' (float): Green component from the interval
+                                                                      [0, 1]
+                    'color.blue' (float): Blue component from the interval
+                                                                      [0, 1]
+        """
+        error = ffi.new("GwyfileError*")
+        errorp = ffi.new("GwyfileError**", error)
+        ndatap = ffi.new("int32_t*")
+        descriptionp = ffi.new("char**")
+        typep = ffi.new("int32_t*")
+        point_typep = ffi.new("int32_t*")
+        line_stylep = ffi.new("int32_t*")
+        point_sizep = ffi.new("int32_t*")
+        line_sizep = ffi.new("int32_t*")
+        color_redp = ffi.new("double*")
+        color_greenp = ffi.new("double*")
+        color_bluep = ffi.new("double*")
+
+        metadata = {}
+
+        if not lib.gwyfile_object_graphcurvemodel_get(curve,
+                                                      errorp,
+                                                      ffi.new('char[]',
+                                                              b'ndata'),
+                                                      ndatap,
+                                                      ffi.new('char[]',
+                                                              b'description'),
+                                                      descriptionp,
+                                                      ffi.new('char[]',
+                                                              b'type'),
+                                                      typep,
+                                                      ffi.new('char[]',
+                                                              b'point_type'),
+                                                      point_typep,
+                                                      ffi.new('char[]',
+                                                              b'line_style'),
+                                                      line_stylep,
+                                                      ffi.new('char[]',
+                                                              b'point_size'),
+                                                      point_sizep,
+                                                      ffi.new('char[]',
+                                                              b'line_size'),
+                                                      line_sizep,
+                                                      ffi.new('char[]',
+                                                              b'color.red'),
+                                                      color_redp,
+                                                      ffi.new('char[]',
+                                                              b'color.green'),
+                                                      color_greenp,
+                                                      ffi.new('char[]',
+                                                              b'color.blue'),
+                                                      color_bluep,
+                                                      ffi.NULL):
+            raise GwyfileErrorCMsg(errorp[0].message)
+        else:
+            metadata['ndata'] = ndatap[0]
+
+            if descriptionp[0]:
+                description = ffi.string(descriptionp[0]).decode('utf-8')
+                metadata['description'] = description
+            else:
+                metadata['description'] = ''
+
+            metadata['type'] = typep[0]
+            metadata['point_type'] = point_typep[0]
+            metadata['line_style'] = line_stylep[0]
+            metadata['point_size'] = point_sizep[0]
+            metadata['line_size'] = line_sizep[0]
+            metadata['color.red'] = color_redp[0]
+            metadata['color.green'] = color_greenp[0]
+            metadata['color.blue'] = color_bluep[0]
+        return metadata
+
 
 def read_gwyfile(filename):
     """Read gwy file

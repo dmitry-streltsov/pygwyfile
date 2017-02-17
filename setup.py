@@ -6,7 +6,7 @@ setup(name="gwydb",
       author="Dmitry Streltsov",
       author_email="streltsov.dmitry@gmail.com",
       description=("Project for organizing AFM data files "
-                   "in Posegresql database."),
+                   "in Postgresql database."),
       license="MIT",
       packages=["gwydb"],
       url="https://github.com/dmitry-streltsov/gwy-postgresql",
