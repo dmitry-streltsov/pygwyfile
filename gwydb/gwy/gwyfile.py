@@ -988,6 +988,51 @@ class Gwyfile():
             metadata['color.blue'] = color_bluep[0]
         return metadata
 
+    def get_graphcurvemodel_data(self, curve, npoints):
+        """
+        Get xdata from GwyGraphCurveModel object
+
+        Args:
+            curve (GwyfileObject*):
+                GwyGraphCurveModel object
+            npoints (int):
+                number of points in the curve
+
+        Returns:
+            data (np.float64 numpy array):
+                2D numpy array with shape (2, npoints)
+                with xdata (data[0]) and ydata (data[1])
+        """
+
+        error = ffi.new("GwyfileError*")
+        errorp = ffi.new("GwyfileError**", error)
+
+        xdata = ffi.new("double[]", npoints)
+        xdatap = ffi.new("double**", xdata)
+
+        ydata = ffi.new("double[]", npoints)
+        ydatap = ffi.new("double**", ydata)
+
+        if not lib.gwyfile_object_graphcurvemodel_get(curve,
+                                                      errorp,
+                                                      ffi.new('char[]',
+                                                              b'xdata'),
+                                                      xdatap,
+                                                      ffi.new('char[]',
+                                                              b'ydata'),
+                                                      ydatap,
+                                                      ffi.NULL):
+            raise GwyfileErrorCMsg(errorp[0].message)
+        else:
+            xdata_buf = ffi.buffer(xdatap[0], npoints * ffi.sizeof(xdata))
+            xdata_array = np.frombuffer(xdata_buf, dtype=np.float64,
+                                        count=npoints)
+            ydata_buf = ffi.buffer(ydatap[0], npoints * ffi.sizeof(ydata))
+            ydata_array = np.frombuffer(ydata_buf, dtype=np.float64,
+                                        count=npoints)
+            data_array = np.vstack((xdata_array, ydata_array))
+            return data_array
+
 
 def read_gwyfile(filename):
     """Read gwy file

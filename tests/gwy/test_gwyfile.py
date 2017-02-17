@@ -2791,5 +2791,103 @@ class Gwyfile_get_graphcurvemodel_metadata(unittest.TestCase):
         return truep[0]
 
 
+class Gwyfile_get_graphcurvemodel_data(unittest.TestCase):
+    """
+    Test get_graphcurvemodel_data method of Gwyfile class
+    """
+
+    def setUp(self):
+        self.gwyfile = Mock(spec=Gwyfile)
+        self.gwyfile.get_graphcurvemodel_data = (
+            Gwyfile.get_graphcurvemodel_data)
+        self.curve = Mock()
+        patcher_lib = patch('gwydb.gwy.gwyfile.lib',
+                            autospec=True)
+        self.addCleanup(patcher_lib.stop)
+        self.mock_lib = patcher_lib.start()
+
+        self.npoints = 256
+        self.xdata = np.random.rand(self.npoints)
+        self.ydata = np.random.rand(self.npoints)
+
+    def test_raise_exception_if_graphcurvemodel_looks_unacceptable(self):
+        """
+        Raise GwyfileErrorCMsg if GwyGraphCurveModel looks unacceptable
+        """
+
+        falsep = ffi.new("bool*", False)
+        self.mock_lib.gwyfile_object_graphcurvemodel_get.return_value = (
+            falsep[0])
+        self.assertRaises(GwyfileErrorCMsg,
+                          self.gwyfile.get_graphcurvemodel_data,
+                          self.gwyfile,
+                          self.curve,
+                          self.npoints)
+
+    def test_positional_args_of_libgwyfile_func_call(self):
+        """
+        Test positional args in gwyfile_object_graphcurvemodel_get call
+
+        First arg is GwyGraphCurveModel*
+        Second arg is GwyfileError**
+        Last arg is NULL
+        """
+
+        self.mock_lib.gwyfile_object_graphcurvemodel_get.side_effect = (
+            self._positional_args_side_effect)
+        self.gwyfile.get_graphcurvemodel_data(self.gwyfile,
+                                              self.curve,
+                                              self.npoints)
+
+    def _positional_args_side_effect(self, *args):
+        """
+        Check positional args in gwyfile_object_graphcurvemodel_get call
+        """
+
+        # first arg is GwyGraphCurveModel
+        self.assertEqual(args[0], self.curve)
+
+        # second arg is GwyfileError**
+        assert ffi.typeof(args[1]) == ffi.typeof(ffi.new("GwyfileError**"))
+
+        # last arg in Null
+        self.assertEqual(args[-1], ffi.NULL)
+
+        # C func returns true if the graphcurvemodel object loock acceptable
+        truep = ffi.new("bool*", True)
+        return truep[0]
+
+    def test_returned_value(self):
+        """
+        Test the value returned by get_graphcurvemodel_data method"
+        """
+
+        self.mock_lib.gwyfile_object_graphcurvemodel_get.side_effect = (
+            self._returned_value_side_effect)
+
+        data = self.gwyfile.get_graphcurvemodel_data(self.gwyfile,
+                                                     self.curve,
+                                                     self.npoints)
+        np.testing.assert_almost_equal(self.xdata, data[0])
+        np.testing.assert_almost_equal(self.ydata, data[1])
+
+    def _returned_value_side_effect(self, *args):
+        """
+        Write self.xdata and self.ydata as C arrays to 'xdata' and 'ydata'
+        and return True
+        """
+        # combine fields names and fields pointers in one dictionary
+        arg_keys = [ffi.string(key).decode('utf-8') for key in args[2:-1:2]]
+        arg_pointers = [pointer for pointer in args[3:-1:2]]
+        arg_dict = dict(zip(arg_keys, arg_pointers))
+
+        arg_dict['xdata'][0] = ffi.cast("double*", self.xdata.ctypes.data)
+        arg_dict['ydata'][0] = ffi.cast("double*", self.ydata.ctypes.data)
+
+        # C func returns true if the graphcurvemodel object loock acceptable
+        truep = ffi.new("bool*", True)
+        return truep[0]
+
+
 if __name__ == '__main__':
     unittest.main()
