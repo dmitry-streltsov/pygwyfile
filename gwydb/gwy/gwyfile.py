@@ -1,7 +1,6 @@
 """
 Wrapper for GwyfileObject from Libgwyfile C library
 """
-
 import os.path
 
 import numpy as np
@@ -1032,6 +1031,146 @@ class Gwyfile():
                                         count=npoints)
             data_array = np.vstack((xdata_array, ydata_array))
             return data_array
+
+
+class GwySelection():
+    """Base class for GwySelection objects
+    """
+
+    def __init__(self, gwysel, get_sel_func, npoints):
+        self._gwysel = gwysel
+        self._get_sel_func = get_sel_func
+        self._npoints = npoints
+        self._nsel = self._get_selection_nsel()
+        self._points = self._get_selection_points()
+
+    def _get_selection_nsel(self):
+        """Get number of selections from the object
+
+        Returns:
+            nsel (int):
+                number of selections of this type for the object
+        """
+
+        error = ffi.new("GwyfileError*")
+        errorp = ffi.new("GwyfileError**", error)
+        nselp = ffi.new("int32_t*")
+
+        if self._get_sel_func(self._gwysel,
+                              errorp,
+                              ffi.new("char[]", b'nsel'),
+                              nselp,
+                              ffi.NULL):
+            nsel = nselp[0]
+        else:
+            raise GwyfileErrorCMsg(errorp[0].message)
+
+        return nsel
+
+    def _get_selection_points(self):
+        """Get all points of selection for the object
+
+        Returns:
+            [(x1, y1), ..., (xN, yN)]: list of tuples with point coordinates
+
+            or None :                  if there are no point selections
+
+        """
+
+        error = ffi.new("GwyfileError*")
+        errorp = ffi.new("GwyfileError**", error)
+
+        if self._nsel == 0:
+            return None
+        else:
+            npoints = self._nsel * self._npoints
+            data = ffi.new("double[]", 2 * npoints)
+            datap = ffi.new("double**", data)
+
+        if self._get_sel_func(self._gwysel,
+                              errorp,
+                              ffi.new("char[]", b'data'),
+                              datap,
+                              ffi.NULL):
+            data = datap[0]
+            points = [(data[i * 2], data[i * 2 + 1])
+                      for i in range(npoints)]
+        else:
+            raise GwyfileErrorCMsg(errorp[0].message)
+
+        return points
+
+
+class GwyPointSelections(GwySelection):
+    """Class for point and pointer selections
+    """
+
+    _npoints = 1  # number of points in one point selection
+    _get_sel_func = lib.gwyfile_object_selectionpoint_get
+
+    def __init__(self, gwysel):
+        super().__init__(gwysel=gwysel,
+                         get_sel_func=GwyPointSelections._get_sel_func,
+                         npoints=GwyPointSelections._npoints)
+        self.points = self._points
+
+
+class GwyLineSelections(GwySelection):
+    """Class for line selections
+    """
+
+    _npoints = 2  # number of points in one line selection
+    _get_sel_func = lib.gwyfile_object_selectionline_get
+
+    def __init__(self, gwysel):
+        super().__init__(gwysel=gwysel,
+                         get_sel_func=GwyLineSelections._get_sel_func,
+                         npoints=GwyLineSelections._npoints)
+
+        # combine points in pairs
+        points = self._points
+        lines = list(zip(tuple(points[::2]),    # first point of each line
+                         tuple(points[1::2])))  # last point of each line
+
+        self.lines = lines
+
+
+class GwyRectangleSelections(GwySelection):
+    """Class for rectange selections
+    """
+
+    _npoints = 2  # number of points in one rectangle selection
+    _get_sel_func = lib.gwyfile_object_selectionrectangle_get
+
+    def __init__(self, gwysel):
+        super().__init__(gwysel=gwysel,
+                         get_sel_func=GwyRectangleSelections._get_sel_func,
+                         npoints=GwyRectangleSelections._npoints)
+
+        # combine points in pairs
+        points = self._points
+        rect = list(zip(tuple(points[::2]),    # first point of each rectangle
+                        tuple(points[1::2])))  # second point of each rectangle
+        self.rectangles = rect
+
+
+class GwyEllipseSelections(GwySelection):
+    """Class for ellipse selections
+    """
+
+    _npoints = 2  # number of points in one ellipse selection
+    _get_sel_func = lib.gwyfile_object_selectionellipse_get
+
+    def __init__(self, gwysel):
+        super().__init__(gwysel=gwysel,
+                         get_sel_func=GwyEllipseSelections._get_sel_func,
+                         npoints=GwyEllipseSelections._npoints)
+
+        # combine points in pairs (two points for each ellipse)
+        points = self._points
+        ellipses = list(zip(tuple(points[::2]),    # first point of each ell.
+                            tuple(points[1::2])))  # second point of each ell.
+        self.ellipses = ellipses
 
 
 def read_gwyfile(filename):
