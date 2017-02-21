@@ -1,11 +1,12 @@
 import unittest
-from unittest.mock import patch, call, ANY, Mock, MagicMock
+from unittest.mock import patch, call, ANY, Mock
 
 import numpy as np
 
 from gwydb.gwy.gwyfile import Gwyfile
 from gwydb.gwy.gwyfile import GwyfileError, GwyfileErrorCMsg
-from gwydb.gwy.gwyfile import ffi, lib
+from gwydb.gwy.gwyfile import GwyPointSelections
+from gwydb.gwy.gwyfile import ffi
 from gwydb.gwy.gwyfile import read_gwyfile
 
 
@@ -835,451 +836,6 @@ class Gwyfile_get_presentation_data(unittest.TestCase):
                                                            self.xres,
                                                            self.yres)
         self.assertEqual(actual_return, expected_return)
-
-
-class Gwyfile__get_selection_nsel(unittest.TestCase):
-    """
-    Test _get_selection_nsel method in Gwyfile class
-    """
-
-    def setUp(self):
-        self.gwyfile = Mock(spec=Gwyfile)
-        self.gwyfile._get_selection_nsel = Gwyfile._get_selection_nsel
-        self.gwyfile._gwyobject_check = Mock(autospec=True)
-        self.key = "/0/select/point"
-        self.nsel = 3
-        patcher_lib = patch('gwydb.gwy.gwyfile.lib', autospec=True)
-        self.addCleanup(patcher_lib.stop)
-        self.mock_lib = patcher_lib.start()
-
-    def test_return_None_is_there_is_no_selection(self):
-        """
-        Return None if there is no such selection
-        """
-
-        self.gwyfile._gwyobject_check.return_value = None
-        func_sel = self.mock_lib.gwyfile_object_selectionpoint_get
-        returned_value = self.gwyfile._get_selection_nsel(self.gwyfile,
-                                                          self.key,
-                                                          func_sel)
-        self.assertIsNone(returned_value)
-
-    def test_raise_exception_if_libgwyfile_function_returns_error(self):
-        """
-        Raise GwyfileError exception if libgwyfile func returns NULL
-        """
-
-        func_sel = self.mock_lib.gwyfile_object_selectionpoint_get
-        func_sel.return_value = ffi.NULL
-        self.assertRaises(GwyfileError,
-                          self.gwyfile._get_selection_nsel,
-                          self.gwyfile,
-                          self.key,
-                          func_sel)
-
-    def test_check_returned_value(self):
-        """
-        Check returned value of _get_selection_nsel method
-        """
-
-        func_sel = self.mock_lib.gwyfile_object_selectionpoint_get
-        func_sel.side_effect = self._side_effect
-        returned_value = self.gwyfile._get_selection_nsel(self.gwyfile,
-                                                          self.key,
-                                                          func_sel)
-        self.assertEqual(returned_value, self.nsel)
-
-    def _side_effect(self, *args):
-        """
-        Write self.nsel as number of selections in nselp arg
-        """
-        truep = ffi.new("bool*", True)
-        nselp = args[3]
-        nselp[0] = self.nsel
-        return truep[0]
-
-
-class Gwyfile__get_selection_data(unittest.TestCase):
-    """
-    Test _get_selection_data method in Gwyfile class
-    """
-
-    def setUp(self):
-        self.gwyfile = Mock(spec=Gwyfile)
-        self.gwyfile._get_selection_data = Gwyfile._get_selection_data
-        self.gwyfile._gwyobject_check = Mock(autospec=True)
-        self.key = "/0/select/point"
-        self.npoints = 3
-        self.points = [(1.0, 1.0), (2.0, 2.0), (3.0, 3.0)]
-        patcher_lib = patch('gwydb.gwy.gwyfile.lib', autospec=True)
-        self.addCleanup(patcher_lib.stop)
-        self.mock_lib = patcher_lib.start()
-
-    def test_return_None_is_there_is_no_selection(self):
-        """
-        Return None if there is no such selection
-        """
-
-        self.gwyfile._gwyobject_check.return_value = None
-        func_sel = self.mock_lib.gwyfile_object_selectionpoint_get
-        returned_value = self.gwyfile._get_selection_data(self.gwyfile,
-                                                          self.key,
-                                                          func_sel,
-                                                          self.npoints)
-        self.assertIsNone(returned_value)
-
-    def test_return_None_if_npoints_equals_zero(self):
-        """
-        Return None if npoints argument equals zero
-        """
-
-        func_sel = self.mock_lib.gwyfile_object_selectionpoint_get
-        returned_value = self.gwyfile._get_selection_data(self.gwyfile,
-                                                          self.key,
-                                                          func_sel,
-                                                          0)
-        self.assertIsNone(returned_value)
-
-    def test_raise_exception_if_libgwyfile_function_returns_error(self):
-        """
-        Raise GwyfileError exception if libgwyfile func returns NULL
-        """
-
-        func_sel = self.mock_lib.gwyfile_object_selectionpoint_get
-        func_sel.return_value = ffi.NULL
-        self.assertRaises(GwyfileError,
-                          self.gwyfile._get_selection_data,
-                          self.gwyfile,
-                          self.key,
-                          func_sel,
-                          self.npoints)
-
-    def test_check_returned_value(self):
-        """
-        Check returned value of _get_selection_data method
-        """
-
-        func_sel = self.mock_lib.gwyfile_object_selectionpoint_get
-        func_sel.side_effect = self._side_effect
-        returned_value = self.gwyfile._get_selection_data(self.gwyfile,
-                                                          self.key,
-                                                          func_sel,
-                                                          self.npoints)
-        self.assertEqual(returned_value, self.points)
-
-    def _side_effect(self, *args):
-        """
-        Write self.points as C array in data arg
-        """
-        truep = ffi.new("bool*", True)
-
-        # convert self.points to list
-        points_list = []
-        for point in self.points:
-            points_list.append(point[0])
-            points_list.append(point[1])
-
-        datap = args[3]
-        datap[0] = ffi.new("double[]", points_list)
-
-        return truep[0]
-
-
-class Gwyfile_get_pointer_sel(unittest.TestCase):
-    """
-    Test get_pointer_sel method of Gwyfile class
-    """
-
-    def setUp(self):
-        self.gwyfile = Mock(spec=Gwyfile)
-        self.gwyfile.get_pointer_sel = Gwyfile.get_pointer_sel
-        self.gwyfile._get_selection_nsel = Mock(autospec=True)
-        self.gwyfile._get_selection_data = Mock(autospec=True)
-        self.channel_id = 1
-        self.nsel = 3
-
-    def test_args_of_get_selection_nsel_call(self):
-        """
-        Get number of pointer selections using _get_selection_nsel method
-        """
-
-        expected_key = "/{:d}/select/pointer".format(self.channel_id)
-        expected_sel_func = lib.gwyfile_object_selectionpoint_get
-        self.gwyfile.get_pointer_sel(self.gwyfile, self.channel_id)
-        self.gwyfile._get_selection_nsel.assert_has_calls(
-            [call(expected_key, expected_sel_func)])
-
-    def test_return_None_if_nsel_equals_zero(self):
-        """
-        Return None if number of pointer selections is zero
-        """
-
-        self.gwyfile._get_selection_nsel.return_value = None
-        returned_value = self.gwyfile.get_pointer_sel(self.gwyfile,
-                                                      self.channel_id)
-        self.assertIsNone(returned_value)
-
-    def test_args_of_get_selection_data_call(self):
-        """
-        Get points using _get_selection_data method
-        """
-
-        self.gwyfile._get_selection_nsel.return_value = self.nsel
-        expected_key = "/{:d}/select/pointer".format(self.channel_id)
-        expected_sel_func = lib.gwyfile_object_selectionpoint_get
-        self.gwyfile.get_pointer_sel(self.gwyfile, self.channel_id)
-        self.gwyfile._get_selection_data.assert_has_calls(
-            [call(expected_key, expected_sel_func, self.nsel)])
-
-    def test_returned_value(self):
-        """
-        get_pointer_sel method returns points returned by _get_selection_data
-        """
-
-        expected_return = self.gwyfile._get_selection_data.return_value
-        actual_return = self.gwyfile.get_pointer_sel(self.gwyfile,
-                                                     self.channel_id)
-        self.assertEqual(expected_return, actual_return)
-
-
-class Gwyfile_get_point_sel(unittest.TestCase):
-    """
-    Test get_point_sel method of Gwyfile class
-    """
-
-    def setUp(self):
-        self.gwyfile = Mock(spec=Gwyfile)
-        self.gwyfile.get_point_sel = Gwyfile.get_point_sel
-        self.gwyfile._get_selection_nsel = Mock(autospec=True)
-        self.gwyfile._get_selection_data = Mock(autospec=True)
-        self.channel_id = 1
-        self.nsel = 3
-
-    def test_args_of_get_selection_nsel_call(self):
-        """
-        Get number of point selections using _get_selection_nsel method
-        """
-
-        expected_key = "/{:d}/select/point".format(self.channel_id)
-        expected_sel_func = lib.gwyfile_object_selectionpoint_get
-        self.gwyfile.get_point_sel(self.gwyfile, self.channel_id)
-        self.gwyfile._get_selection_nsel.assert_has_calls(
-            [call(expected_key, expected_sel_func)])
-
-    def test_return_None_if_nsel_equals_zero(self):
-        """
-        Return None if number of point selections is zero
-        """
-
-        self.gwyfile._get_selection_nsel.return_value = None
-        returned_value = self.gwyfile.get_point_sel(self.gwyfile,
-                                                    self.channel_id)
-        self.assertIsNone(returned_value)
-
-    def test_args_of_get_selection_data_call(self):
-        """
-        Get points using _get_selection_data method
-        """
-
-        self.gwyfile._get_selection_nsel.return_value = self.nsel
-        expected_key = "/{:d}/select/point".format(self.channel_id)
-        expected_sel_func = lib.gwyfile_object_selectionpoint_get
-        self.gwyfile.get_point_sel(self.gwyfile, self.channel_id)
-        self.gwyfile._get_selection_data.assert_has_calls(
-            [call(expected_key, expected_sel_func, self.nsel)])
-
-    def test_returned_value(self):
-        """
-        get_point_sel method returns points returned by _get_selection_data
-        """
-
-        expected_return = self.gwyfile._get_selection_data.return_value
-        actual_return = self.gwyfile.get_point_sel(self.gwyfile,
-                                                   self.channel_id)
-        self.assertEqual(expected_return, actual_return)
-
-
-class Gwyfile_get_line_sel(unittest.TestCase):
-    """
-    Test get_line_sel method of Gwyfile class
-    """
-
-    def setUp(self):
-        self.gwyfile = Mock(spec=Gwyfile)
-        self.gwyfile.get_line_sel = Gwyfile.get_line_sel
-        self.gwyfile._get_selection_nsel = MagicMock(autospec=True)
-        self.gwyfile._get_selection_data = MagicMock(autospec=True)
-        self.channel_id = 1
-        self.nsel = 2
-        self.points = [(0., 0.), (1., 1.), (2., 2.), (3., 3.)]
-        self.lines = [((0., 0.), (1., 1.)), ((2., 2.), (3., 3.))]
-
-    def test_args_of_get_selection_nsel_call(self):
-        """
-        Get number of line selections using _get_selection_nsel method
-        """
-
-        expected_key = "/{:d}/select/line".format(self.channel_id)
-        expected_sel_func = lib.gwyfile_object_selectionline_get
-        self.gwyfile.get_line_sel(self.gwyfile, self.channel_id)
-        self.gwyfile._get_selection_nsel.assert_has_calls(
-            [call(expected_key, expected_sel_func)])
-
-    def test_return_None_if_nsel_equals_zero(self):
-        """
-        Return None if number of line selections is zero
-        """
-
-        self.gwyfile._get_selection_nsel.return_value = None
-        returned_value = self.gwyfile.get_line_sel(self.gwyfile,
-                                                   self.channel_id)
-        self.assertIsNone(returned_value)
-
-    def test_args_of_get_selection_data_call(self):
-        """
-        Get points using _get_selection_data method
-        """
-
-        self.gwyfile._get_selection_nsel.return_value = self.nsel
-        npoints = 2 * self.nsel  # there are 2 points in one line selection
-        expected_key = "/{:d}/select/line".format(self.channel_id)
-        expected_sel_func = lib.gwyfile_object_selectionline_get
-        self.gwyfile.get_line_sel(self.gwyfile, self.channel_id)
-        self.gwyfile._get_selection_data.assert_has_calls(
-            [call(expected_key, expected_sel_func, npoints)])
-
-    def test_returned_value(self):
-        """
-        Return points combined in pairs
-        """
-
-        self.gwyfile._get_selection_data.return_value = self.points
-        expected_return = self.lines
-        actual_return = self.gwyfile.get_line_sel(self.gwyfile,
-                                                  self.channel_id)
-        self.assertEqual(expected_return, actual_return)
-
-
-class Gwyfile_get_rectangle_sel(unittest.TestCase):
-    """
-    Test get_rectangle_sel method of Gwyfile class
-    """
-
-    def setUp(self):
-        self.gwyfile = Mock(spec=Gwyfile)
-        self.gwyfile.get_rectangle_sel = Gwyfile.get_rectangle_sel
-        self.gwyfile._get_selection_nsel = MagicMock(autospec=True)
-        self.gwyfile._get_selection_data = MagicMock(autospec=True)
-        self.channel_id = 1
-        self.nsel = 2
-        self.points = [(0., 0.), (1., 1.), (2., 2.), (3., 3.)]
-        self.rectangles = [((0., 0.), (1., 1.)), ((2., 2.), (3., 3.))]
-
-    def test_args_of_get_selection_nsel_call(self):
-        """
-        Get number of rectangle selections using _get_selection_nsel method
-        """
-
-        expected_key = "/{:d}/select/rectangle".format(self.channel_id)
-        expected_sel_func = lib.gwyfile_object_selectionrectangle_get
-        self.gwyfile.get_rectangle_sel(self.gwyfile, self.channel_id)
-        self.gwyfile._get_selection_nsel.assert_has_calls(
-            [call(expected_key, expected_sel_func)])
-
-    def test_return_None_if_nsel_equals_zero(self):
-        """
-        Return None if number of line selections is zero
-        """
-
-        self.gwyfile._get_selection_nsel.return_value = None
-        returned_value = self.gwyfile.get_rectangle_sel(self.gwyfile,
-                                                        self.channel_id)
-        self.assertIsNone(returned_value)
-
-    def test_args_of_get_selection_data_call(self):
-        """
-        Get points of selections using _get_selection_data method
-        """
-
-        self.gwyfile._get_selection_nsel.return_value = self.nsel
-        npoints = 2 * self.nsel  # there are 2 pts in one rectangle selection
-        expected_key = "/{:d}/select/rectangle".format(self.channel_id)
-        expected_sel_func = lib.gwyfile_object_selectionrectangle_get
-        self.gwyfile.get_rectangle_sel(self.gwyfile, self.channel_id)
-        self.gwyfile._get_selection_data.assert_has_calls(
-            [call(expected_key, expected_sel_func, npoints)])
-
-    def test_returned_value(self):
-        """
-        Return points of selections combined in pairs
-        """
-
-        self.gwyfile._get_selection_data.return_value = self.points
-        expected_return = self.rectangles
-        actual_return = self.gwyfile.get_rectangle_sel(self.gwyfile,
-                                                       self.channel_id)
-        self.assertEqual(expected_return, actual_return)
-
-
-class Gwyfile_get_ellipse_sel(unittest.TestCase):
-    """
-    Test get_ellipse_sel method of Gwyfile class
-    """
-
-    def setUp(self):
-        self.gwyfile = Mock(spec=Gwyfile)
-        self.gwyfile.get_ellipse_sel = Gwyfile.get_ellipse_sel
-        self.gwyfile._get_selection_nsel = MagicMock(autospec=True)
-        self.gwyfile._get_selection_data = MagicMock(autospec=True)
-        self.channel_id = 1
-        self.nsel = 2
-        self.points = [(0., 0.), (1., 1.), (2., 2.), (3., 3.)]
-        self.ellipses = [((0., 0.), (1., 1.)), ((2., 2.), (3., 3.))]
-
-    def test_args_of_get_selection_nsel_call(self):
-        """
-        Get number of ellipse selections using _get_selection_nsel method
-        """
-
-        expected_key = "/{:d}/select/ellipse".format(self.channel_id)
-        expected_sel_func = lib.gwyfile_object_selectionellipse_get
-        self.gwyfile.get_ellipse_sel(self.gwyfile, self.channel_id)
-        self.gwyfile._get_selection_nsel.assert_has_calls(
-            [call(expected_key, expected_sel_func)])
-
-    def test_return_None_if_nsel_equals_zero(self):
-        """
-        Return None if number of line selections is zero
-        """
-
-        self.gwyfile._get_selection_nsel.return_value = None
-        returned_value = self.gwyfile.get_ellipse_sel(self.gwyfile,
-                                                      self.channel_id)
-        self.assertIsNone(returned_value)
-
-    def test_args_of_get_selection_data_call(self):
-        """
-        Get points of selections using _get_selection_data method
-        """
-
-        self.gwyfile._get_selection_nsel.return_value = self.nsel
-        npoints = 2 * self.nsel  # there are 2 points in one ellipse selection
-        expected_key = "/{:d}/select/ellipse".format(self.channel_id)
-        expected_sel_func = lib.gwyfile_object_selectionellipse_get
-        self.gwyfile.get_ellipse_sel(self.gwyfile, self.channel_id)
-        self.gwyfile._get_selection_data.assert_has_calls(
-            [call(expected_key, expected_sel_func, npoints)])
-
-    def test_returned_value(self):
-        """
-        Return points of selections combined in pairs
-        """
-
-        self.gwyfile._get_selection_data.return_value = self.points
-        expected_return = self.ellipses
-        actual_return = self.gwyfile.get_ellipse_sel(self.gwyfile,
-                                                     self.channel_id)
-        self.assertEqual(expected_return, actual_return)
 
 
 class Gwyfile_get_graphmodel_metadata(unittest.TestCase):
@@ -2885,6 +2441,92 @@ class Gwyfile_get_graphcurvemodel_data(unittest.TestCase):
         arg_dict['ydata'][0] = ffi.cast("double*", self.ydata.ctypes.data)
 
         # C func returns true if the graphcurvemodel object loock acceptable
+        truep = ffi.new("bool*", True)
+        return truep[0]
+
+
+class GwyPointSelection_init(unittest.TestCase):
+    """Test constructor of GwyPointSelections class
+    """
+
+    def setUp(self):
+        self.gwysel = Mock()
+        self.nsel = 3
+        self.data = [(1., 1.), (2., 2.), (3., 3.)]
+        self.cdata = ffi.new("double[]", [1., 1., 2., 2., 3., 3.])
+        patcher_lib = (
+            patch('gwydb.gwy.gwyfile.GwyPointSelections._get_sel_func',
+                  autospec=True))
+        self.addCleanup(patcher_lib.stop)
+        self.get_sel_func = patcher_lib.start()
+
+    def test_raise_GwyfileErrorCMsg_if_get_sel_func_returns_False(self):
+        """Raise GwyFileErrorCMsg if get_sel_func returns False
+        """
+
+        falsep = ffi.new("bool*", False)
+        self.get_sel_func.return_value = falsep[0]
+        self.assertRaises(GwyfileErrorCMsg,
+                          GwyPointSelections,
+                          self.gwysel)
+
+    def test_pos_arguments(self):
+        """Test positional arguments in gwyfile_object_selectionpoint_get
+
+        First argument must be GwySelectionPoint libgwyfile object
+        Second argument must be GwyfileError** libgwyfile object
+        Last argument must be NULL
+        """
+
+        self.get_sel_func.side_effect = self._test_pos_args_side_effect
+        GwyPointSelections(self.gwysel)
+
+    def _test_pos_args_side_effect(self, *args):
+        # first arg is GwyfileSelectionPoint object
+        self.assertEqual(args[0], self.gwysel)
+
+        # second arg is GwyfileError**
+        self.assertEqual(ffi.typeof(args[1]),
+                         ffi.typeof(ffi.new("GwyfileError**")))
+
+        # last arg in Null
+        self.assertEqual(args[-1], ffi.NULL)
+
+        # Function should return True if object looks acceptable
+        truep = ffi.new("bool*", True)
+        return truep[0]
+
+    def test_data_property(self):
+        """Test data property if number of selections is not zero
+        """
+        self.get_sel_func.side_effect = self._test_data_side_effect
+        point_sel = GwyPointSelections(self.gwysel)
+        self.assertListEqual(self.data, point_sel.data)
+
+    def test_data_property_if_nsel_is_zero(self):
+        """data property should be None if number of selections is zero
+        """
+        self.nsel = 0
+        self.get_sel_func.side_effect = self._test_data_side_effect
+        point_sel = GwyPointSelections(self.gwysel)
+        self.assertIsNone(point_sel.data)
+
+    def _test_data_side_effect(self, *args):
+        """ Write self.nsel in 'nsel' field, self.cdata in 'data' field
+        and return True
+        """
+
+        # combine fields names and fields pointers in one dictionary
+        arg_keys = [ffi.string(key).decode('utf-8') for key in args[2:-1:2]]
+        arg_pointers = [pointer for pointer in args[3:-1:2]]
+        arg_dict = dict(zip(arg_keys, arg_pointers))
+
+        if 'nsel' in arg_dict:
+            arg_dict['nsel'][0] = self.nsel
+        if 'data' in arg_dict:
+            arg_dict['data'][0] = self.cdata
+
+        # Function should return True if object looks acceptable
         truep = ffi.new("bool*", True)
         return truep[0]
 
