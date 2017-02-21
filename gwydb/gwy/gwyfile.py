@@ -1,7 +1,9 @@
 """
 Wrapper for GwyfileObject from Libgwyfile C library
 """
+
 import os.path
+from abc import ABC, abstractmethod
 
 import numpy as np
 
@@ -1033,23 +1035,49 @@ class Gwyfile():
             return data_array
 
 
-class GwySelection():
+class GwySelection(ABC):
     """Base class for GwySelection objects
+
+    Properties:
+        data: python list containing selection data
+              (list of points (x, y) for point and pointer selections,
+               list of pairs of points ((x1, y1), (x2, y2)) for line,
+               rectangle and ellipse selections
     """
 
     def __init__(self, gwysel, get_sel_func, npoints):
+        """
+        Args:
+            gwysel (GwyfileObject):
+                GwySelection object
+                e.g. GwySelectionPoint object for point selection
+            get_sel_func:
+                Libgwyfile C function to get this selection
+            npoints (int):
+                number of points in one selection (e.g. 1 for point)
+        """
+
         self._gwysel = gwysel
         self._get_sel_func = get_sel_func
         self._npoints = npoints
         self._nsel = self._get_selection_nsel()
-        self._points = self._get_selection_points()
+
+    @property
+    @abstractmethod
+    def data(self):
+        """This property contains selection points grouped in list
+
+        Method must be redefined in a subclass
+        """
+
+        return self._get_selection_points()
 
     def _get_selection_nsel(self):
         """Get number of selections from the object
 
         Returns:
             nsel (int):
-                number of selections of this type for the object
+                number of selections of this type in the object
         """
 
         error = ffi.new("GwyfileError*")
@@ -1100,9 +1128,22 @@ class GwySelection():
 
         return points
 
+    @staticmethod
+    def _combine_points_in_pair(points):
+        """ Combine list of points in list of pairs
+            [(x1, y1), (x2, y2), ...] -> [((x1, y1), (x2, y2))...]
+        """
+
+        pairs = list(zip(tuple(points[::2]),
+                         tuple(points[1::2])))
+        return pairs
+
 
 class GwyPointSelections(GwySelection):
-    """Class for point and pointer selections
+    """Class for point selections
+
+    Properties:
+        data: list of points [(x1, y1), ...]
     """
 
     _npoints = 1  # number of points in one point selection
@@ -1112,11 +1153,38 @@ class GwyPointSelections(GwySelection):
         super().__init__(gwysel=gwysel,
                          get_sel_func=GwyPointSelections._get_sel_func,
                          npoints=GwyPointSelections._npoints)
-        self.points = self._points
+
+    @property
+    def data(self):
+        return super().data
+
+
+class GwyPointerSelections(GwySelection):
+    """Class for pointer selections
+
+    Properties:
+        data: list of points [(x1, y1), ...]
+    """
+
+    _npoints = 1  # number of points in one pointer selection
+    _get_sel_func = lib.gwyfile_object_selectionpoint_get
+
+    def __init__(self, gwysel):
+        super().__init__(gwysel=gwysel,
+                         get_sel_func=GwyPointSelections._get_sel_func,
+                         npoints=GwyPointSelections._npoints)
+
+    @property
+    def data(self):
+        return super().data
 
 
 class GwyLineSelections(GwySelection):
     """Class for line selections
+
+    Properties:
+        data: list of point pairs [((x1, y1), (x2, y2))...]
+              (two points for one line selection)
     """
 
     _npoints = 2  # number of points in one line selection
@@ -1127,16 +1195,18 @@ class GwyLineSelections(GwySelection):
                          get_sel_func=GwyLineSelections._get_sel_func,
                          npoints=GwyLineSelections._npoints)
 
-        # combine points in pairs
-        points = self._points
-        lines = list(zip(tuple(points[::2]),    # first point of each line
-                         tuple(points[1::2])))  # last point of each line
-
-        self.lines = lines
+    @property
+    def data(self):
+        points = super().data
+        return super()._combine_points_in_pair(points)
 
 
 class GwyRectangleSelections(GwySelection):
     """Class for rectange selections
+
+    Properties:
+        data: list of point pairs [((x1, y1), (x2, y2))...]
+              (two points for one rectangle selection)
     """
 
     _npoints = 2  # number of points in one rectangle selection
@@ -1147,15 +1217,18 @@ class GwyRectangleSelections(GwySelection):
                          get_sel_func=GwyRectangleSelections._get_sel_func,
                          npoints=GwyRectangleSelections._npoints)
 
-        # combine points in pairs
-        points = self._points
-        rect = list(zip(tuple(points[::2]),    # first point of each rectangle
-                        tuple(points[1::2])))  # second point of each rectangle
-        self.rectangles = rect
+    @property
+    def data(self):
+        points = super().data
+        return super()._combine_points_in_pair(points)
 
 
 class GwyEllipseSelections(GwySelection):
     """Class for ellipse selections
+
+    Properties:
+        data: list of point pairs [((x1, y1), (x2, y2))...]
+              (two points for one ellipse selection)
     """
 
     _npoints = 2  # number of points in one ellipse selection
@@ -1166,11 +1239,10 @@ class GwyEllipseSelections(GwySelection):
                          get_sel_func=GwyEllipseSelections._get_sel_func,
                          npoints=GwyEllipseSelections._npoints)
 
-        # combine points in pairs (two points for each ellipse)
-        points = self._points
-        ellipses = list(zip(tuple(points[::2]),    # first point of each ell.
-                            tuple(points[1::2])))  # second point of each ell.
-        self.ellipses = ellipses
+    @property
+    def data(self):
+        points = super().data
+        return super()._combine_points_in_pair(points)
 
 
 def read_gwyfile(filename):
