@@ -1138,6 +1138,11 @@ class GwySelection(ABC):
                          tuple(points[1::2])))
         return pairs
 
+    def __repr__(self):
+        return "<{}. data: {}>".format(
+            self.__class__.__name__,
+            self.data.__repr__())
+
 
 class GwyPointSelections(GwySelection):
     """Class for point selections
