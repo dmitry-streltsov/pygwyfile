@@ -50,6 +50,7 @@ class GwyDatafield():
         for dictionary in args:
             for key in dictionary:
                 setattr(self, key, dictionary[key])
+
         # initialize via keyword arguments
         for key in kwargs:
             setattr(self, key, kwargs[key])
