@@ -30,6 +30,10 @@ cover/
 .dir-locals.el
 .projectile
 
+# ctags
+TAGS
+.ctags
+
 # build
 *.egg-info/
 build/
