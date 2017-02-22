@@ -9,6 +9,7 @@ from gwydb.gwy.gwyfile import GwySelection
 from gwydb.gwy.gwyfile import GwyPointSelections, GwyPointerSelections
 from gwydb.gwy.gwyfile import GwyLineSelections, GwyRectangleSelections
 from gwydb.gwy.gwyfile import GwyEllipseSelections
+from gwydb.gwy.gwyfile import GwyDataField
 from gwydb.gwy.gwyfile import ffi, lib
 from gwydb.gwy.gwyfile import read_gwyfile
 
@@ -295,180 +296,6 @@ class Gwyfile__gwyfile_get_object_TestCase(unittest.TestCase):
         returned_object = self.gwyfile._gwyfile_get_object(self.gwyfile,
                                                            self.test_key)
         self.assertIs(mock_object, returned_object)
-
-
-class Gwyfile__gwydf_get_metadata(unittest.TestCase):
-    """
-    Test __gwydf_get_metadata method in Gwyfile class
-    """
-
-    def setUp(self):
-        self.gwyfile = Mock(spec=Gwyfile)
-        self.gwyfile._gwydf_get_metadata = Gwyfile._gwydf_get_metadata
-
-        patcher_lib = patch('gwydb.gwy.gwyfile.lib', autospec=True)
-        self.addCleanup(patcher_lib.stop)
-        self.mock_lib = patcher_lib.start()
-
-        self.test_key = '/0/data'
-        self.falsep = ffi.new("bool*", False)
-        self.truep = ffi.new("bool*", True)
-        self.errorp = ffi.new("GwyfileError**")
-        self.error_msg = "Test error message"
-        self.metadata_dict = {'xres': ffi.typeof(ffi.new("int32_t*")),
-                              'yres': ffi.typeof(ffi.new("int32_t*")),
-                              'xreal': ffi.typeof(ffi.new("double*")),
-                              'yreal': ffi.typeof(ffi.new("double*")),
-                              'xoff': ffi.typeof(ffi.new("double*")),
-                              'yoff': ffi.typeof(ffi.new("double*")),
-                              'si_unit_xy': ffi.typeof(ffi.new("char**")),
-                              'si_unit_z': ffi.typeof(ffi.new("char**"))}
-
-    def test_raise_exception_without_msg_if_df_loock_unacceptable(self):
-        """Raise GywfileError exception without message
-
-        Raise GwyfileError exception without error message
-        if gwyfile_object_datafield_get returns False
-        and GwyfileError.message is NULL
-
-        """
-
-        self.mock_lib.gwyfile_object_datafield_get.return_value = self.falsep[
-            0]
-        self.assertRaises(GwyfileError,
-                          self.gwyfile._gwydf_get_metadata,
-                          self.gwyfile,
-                          self.test_key)
-
-    def test_raise_exception_with_msg_if_df_looks_unacceptable(self):
-        """Raise GwyfileError exception with error message
-
-        Raise GwyfileError exception with error message if
-        gwyfile_object_datafield_get returns False and
-        GwyfileError.message is not NULL
-        """
-
-        gwyfile_object_df_get = self.mock_lib.gwyfile_object_datafield_get
-        gwyfile_object_df_get.side_effect = self._side_effect_with_msg
-        self.assertRaisesRegex(GwyfileErrorCMsg,
-                               self.error_msg,
-                               self.gwyfile._gwydf_get_metadata,
-                               self.gwyfile,
-                               self.test_key)
-
-    def _side_effect_with_msg(self, *args):
-        """
-        gwyfile_object_datafield_get returns False with error_msg
-        """
-
-        errorp = args[1]
-        c_error_msg = ffi.new("char[]", self.error_msg.encode('utf-8'))
-        errorp[0].message = c_error_msg
-        return self.falsep[0]
-
-    def test_libgwyfile_function_args(self):
-        """
-        Test args of gwyfile_object_datafield_get C function
-        """
-
-        gwyfile_object_df_get = self.mock_lib.gwyfile_object_datafield_get
-        gwyfile_object_df_get.side_effect = self._side_effect_check_args
-        self.df = self.gwyfile._gwyfile_get_object.return_value
-        self.gwyfile._gwydf_get_metadata(self.gwyfile, self.test_key)
-        self.gwyfile._gwyfile_get_object.assert_has_calls(
-            [call(self.test_key)])
-
-    def _side_effect_check_args(self, *args):
-        """
-        Check args passing to gwyfile_object_datafield_get C function
-        """
-
-        # first arg is GwyDatafield returned by _gwyfile_get_object
-        self.assertEqual(args[0], self.df)
-
-        # second arg is GwyfileError**
-        assert ffi.typeof(args[1]) == ffi.typeof(self.errorp)
-
-        # last arg in Null
-        self.assertEqual(args[-1], ffi.NULL)
-
-        # create dict from names and types of pointers in args
-        arg_keys = [ffi.string(key).decode('utf-8') for key in args[2:-1:2]]
-        arg_pointer_types = [ffi.typeof(pointer) for pointer in args[3:-1:2]]
-        arg_dict = dict(zip(arg_keys, arg_pointer_types))
-
-        self.assertDictEqual(arg_dict, self.metadata_dict)
-
-        return self.truep[0]
-
-    def test_returned_metadata_dict(self):
-        """
-        Returns dictionary with metadata
-        """
-
-        self.test_metadata_dict = {'xres': 256,
-                                   'yres': 256,
-                                   'xreal': 1e-6,
-                                   'yreal': 1e-6,
-                                   'xoff': 0,
-                                   'yoff': 0,
-                                   'si_unit_xy': 'm',
-                                   'si_unit_z': 'A'}
-        gwyfile_object_df_get = self.mock_lib.gwyfile_object_datafield_get
-        gwyfile_object_df_get.side_effect = self._side_effect_return_metadata
-
-        metadata = self.gwyfile._gwydf_get_metadata(self.gwyfile,
-                                                    self.test_key)
-        self.assertDictEqual(self.test_metadata_dict, metadata)
-
-    def _side_effect_return_metadata(self, *args):
-
-        arg_keys = [ffi.string(key).decode('utf-8') for key in args[2:-1:2]]
-        arg_pointers = [pointer for pointer in args[3:-1:2]]
-        arg_dict = dict(zip(arg_keys, arg_pointers))
-
-        for key in arg_dict:
-            if key not in ['si_unit_xy', 'si_unit_z']:
-                arg_dict[key][0] = self.test_metadata_dict[key]
-            else:
-                metadata_value = self.test_metadata_dict[key].encode('utf-8')
-                metadata_c_str = ffi.new("char[]", metadata_value)
-                arg_dict[key][0] = metadata_c_str
-        return self.truep[0]
-
-    def test_returned_min_metadata_dict(self):
-        """
-        Every GwyDataField must contain xres and yres
-        """
-
-        self.test_metadata_dict = {'xres': 256, 'yres': 256}
-        gwyfile_obj_df_get = self.mock_lib.gwyfile_object_datafield_get
-        gwyfile_obj_df_get.side_effect = self._side_effect_return_min_metadata
-
-        metadata = self.gwyfile._gwydf_get_metadata(self.gwyfile,
-                                                    self.test_key)
-
-        expected_metadata = {'xres': self.test_metadata_dict['xres'],
-                             'yres': self.test_metadata_dict['yres'],
-                             'xreal': 0,
-                             'yreal': 0,
-                             'xoff': 0,
-                             'yoff': 0,
-                             'si_unit_xy': '',
-                             'si_unit_z': ''}
-
-        self.assertDictEqual(metadata, expected_metadata)
-
-    def _side_effect_return_min_metadata(self, *args):
-
-        arg_keys = [ffi.string(key).decode('utf-8') for key in args[2:-1:2]]
-        arg_pointers = [pointer for pointer in args[3:-1:2]]
-        arg_dict = dict(zip(arg_keys, arg_pointers))
-
-        arg_dict['xres'][0] = self.test_metadata_dict['xres']
-        arg_dict['yres'][0] = self.test_metadata_dict['yres']
-
-        return self.truep[0]
 
 
 class Gwyfile__gwydf_get_data(unittest.TestCase):
@@ -2818,6 +2645,112 @@ class GwyEllipseSelections_data(unittest.TestCase):
         # Function should return True if object looks acceptable
         truep = ffi.new("bool*", True)
         return truep[0]
+
+
+class GwyDataField_get_meta(unittest.TestCase):
+    """Test _get_meta method of GwyDataField
+    """
+
+    def setUp(self):
+        self.gwydf = Mock()
+        self.mock_gwydf = Mock(spec=GwyDataField)
+        self.mock_gwydf._get_meta = GwyDataField._get_meta
+
+        patcher_lib = patch('gwydb.gwy.gwyfile.lib',
+                            autospec=True)
+        self.addCleanup(patcher_lib.stop)
+        self.mock_lib = patcher_lib.start()
+
+        self.falsep = ffi.new("bool*", False)
+        self.truep = ffi.new("bool*", True)
+        self.errorp = ffi.new("GwyfileError**")
+        self.error_msg = "Test error message"
+        self.metadata_dict = {'xres': ffi.typeof(ffi.new("int32_t*")),
+                              'yres': ffi.typeof(ffi.new("int32_t*")),
+                              'xreal': ffi.typeof(ffi.new("double*")),
+                              'yreal': ffi.typeof(ffi.new("double*")),
+                              'xoff': ffi.typeof(ffi.new("double*")),
+                              'yoff': ffi.typeof(ffi.new("double*")),
+                              'si_unit_xy': ffi.typeof(ffi.new("char**")),
+                              'si_unit_z': ffi.typeof(ffi.new("char**"))}
+
+    def test_raise_exception_if_df_loock_unacceptable(self):
+        """Raise GywfileErrorCMsg if gwyfile_object_datafield_get returns False
+        """
+
+        self.mock_lib.gwyfile_object_datafield_get.return_value = (
+            self.falsep[0])
+        self.assertRaises(GwyfileErrorCMsg,
+                          self.mock_gwydf._get_meta,
+                          self.mock_gwydf,
+                          self.gwydf)
+
+    def test_libgwyfile_function_args(self):
+        """
+        Test args of gwyfile_object_datafield_get C function
+        """
+
+        self.mock_lib.gwyfile_object_datafield_get.side_effect = (
+            self._side_effect_check_args)
+        self.mock_gwydf._get_meta(self.mock_gwydf, self.gwydf)
+
+    def _side_effect_check_args(self, *args):
+        """
+        Check args passing to gwyfile_object_datafield_get C function
+        """
+
+        # first arg is GwyDatafield returned by _gwyfile_get_object
+        self.assertEqual(args[0], self.gwydf)
+
+        # second arg is GwyfileError**
+        assert ffi.typeof(args[1]) == ffi.typeof(self.errorp)
+
+        # last arg in NULL
+        self.assertEqual(args[-1], ffi.NULL)
+
+        # create dict from names and types of pointers in args
+        arg_keys = [ffi.string(key).decode('utf-8') for key in args[2:-1:2]]
+        arg_pointer_types = [ffi.typeof(pointer) for pointer in args[3:-1:2]]
+        arg_dict = dict(zip(arg_keys, arg_pointer_types))
+
+        self.assertDictEqual(arg_dict, self.metadata_dict)
+
+        return self.truep[0]
+
+    def test_returned_metadata_dict(self):
+        """
+        Returns dictionary with metadata
+        """
+
+        self.test_metadata_dict = {'xres': 256,
+                                   'yres': 256,
+                                   'xreal': 1e-6,
+                                   'yreal': 1e-6,
+                                   'xoff': 0,
+                                   'yoff': 0,
+                                   'si_unit_xy': 'm',
+                                   'si_unit_z': 'A'}
+        self.mock_lib.gwyfile_object_datafield_get.side_effect = (
+            self._side_effect_return_metadata)
+
+        meta = self.mock_gwydf._get_meta(self.mock_gwydf,
+                                         self.gwydf)
+        self.assertDictEqual(self.test_metadata_dict, meta)
+
+    def _side_effect_return_metadata(self, *args):
+
+        arg_keys = [ffi.string(key).decode('utf-8') for key in args[2:-1:2]]
+        arg_pointers = [pointer for pointer in args[3:-1:2]]
+        arg_dict = dict(zip(arg_keys, arg_pointers))
+
+        for key in arg_dict:
+            if key not in ['si_unit_xy', 'si_unit_z']:
+                arg_dict[key][0] = self.test_metadata_dict[key]
+            else:
+                metadata_value = self.test_metadata_dict[key].encode('utf-8')
+                metadata_c_str = ffi.new("char[]", metadata_value)
+                arg_dict[key][0] = metadata_c_str
+        return self.truep[0]
 
 
 if __name__ == '__main__':
