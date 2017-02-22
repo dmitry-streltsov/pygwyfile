@@ -921,7 +921,7 @@ class GwySelection(ABC):
         return pairs
 
     def __repr__(self):
-        return "<{}. data: {}>".format(
+        return "<{} instance.\n data: {}>".format(
             self.__class__.__name__,
             self.data.__repr__())
 
@@ -1039,6 +1039,157 @@ class GwyEllipseSelections(GwySelection):
             return None
         else:
             return super()._combine_points_in_pair(points)
+
+
+class GwyDataField():
+    """Class for GwyDataField representation
+
+    Properties:
+        data (2D numpy array, float64):
+            data from the datafield
+
+        meta (python dictionary):
+            datafield metadata
+            Keys of the metadata dictionary:
+                    'xres' (int):    Horizontal dimension in pixels
+                    'yres' (int):    Vertical dimension in pixels
+                    'xreal' (float): Horizontal size in physical units
+                    'yreal' (float): Vertical size in physical units
+                    'xoff' (double): Horizontal offset of the top-left corner
+                                     in physical units.
+                    'yoff' (double): Vertical offset of the top-left corner
+                                     in physical units.
+                    'si_unit_xy' (str): Physical units of lateral dimensions,
+                                        base SI units, e.g. "m"
+                    'si_unit_z' (str): Physical unit of vertical dimension,
+                                       base SI unit, e.g. "m"
+    """
+
+    def __init__(self, gwydf):
+        """
+        Args:
+            gwydf (GwyDataField*):
+                GwyDataField object from Libgwyfile
+        """
+        self._gwydf = gwydf
+        self._meta = self._get_meta(gwydf)
+        xres = self._meta['xres']
+        yres = self._meta['yres']
+        self._data = self._get_data(gwydf, xres, yres)
+
+    @property
+    def meta(self):
+        return self._meta
+
+    @property
+    def data(self):
+        return self._data
+
+    def _get_meta(self, gwydf):
+        """Get metadata from  the datafield
+
+        Args:
+            gwydf (GwyDataField*):
+                GwyDataField object from Libgwyfile
+
+        Returns:
+            meta: Python dictionary with the data field metadata
+
+                Keys of the metadata dictionary:
+                    'xres' (int):    Horizontal dimension in pixels
+                    'yres' (int):    Vertical dimension in pixels
+                    'xreal' (float): Horizontal size in physical units
+                    'yreal' (float): Vertical size in physical units
+                    'xoff' (double): Horizontal offset of the top-left corner
+                                     in physical units.
+                    'yoff' (double): Vertical offset of the top-left corner
+                                     in physical units.
+                    'si_unit_xy' (str): Physical units of lateral dimensions,
+                                        base SI units, e.g. "m"
+                    'si_unit_z' (str): Physical unit of vertical dimension,
+                                       base SI unit, e.g. "m"
+
+        """
+
+        error = ffi.new("GwyfileError*")
+        errorp = ffi.new("GwyfileError**", error)
+        xresp = ffi.new("int32_t*")
+        yresp = ffi.new("int32_t*")
+        xrealp = ffi.new("double*")
+        yrealp = ffi.new("double*")
+        xoffp = ffi.new("double*")
+        yoffp = ffi.new("double*")
+        xyunitp = ffi.new("char**")
+        zunitp = ffi.new("char**")
+
+        meta = {}
+
+        if lib.gwyfile_object_datafield_get(
+                gwydf, errorp,
+                ffi.new("char[]", b'xres'), xresp,
+                ffi.new("char[]", b'yres'), yresp,
+                ffi.new("char[]", b'xreal'), xrealp,
+                ffi.new("char[]", b'yreal'), yrealp,
+                ffi.new("char[]", b'xoff'), xoffp,
+                ffi.new("char[]", b'yoff'), yoffp,
+                ffi.new("char[]", b'si_unit_xy'), xyunitp,
+                ffi.new("char[]", b'si_unit_z'), zunitp,
+                ffi.NULL):
+            meta['xres'] = xresp[0]
+            meta['yres'] = yresp[0]
+            meta['xreal'] = xrealp[0]
+            meta['yreal'] = yrealp[0]
+            meta['xoff'] = xoffp[0]
+            meta['yoff'] = yoffp[0]
+
+            if xyunitp[0]:
+                meta['si_unit_xy'] = ffi.string(xyunitp[0]).decode('utf-8')
+            else:
+                meta['si_unit_xy'] = ''
+            if zunitp[0]:
+                meta['si_unit_z'] = ffi.string(zunitp[0]).decode('utf-8')
+            else:
+                meta['si_unit_z'] = ''
+
+            return meta
+        else:
+            raise GwyfileErrorCMsg(errorp[0].message)
+
+    def _get_data(self, gwydf, xres, yres):
+        """Get data array from the GwyDataField
+
+        Args:
+            gwydf (GwyDataField*):
+                GwyDataField object from Libgwyfile
+            xres (int): Horizontal dimension of the data field in pixels
+            yres (int): Vertical dimension of the data field in pixels
+
+        Returns:
+            data (2D numpy array, float64): data from the data field
+
+        """
+
+        error = ffi.new("GwyfileError*")
+        errorp = ffi.new("GwyfileError**", error)
+
+        data = ffi.new("double[]", xres * yres)
+        datap = ffi.new("double**", data)
+
+        if lib.gwyfile_object_datafield_get(gwydf, errorp,
+                                            ffi.new("char[]", b'data'), datap,
+                                            ffi.NULL):
+            data_buf = ffi.buffer(datap[0], xres * yres * ffi.sizeof(data))
+            data_array = np.frombuffer(data_buf, dtype=np.float64,
+                                       count=xres * yres).reshape((xres, yres))
+            return data_array
+        else:
+            raise GwyfileErrorCMsg(errorp[0].message)
+
+    def __repr__(self):
+        return "<{} instance.\n meta: {},\n data: {}>".format(
+            self.__class__.__name__,
+            self.meta.__repr__(),
+            self.data.__repr__())
 
 
 def read_gwyfile(filename):
