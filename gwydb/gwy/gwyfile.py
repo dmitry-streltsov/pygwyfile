@@ -830,7 +830,7 @@ class GwySelection(ABC):
     def __init__(self, gwysel, get_sel_func, npoints):
         """
         Args:
-            gwysel (GwyfileObject):
+            gwysel (GwyfileObject*):
                 GwySelection object
                 e.g. GwySelectionPoint object for point selection
             get_sel_func:
@@ -958,8 +958,8 @@ class GwyPointerSelections(GwySelection):
 
     def __init__(self, gwysel):
         super().__init__(gwysel=gwysel,
-                         get_sel_func=GwyPointSelections._get_sel_func,
-                         npoints=GwyPointSelections._npoints)
+                         get_sel_func=GwyPointerSelections._get_sel_func,
+                         npoints=GwyPointerSelections._npoints)
 
     @property
     def data(self):
@@ -985,7 +985,10 @@ class GwyLineSelections(GwySelection):
     @property
     def data(self):
         points = super().data
-        return super()._combine_points_in_pair(points)
+        if points is None:
+            return None
+        else:
+            return super()._combine_points_in_pair(points)
 
 
 class GwyRectangleSelections(GwySelection):
@@ -1007,7 +1010,10 @@ class GwyRectangleSelections(GwySelection):
     @property
     def data(self):
         points = super().data
-        return super()._combine_points_in_pair(points)
+        if points is None:
+            return None
+        else:
+            return super()._combine_points_in_pair(points)
 
 
 class GwyEllipseSelections(GwySelection):
@@ -1029,7 +1035,10 @@ class GwyEllipseSelections(GwySelection):
     @property
     def data(self):
         points = super().data
-        return super()._combine_points_in_pair(points)
+        if points is None:
+            return None
+        else:
+            return super()._combine_points_in_pair(points)
 
 
 def read_gwyfile(filename):
