@@ -773,7 +773,7 @@ class Gwyfile:
 
     def get_graphcurvemodel_data(self, curve, npoints):
         """
-        Get xdata from GwyGraphCurveModel object
+        Get data from GwyGraphCurveModel object
 
         Args:
             curve (GwyfileObject*):
@@ -859,7 +859,7 @@ class GwySelection(ABC):
     @staticmethod
     def _get_selection_nsel(gwysel, get_sel_func):
         """Get number of selections from the object
-        
+
         Args:
             gwysel (GwyfileObject*):
                 GwySelection object from Libgwyfile
@@ -1208,6 +1208,168 @@ class GwyDataField:
             self.__class__.__name__,
             self.meta.__repr__(),
             self.data.__repr__())
+
+
+class GwyGraphCurve:
+    """Class for GwyGraphCurveModel representation
+    """
+
+    def __init__(self, gwycurve):
+        self._meta = self._get_meta(gwycurve)
+        npoints = self._meta['ndata']
+        self._data = self._get_data(gwycurve, npoints)
+
+    @property
+    def meta(self):
+        return self._meta
+
+    @property
+    def data(self):
+        return self._data
+
+    @staticmethod
+    def _get_meta(gwycurve):
+        """
+        Get metadata from GwyGraphCurveModel object
+
+        Args:
+            curve (GwyfileObject*):
+                GwyGraphCurveModel object
+
+        Returns:
+            metadata (dict):
+                Python dictionary with keys:
+                    'ndata' (int): number of points in the curve
+                    'description' (string): curve label
+                    'type' (int): GwyGraphCurveType
+                    'point_type' (int): GwyGraphPointType
+                    'line_style' (int): GdkLineStyle
+                    'point_size' (int): Point size
+                    'line_size' (int):  Line width
+                    'color.red' (float): Red component from the interval [0, 1]
+                    'color.green' (float): Green component from the interval
+                                                                      [0, 1]
+                    'color.blue' (float): Blue component from the interval
+                                                                      [0, 1]
+        """
+        error = ffi.new("GwyfileError*")
+        errorp = ffi.new("GwyfileError**", error)
+        ndatap = ffi.new("int32_t*")
+        descriptionp = ffi.new("char**")
+        typep = ffi.new("int32_t*")
+        point_typep = ffi.new("int32_t*")
+        line_stylep = ffi.new("int32_t*")
+        point_sizep = ffi.new("int32_t*")
+        line_sizep = ffi.new("int32_t*")
+        color_redp = ffi.new("double*")
+        color_greenp = ffi.new("double*")
+        color_bluep = ffi.new("double*")
+
+        metadata = {}
+
+        if not lib.gwyfile_object_graphcurvemodel_get(gwycurve,
+                                                      errorp,
+                                                      ffi.new('char[]',
+                                                              b'ndata'),
+                                                      ndatap,
+                                                      ffi.new('char[]',
+                                                              b'description'),
+                                                      descriptionp,
+                                                      ffi.new('char[]',
+                                                              b'type'),
+                                                      typep,
+                                                      ffi.new('char[]',
+                                                              b'point_type'),
+                                                      point_typep,
+                                                      ffi.new('char[]',
+                                                              b'line_style'),
+                                                      line_stylep,
+                                                      ffi.new('char[]',
+                                                              b'point_size'),
+                                                      point_sizep,
+                                                      ffi.new('char[]',
+                                                              b'line_size'),
+                                                      line_sizep,
+                                                      ffi.new('char[]',
+                                                              b'color.red'),
+                                                      color_redp,
+                                                      ffi.new('char[]',
+                                                              b'color.green'),
+                                                      color_greenp,
+                                                      ffi.new('char[]',
+                                                              b'color.blue'),
+                                                      color_bluep,
+                                                      ffi.NULL):
+            raise GwyfileErrorCMsg(errorp[0].message)
+        else:
+            metadata['ndata'] = ndatap[0]
+
+            if descriptionp[0]:
+                description = ffi.string(descriptionp[0]).decode('utf-8')
+                metadata['description'] = description
+            else:
+                metadata['description'] = ''
+
+            metadata['type'] = typep[0]
+            metadata['point_type'] = point_typep[0]
+            metadata['line_style'] = line_stylep[0]
+            metadata['point_size'] = point_sizep[0]
+            metadata['line_size'] = line_sizep[0]
+            metadata['color.red'] = color_redp[0]
+            metadata['color.green'] = color_greenp[0]
+            metadata['color.blue'] = color_bluep[0]
+        return metadata
+
+    @staticmethod
+    def _get_data(gwycurve, npoints):
+        """
+        Get data from GwyGraphCurveModel object
+
+        Args:
+            curve (GwyfileObject*):
+                GwyGraphCurveModel object
+            npoints (int):
+                number of points in the curve
+
+        Returns:
+            data (np.float64 numpy array):
+                2D numpy array with shape (2, npoints)
+                with xdata (data[0]) and ydata (data[1])
+        """
+
+        error = ffi.new("GwyfileError*")
+        errorp = ffi.new("GwyfileError**", error)
+
+        xdata = ffi.new("double[]", npoints)
+        xdatap = ffi.new("double**", xdata)
+
+        ydata = ffi.new("double[]", npoints)
+        ydatap = ffi.new("double**", ydata)
+
+        if not lib.gwyfile_object_graphcurvemodel_get(gwycurve,
+                                                      errorp,
+                                                      ffi.new('char[]',
+                                                              b'xdata'),
+                                                      xdatap,
+                                                      ffi.new('char[]',
+                                                              b'ydata'),
+                                                      ydatap,
+                                                      ffi.NULL):
+            raise GwyfileErrorCMsg(errorp[0].message)
+        else:
+            xdata_buf = ffi.buffer(xdatap[0], npoints * ffi.sizeof(xdata))
+            xdata_array = np.frombuffer(xdata_buf, dtype=np.float64,
+                                        count=npoints)
+            ydata_buf = ffi.buffer(ydatap[0], npoints * ffi.sizeof(ydata))
+            ydata_array = np.frombuffer(ydata_buf, dtype=np.float64,
+                                        count=npoints)
+            data_array = np.vstack((xdata_array, ydata_array))
+            return data_array
+
+    def __repr__(self):
+        return "<{} instance. Description: {}>".format(
+            self.__class__.__name__,
+            self.meta['description'])
 
 
 def read_gwyfile(filename):
