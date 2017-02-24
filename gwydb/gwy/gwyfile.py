@@ -31,7 +31,7 @@ class GwyfileErrorCMsg(GwyfileError):
             super(GwyfileErrorCMsg, self).__init__()
 
 
-class Gwyfile():
+class Gwyfile:
     """Wrapper class for GwyfileObject from Libgwyfile C library
 
     Attributes:
@@ -1041,7 +1041,7 @@ class GwyEllipseSelections(GwySelection):
             return super()._combine_points_in_pair(points)
 
 
-class GwyDataField():
+class GwyDataField:
     """Class for GwyDataField representation
 
     Properties:
@@ -1071,7 +1071,6 @@ class GwyDataField():
             gwydf (GwyDataField*):
                 GwyDataField object from Libgwyfile
         """
-        self._gwydf = gwydf
         self._meta = self._get_meta(gwydf)
         xres = self._meta['xres']
         yres = self._meta['yres']
@@ -1085,7 +1084,8 @@ class GwyDataField():
     def data(self):
         return self._data
 
-    def _get_meta(self, gwydf):
+    @staticmethod
+    def _get_meta(gwydf):
         """Get metadata from  the datafield
 
         Args:
@@ -1155,7 +1155,8 @@ class GwyDataField():
         else:
             raise GwyfileErrorCMsg(errorp[0].message)
 
-    def _get_data(self, gwydf, xres, yres):
+    @staticmethod
+    def _get_data(gwydf, xres, yres):
         """Get data array from the GwyDataField
 
         Args:

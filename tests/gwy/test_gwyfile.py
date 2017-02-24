@@ -2647,12 +2647,42 @@ class GwyEllipseSelections_data(unittest.TestCase):
         return truep[0]
 
 
+class GwyDataField_init(unittest.TestCase):
+    """Test __init__ method of GwyDataField class
+    """
+    @patch.object(GwyDataField, '_get_data')
+    @patch.object(GwyDataField, '_get_meta')
+    def test_GwyDataField_init(self, mock_get_meta, mock_get_data):
+        cgwydf = Mock()
+        test_meta = {'xres': 256,
+                     'yres': 256,
+                     'xreal': 1e-6,
+                     'yreal': 1e-6,
+                     'xoff': 0,
+                     'yoff': 0,
+                     'si_unit_xy': 'm',
+                     'si_unit_z': 'A'}
+        test_data = np.random.rand(256, 256)
+        mock_get_meta.return_value = test_meta
+        mock_get_data.return_value = test_data
+        gwydf = GwyDataField(cgwydf)
+        self.assertDictEqual(test_meta, gwydf.meta)
+        np.testing.assert_almost_equal(test_data, gwydf.data)
+
+
 class GwyDataField_get_meta(unittest.TestCase):
-    """Test _get_meta method of GwyDataField
+    """Test _get_meta method of GwyDataFieldself.test_metadata_dict = {'xres': 256,
+                                   'yres': 256,
+                                   'xreal': 1e-6,
+                                   'yreal': 1e-6,
+                                   'xoff': 0,
+                                   'yoff': 0,
+                                   'si_unit_xy': 'm',
+                                   'si_unit_z': 'A'}
     """
 
     def setUp(self):
-        self.gwydf = Mock()
+        self.cgwydf = Mock()
         self.mock_gwydf = Mock(spec=GwyDataField)
         self.mock_gwydf._get_meta = GwyDataField._get_meta
 
@@ -2682,8 +2712,7 @@ class GwyDataField_get_meta(unittest.TestCase):
             self.falsep[0])
         self.assertRaises(GwyfileErrorCMsg,
                           self.mock_gwydf._get_meta,
-                          self.mock_gwydf,
-                          self.gwydf)
+                          self.cgwydf)
 
     def test_libgwyfile_function_args(self):
         """
@@ -2692,15 +2721,15 @@ class GwyDataField_get_meta(unittest.TestCase):
 
         self.mock_lib.gwyfile_object_datafield_get.side_effect = (
             self._side_effect_check_args)
-        self.mock_gwydf._get_meta(self.mock_gwydf, self.gwydf)
+        self.mock_gwydf._get_meta(self.cgwydf)
 
     def _side_effect_check_args(self, *args):
         """
         Check args passing to gwyfile_object_datafield_get C function
         """
 
-        # first arg is GwyDatafield returned by _gwyfile_get_object
-        self.assertEqual(args[0], self.gwydf)
+        # first arg is GwyDatafield object from Libgwyfile
+        self.assertEqual(args[0], self.cgwydf)
 
         # second arg is GwyfileError**
         assert ffi.typeof(args[1]) == ffi.typeof(self.errorp)
@@ -2733,8 +2762,7 @@ class GwyDataField_get_meta(unittest.TestCase):
         self.mock_lib.gwyfile_object_datafield_get.side_effect = (
             self._side_effect_return_metadata)
 
-        meta = self.mock_gwydf._get_meta(self.mock_gwydf,
-                                         self.gwydf)
+        meta = self.mock_gwydf._get_meta(self.cgwydf)
         self.assertDictEqual(self.test_metadata_dict, meta)
 
     def _side_effect_return_metadata(self, *args):
@@ -2750,6 +2778,80 @@ class GwyDataField_get_meta(unittest.TestCase):
                 metadata_value = self.test_metadata_dict[key].encode('utf-8')
                 metadata_c_str = ffi.new("char[]", metadata_value)
                 arg_dict[key][0] = metadata_c_str
+        return self.truep[0]
+
+
+class GwyDataField_get_data(unittest.TestCase):
+    """Test _get_data method of GwyDataField class
+    """
+
+    def setUp(self):
+        self.cgwydf = Mock()
+        self.mock_gwydf = Mock(spec=GwyDataField)
+        self.mock_gwydf._get_data = GwyDataField._get_data
+
+        patcher_lib = patch('gwydb.gwy.gwyfile.lib',
+                            autospec=True)
+        self.addCleanup(patcher_lib.stop)
+        self.mock_lib = patcher_lib.start()
+
+        self.falsep = ffi.new("bool*", False)
+        self.truep = ffi.new("bool*", True)
+        self.errorp = ffi.new("GwyfileError**")
+        self.error_msg = "Test error message"
+
+        self.xres = 256
+        self.yres = 256
+        self.data = np.random.rand(self.xres, self.yres)
+
+    def test_raise_exception__df_looks_unacceptable(self):
+        """Raise GwyfileErrorCMsg if datafield object loosk unacceptable
+
+        Raise GwyfileErrorCMsg exception if
+        gwyfile_object_datafield_get returns False
+        """
+
+        self.mock_lib.gwyfile_object_datafield_get.return_value = (
+            self.falsep[0])
+        self.assertRaises(GwyfileErrorCMsg,
+                          self.mock_gwydf._get_data,
+                          self.cgwydf,
+                          self.xres,
+                          self.yres)
+
+    def test_returned_data(self):
+        """
+        Check returned value
+        """
+
+        self.mock_lib.gwyfile_object_datafield_get.side_effect = (
+            self._side_effect)
+
+        data = self.mock_gwydf._get_data(self.cgwydf,
+                                         self.xres,
+                                         self.yres)
+
+        np.testing.assert_almost_equal(self.data, data)
+
+    def _side_effect(self, *args):
+
+        # first arg is GwyDatafield object from Libgwyfile
+        self.assertEqual(args[0], self.cgwydf)
+
+        # second arg is GwyfileError**
+        assert ffi.typeof(args[1]) == ffi.typeof(self.errorp)
+
+        # last arg in NULL
+        self.assertEqual(args[-1], ffi.NULL)
+
+        # create dict from names and types of pointers in args
+        arg_keys = [ffi.string(key).decode('utf-8') for key in args[2:-1:2]]
+        arg_pointers = [pointer for pointer in args[3:-1:2]]
+        arg_dict = dict(zip(arg_keys, arg_pointers))
+
+        datap = arg_dict['data']
+        datap[0] = ffi.cast("double*", self.data.ctypes.data)
+
         return self.truep[0]
 
 
