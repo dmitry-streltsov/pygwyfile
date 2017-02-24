@@ -2310,6 +2310,35 @@ class GwyPointSelections_class(unittest.TestCase):
         self.addCleanup(patcher_lib.stop)
         self.get_sel_func = patcher_lib.start()
 
+    def test_raise_exception_in_get_selection_nsel(self):
+        """Raise GwyfileErrorCMsg in GwySelection._get_selection_nsel
+
+        Raise GwyfileErrorCMsg in GwySelection._get_selection_nsel
+        if get_sel_func returns False
+        """
+        falsep = ffi.new("bool*", False)
+        self.get_sel_func.return_value = falsep[0]
+        self.assertRaises(GwyfileErrorCMsg,
+                          GwySelection._get_selection_nsel,
+                          self.gwysel,
+                          self.get_sel_func)
+
+    def test_raise_exception_in_get_selection_points(self):
+        """Raise GwyfileErrorCMsg in GwySelection._get_selection_points
+
+        Raise GwyfileErrorCMsg in GwySelection._get_selection_points
+        if get_sel_func returns False
+        """
+        falsep = ffi.new("bool*", False)
+        self.get_sel_func.return_value = falsep[0]
+        npoints = 1
+        self.assertRaises(GwyfileErrorCMsg,
+                          GwySelection._get_selection_points,
+                          self.gwysel,
+                          self.get_sel_func,
+                          self.nsel,
+                          npoints)
+
     def test_pos_arguments(self):
         """Test positional arguments in gwyfile_object_selectionpoint_get
 

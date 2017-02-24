@@ -831,7 +831,7 @@ class GwySelection(ABC):
         """
         Args:
             gwysel (GwyfileObject*):
-                GwySelection object
+                GwySelection object from Libgwyfile
                 e.g. GwySelectionPoint object for point selection
             get_sel_func:
                 Libgwyfile C function to get this selection
@@ -839,10 +839,12 @@ class GwySelection(ABC):
                 number of points in one selection (e.g. 1 for point)
         """
 
-        self._gwysel = gwysel
-        self._get_sel_func = get_sel_func
-        self._npoints = npoints
-        self._nsel = self._get_selection_nsel()
+        nsel = self._get_selection_nsel(gwysel, get_sel_func)
+        points = self._get_selection_points(gwysel,
+                                            get_sel_func,
+                                            nsel,
+                                            npoints)
+        self._points = points
 
     @property
     @abstractmethod
@@ -852,10 +854,18 @@ class GwySelection(ABC):
         Method must be redefined in a subclass
         """
 
-        return self._get_selection_points()
+        return self._points
 
-    def _get_selection_nsel(self):
+    @staticmethod
+    def _get_selection_nsel(gwysel, get_sel_func):
         """Get number of selections from the object
+        
+        Args:
+            gwysel (GwyfileObject*):
+                GwySelection object from Libgwyfile
+                e.g. GwySelectionPoint object for point selection
+            get_sel_func:
+                Libgwyfile C function to get this selection
 
         Returns:
             nsel (int):
@@ -866,19 +876,27 @@ class GwySelection(ABC):
         errorp = ffi.new("GwyfileError**", error)
         nselp = ffi.new("int32_t*")
 
-        if self._get_sel_func(self._gwysel,
-                              errorp,
-                              ffi.new("char[]", b'nsel'),
-                              nselp,
-                              ffi.NULL):
+        if get_sel_func(gwysel,
+                        errorp,
+                        ffi.new("char[]", b'nsel'),
+                        nselp,
+                        ffi.NULL):
             nsel = nselp[0]
         else:
             raise GwyfileErrorCMsg(errorp[0].message)
 
         return nsel
 
-    def _get_selection_points(self):
+    @staticmethod
+    def _get_selection_points(gwysel, get_sel_func, nsel, npoints):
         """Get all points of selection for the object
+
+        Args:
+            gwysel (GwyfileObject*):
+                GwySelection object from Libgwyfile
+                e.g. GwySelectionPoint object for point selection
+            get_sel_func:
+                Libgwyfile C function to get this selection
 
         Returns:
             [(x1, y1), ..., (xN, yN)]: list of tuples with point coordinates
@@ -890,21 +908,20 @@ class GwySelection(ABC):
         error = ffi.new("GwyfileError*")
         errorp = ffi.new("GwyfileError**", error)
 
-        if self._nsel == 0:
+        if nsel == 0:
             return None
         else:
-            npoints = self._nsel * self._npoints
-            data = ffi.new("double[]", 2 * npoints)
+            data = ffi.new("double[]", 2 * nsel * npoints)
             datap = ffi.new("double**", data)
 
-        if self._get_sel_func(self._gwysel,
-                              errorp,
-                              ffi.new("char[]", b'data'),
-                              datap,
-                              ffi.NULL):
+        if get_sel_func(gwysel,
+                        errorp,
+                        ffi.new("char[]", b'data'),
+                        datap,
+                        ffi.NULL):
             data = datap[0]
             points = [(data[i * 2], data[i * 2 + 1])
-                      for i in range(npoints)]
+                      for i in range(nsel * npoints)]
         else:
             raise GwyfileErrorCMsg(errorp[0].message)
 
