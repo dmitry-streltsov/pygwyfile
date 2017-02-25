@@ -12,6 +12,7 @@ from gwydb.gwy.gwyfile import GwyEllipseSelections
 from gwydb.gwy.gwyfile import GwyDataField
 from gwydb.gwy.gwyfile import GwyGraphCurve
 from gwydb.gwy.gwyfile import GwyGraphModel
+from gwydb.gwy.gwyfile import GwyChannel
 from gwydb.gwy.gwyfile import ffi, lib
 from gwydb.gwy.gwyfile import read_gwyfile
 
@@ -206,38 +207,6 @@ class Gwyfile_get_channels_ids_TestCase(unittest.TestCase):
         self.assertEqual(ids, [])
 
 
-class Gwyfile_get_title(unittest.TestCase):
-    """
-    Test get_title method in Gwyfile class
-    """
-
-    def setUp(self):
-        self.gwyfile = Mock(spec=Gwyfile)
-        self.gwyfile.get_title = Gwyfile.get_title
-        self.gwyfile._gwyfile_get_object = Mock(autospec=True)
-        self.gwyfile._gwyfile_get_object.return_value = ffi.new("char[]",
-                                                                b"Title")
-
-        self.channel_id = 0
-
-    def test_check_args_passing_to__gwyfile_get_object(self):
-        """
-        Check args passing to _gwyfile_get_object method
-        """
-
-        self.gwyfile.get_title(self.gwyfile, self.channel_id)
-        self.gwyfile._gwyfile_get_object.assert_has_calls(
-            [call("/{:d}/data/title".format(self.channel_id))])
-
-    def test_returned_value(self):
-        """
-        Check returned value of get_title method
-        """
-
-        title = self.gwyfile.get_title(self.gwyfile, self.channel_id)
-        self.assertEqual(title, 'Title')
-
-
 class Gwyfile__gwyfile_get_object_TestCase(unittest.TestCase):
     """
     Test _gwyfile_get_object method in Gwyfile class
@@ -300,111 +269,6 @@ class Gwyfile__gwyfile_get_object_TestCase(unittest.TestCase):
         self.assertIs(mock_object, returned_object)
 
 
-class Gwyfile__gwydf_get_data(unittest.TestCase):
-    """
-    Test _gwydf_get_data method in Gwyfile class
-    """
-
-    def setUp(self):
-        self.gwyfile = Mock(spec=Gwyfile)
-        self.gwyfile._gwydf_get_data = Gwyfile._gwydf_get_data
-
-        patcher_lib = patch('gwydb.gwy.gwyfile.lib', autospec=True)
-        self.addCleanup(patcher_lib.stop)
-        self.mock_lib = patcher_lib.start()
-
-        self.key = '/0/data'
-        self.xres = 256
-        self.yres = 256
-        self.data = np.random.rand(self.xres, self.yres)
-        self.falsep = ffi.new("bool*", False)
-        self.truep = ffi.new("bool*", True)
-        self.errorp = ffi.new("GwyfileError**")
-        self.error_msg = "Test error message"
-
-    def test_raise_exception_without_msg_if_df_looks_unacceptable(self):
-        """Raise GwyfileError exception without error message
-
-        Raise GwyfileError exception with error message if
-        gwyfile_object_datafield_get returns False and
-        GwyfileError.message is NULL
-        """
-
-        self.mock_lib.gwyfile_object_datafield_get.return_value = self.falsep[
-            0]
-        self.assertRaises(GwyfileError,
-                          self.gwyfile._gwydf_get_data,
-                          self.gwyfile,
-                          self.key,
-                          self.xres,
-                          self.yres)
-
-    def test_raise_exception_with_msg_if_df_looks_unacceptable(self):
-        """Raise GwyfileError exception with error message
-
-        Raise GwyfileError exception with error message if
-        gwyfile_object_datafield_get returns False and
-        GwyfileError.message is not NULL
-        """
-
-        gwyfile_object_df_get = self.mock_lib.gwyfile_object_datafield_get
-        gwyfile_object_df_get.side_effect = self._side_effect_with_msg
-        self.assertRaisesRegex(GwyfileErrorCMsg,
-                               self.error_msg,
-                               self.gwyfile._gwydf_get_data,
-                               self.gwyfile,
-                               self.key,
-                               self.xres,
-                               self.yres)
-
-    def _side_effect_with_msg(self, *args):
-        """
-        gwyfile_object_datafield_get returns False with error_msg
-        """
-
-        errorp = args[1]
-        c_error_msg = ffi.new("char[]", self.error_msg.encode('utf-8'))
-        errorp[0].message = c_error_msg
-        return self.falsep[0]
-
-    def test_returned_data(self):
-        """
-        Check returned data numpy array
-        """
-
-        gwyfile_object_df_get = self.mock_lib.gwyfile_object_datafield_get
-        gwyfile_object_df_get.side_effect = self._side_effect
-        self.df = self.gwyfile._gwyfile_get_object.return_value
-
-        data = self.gwyfile._gwydf_get_data(self.gwyfile,
-                                            self.key,
-                                            self.xres,
-                                            self.yres)
-
-        np.testing.assert_almost_equal(self.data, data)
-
-    def _side_effect(self, *args):
-
-        # first arg is GwyDatafield returned by _gwyfile_get_object
-        self.assertEqual(args[0], self.df)
-
-        # second arg is GwyfileError**
-        assert ffi.typeof(args[1]) == ffi.typeof(self.errorp)
-
-        # last arg in Null
-        self.assertEqual(args[-1], ffi.NULL)
-
-        # create dict from names and types of pointers in args
-        arg_keys = [ffi.string(key).decode('utf-8') for key in args[2:-1:2]]
-        arg_pointers = [pointer for pointer in args[3:-1:2]]
-        arg_dict = dict(zip(arg_keys, arg_pointers))
-
-        datap = arg_dict['data']
-        datap[0] = ffi.cast("double*", self.data.ctypes.data)
-
-        return self.truep[0]
-
-
 class Gwyfile__getobject_check(unittest.TestCase):
     """
     Test _getobject_check method in Gwyfile class
@@ -445,1836 +309,6 @@ class Gwyfile__getobject_check(unittest.TestCase):
 
         value = self.gwyfile._gwyobject_check(self.gwyfile, self.key)
         self.assertIs(value, True)
-
-
-class Gwyfile_get_metadata(unittest.TestCase):
-    """
-    Test get_metadata method in Gwyfile class
-    """
-
-    def setUp(self):
-        self.gwyfile = Mock(spec=Gwyfile)
-        self.gwyfile.get_metadata = Gwyfile.get_metadata
-        self.gwyfile._gwydf_get_metadatadata = Mock(autospec=True)
-
-        self.channel_id = 1
-
-    def test_check_args_passing_to__gwydf_get_metadata(self):
-        """
-        Check arguments passing to _gwydf_get_metadata method
-        """
-
-        self.gwyfile.get_metadata(self.gwyfile,
-                                  self.channel_id)
-        self.gwyfile._gwydf_get_metadata.assert_has_calls(
-            [call("/{:d}/data".format(self.channel_id))])
-
-    def test_check_returned_value(self):
-        """
-        Check value returned by _get_data method
-        """
-
-        expected_return = self.gwyfile._gwydf_get_metadata.return_value
-        actual_return = self.gwyfile.get_metadata(self.gwyfile,
-                                                  self.channel_id)
-        self.assertEqual(actual_return, expected_return)
-
-
-class Gwyfile_get_data(unittest.TestCase):
-    """
-    Test get_data method in Gwyfile class
-    """
-
-    def setUp(self):
-        self.gwyfile = Mock(spec=Gwyfile)
-        self.gwyfile.get_data = Gwyfile.get_data
-        self.gwyfile._gwydf_get_data = Mock(autospec=True)
-
-        self.channel_id = 1
-        self.xres = 256
-        self.yres = 256
-
-    def test_check_args_passing_to__gwydf_get_data(self):
-        """
-        Check arguments passing to _gwydf_get_data method
-        """
-
-        self.gwyfile.get_data(self.gwyfile,
-                              self.channel_id,
-                              self.xres,
-                              self.yres)
-        self.gwyfile._gwydf_get_data.assert_has_calls(
-            [call("/{:d}/data".format(self.channel_id),
-                  self.xres,
-                  self.yres)])
-
-    def test_check_returned_value(self):
-        """
-        Check value returned by get_data method
-        """
-
-        expected_return = self.gwyfile._gwydf_get_data.return_value
-        actual_return = self.gwyfile.get_data(self.gwyfile,
-                                              self.channel_id,
-                                              self.xres,
-                                              self.yres)
-        self.assertEqual(actual_return, expected_return)
-
-
-class Gwyfile_get_mask_metadata(unittest.TestCase):
-    """
-    Test get_mask_metadata method in Gwyfile class
-    """
-
-    def setUp(self):
-        self.gwyfile = Mock(spec=Gwyfile)
-        self.gwyfile.get_mask_metadata = Gwyfile.get_mask_metadata
-        self.gwyfile._gwydf_get_metadatadata = Mock(autospec=True)
-
-        self.channel_id = 1
-
-    def test_check_args_passing_to__gwydf_get_metadata(self):
-        """
-        Check arguments passing to _gwydf_get_metadata method
-        """
-
-        self.gwyfile.get_mask_metadata(self.gwyfile,
-                                       self.channel_id)
-        self.gwyfile._gwydf_get_metadata.assert_has_calls(
-            [call("/{:d}/mask".format(self.channel_id))])
-
-    def test_check_returned_value(self):
-        """
-        Check value returned by get_mask_metadata method
-        """
-
-        expected_return = self.gwyfile._gwydf_get_metadata.return_value
-        actual_return = self.gwyfile.get_mask_metadata(self.gwyfile,
-                                                       self.channel_id)
-        self.assertEqual(actual_return, expected_return)
-
-
-class Gwyfile_get_mask_data(unittest.TestCase):
-    """
-    Test get_mask_data method in Gwyfile class
-    """
-
-    def setUp(self):
-        self.gwyfile = Mock(spec=Gwyfile)
-        self.gwyfile.get_mask_data = Gwyfile.get_mask_data
-        self.gwyfile._gwydf_get_data = Mock(autospec=True)
-
-        self.channel_id = 1
-        self.xres = 256
-        self.yres = 256
-
-    def test_check_args_passing_to__gwydf_get_data(self):
-        """
-        Check arguments passing to _gwydf_get_data method
-        """
-
-        self.gwyfile.get_mask_data(self.gwyfile,
-                                   self.channel_id,
-                                   self.xres,
-                                   self.yres)
-        self.gwyfile._gwydf_get_data.assert_has_calls(
-            [call("/{:d}/mask".format(self.channel_id),
-                  self.xres,
-                  self.yres)])
-
-    def test_check_returned_value(self):
-        """
-        Check value returned by get_mask_data method
-        """
-
-        expected_return = self.gwyfile._gwydf_get_data.return_value
-        actual_return = self.gwyfile.get_mask_data(self.gwyfile,
-                                                   self.channel_id,
-                                                   self.xres,
-                                                   self.yres)
-        self.assertEqual(actual_return, expected_return)
-
-
-class Gwyfile_get_presentation_metadata(unittest.TestCase):
-    """
-    Test get_presentation_metadata method in Gwyfile class
-    """
-
-    def setUp(self):
-        self.gwyfile = Mock(spec=Gwyfile)
-        self.gwyfile.get_presentation_metadata = (
-            Gwyfile.get_presentation_metadata)
-        self.gwyfile._gwydf_get_metadatadata = Mock(autospec=True)
-
-        self.channel_id = 1
-
-    def test_check_args_passing_to__gwydf_get_metadata(self):
-        """
-        Check arguments passing to _gwydf_get_metadata method
-        """
-
-        self.gwyfile.get_presentation_metadata(self.gwyfile,
-                                               self.channel_id)
-        self.gwyfile._gwydf_get_metadata.assert_has_calls(
-            [call("/{:d}/show".format(self.channel_id))])
-
-    def test_check_returned_value(self):
-        """
-        Check value returned by get_presentation_metadata method
-        """
-
-        expected_return = self.gwyfile._gwydf_get_metadata.return_value
-        actual_return = self.gwyfile.get_presentation_metadata(self.gwyfile,
-                                                               self.channel_id)
-        self.assertEqual(actual_return, expected_return)
-
-
-class Gwyfile_get_presentation_data(unittest.TestCase):
-    """
-    Test get_presentation_data method in Gwyfile class
-    """
-
-    def setUp(self):
-        self.gwyfile = Mock(spec=Gwyfile)
-        self.gwyfile.get_presentation_data = Gwyfile.get_presentation_data
-        self.gwyfile._gwydf_get_data = Mock(autospec=True)
-
-        self.channel_id = 1
-        self.xres = 256
-        self.yres = 256
-
-    def test_check_args_passing_to__gwydf_get_data(self):
-        """
-        Check arguments passing to _gwydf_get_data method
-        """
-
-        self.gwyfile.get_presentation_data(self.gwyfile,
-                                           self.channel_id,
-                                           self.xres,
-                                           self.yres)
-        self.gwyfile._gwydf_get_data.assert_has_calls(
-            [call("/{:d}/show".format(self.channel_id),
-                  self.xres,
-                  self.yres)])
-
-    def test_check_returned_value(self):
-        """
-        Check value returned by get_mask_data method
-        """
-
-        expected_return = self.gwyfile._gwydf_get_data.return_value
-        actual_return = self.gwyfile.get_presentation_data(self.gwyfile,
-                                                           self.channel_id,
-                                                           self.xres,
-                                                           self.yres)
-        self.assertEqual(actual_return, expected_return)
-
-
-class Gwyfile_get_graphmodel_metadata(unittest.TestCase):
-    """
-    Test get_graphmodel_metadata of Gwyfile class
-    """
-
-    def setUp(self):
-        self.gwyfile = Mock(spec=Gwyfile)
-        self.gwyfile.get_graphmodel_metadata = Gwyfile.get_graphmodel_metadata
-
-        patcher_lib = patch('gwydb.gwy.gwyfile.lib',
-                            autospec=True)
-        self.addCleanup(patcher_lib.stop)
-        self.mock_lib = patcher_lib.start()
-
-        self.graph_id = 1
-        self.graphmodel = Mock()
-
-    def test_check_graphmodel_object_exists(self):
-        """
-        Check existence of the graphmodel object with the graph_id
-        """
-
-        key = "/0/graph/graph/{:d}".format(self.graph_id)
-        self.gwyfile.get_graphmodel_metadata(self.gwyfile,
-                                             self.graph_id)
-        self.gwyfile._gwyobject_check.assert_has_calls(
-            [call(key)])
-
-    def test_return_empty_dic_if_graphmodel_obj_does_not_exist(self):
-        """
-        Return empty dictionary if graphmodel object does not exist
-        """
-
-        self.gwyfile._gwyobject_check.return_value = False
-        actual_return = self.gwyfile.get_graphmodel_metadata(self.gwyfile,
-                                                             self.graph_id)
-        self.assertDictEqual(actual_return, {})
-
-    def test_arg_of_gwyfile_get_object_func(self):
-        """
-        Get graphmodel object with graph_id
-        """
-
-        key = "/0/graph/graph/{:d}".format(self.graph_id)
-        self.gwyfile.get_graphmodel_metadata(self.gwyfile,
-                                             self.graph_id)
-        self.gwyfile._gwyfile_get_object.assert_has_calls(
-            [call(key)])
-
-    def test_positional_args_of_libgwyfile_func_call(self):
-        """
-        Call gwyfile_object_graphmodel_get C function.
-
-        First arg of the C func is graphmodel obj
-        Second arg of the C func is GwyfileError**
-        Last arg of the C func is NULL
-        """
-
-        graphmodel_get = self.mock_lib.gwyfile_object_graphmodel_get
-        graphmodel_get.side_effect = self._graphmodel_get_pos_args
-        self.gwyfile._gwyfile_get_object.return_value = self.graphmodel
-        self.gwyfile.get_graphmodel_metadata(self.gwyfile,
-                                             self.graph_id)
-
-    def _graphmodel_get_pos_args(self, *args):
-        """
-        Check first, second and last args of gwyfile_object_graphmodel_get
-
-        First arg of the C function is graphmodel obj
-        Second arg of the C function is GwyfileError**
-        Last arg of the C function is NULL
-        """
-
-        # first arg is graphmodel object returned by _gwyfile_get_object
-        self.assertEqual(args[0], self.graphmodel)
-
-        # second arg is GwyfileError**
-        assert ffi.typeof(args[1]) == ffi.typeof(ffi.new("GwyfileError**"))
-
-        # last arg in Null
-        self.assertEqual(args[-1], ffi.NULL)
-
-        # C func returns true if the graphmodel object loock acceptable
-        truep = ffi.new("bool*", True)
-        return truep[0]
-
-    def test_getting_number_of_curves(self):
-        """
-        Test getting number of curves from graphmodel object
-        """
-
-        graphmodel_get = self.mock_lib.gwyfile_object_graphmodel_get
-        graphmodel_get.side_effect = self._number_of_curves
-        metadata = self.gwyfile.get_graphmodel_metadata(self.gwyfile,
-                                                        self.graph_id)
-        self.assertEqual(metadata['ncurves'], 3)
-
-    def _number_of_curves(self, *args):
-        """
-        Return 3 as a number of curves in graphmodel object
-        """
-
-        # combine fields names and fields pointers in one dictionary
-        arg_keys = [ffi.string(key).decode('utf-8') for key in args[2:-1:2]]
-        arg_pointers = [pointer for pointer in args[3:-1:2]]
-        arg_dict = dict(zip(arg_keys, arg_pointers))
-
-        arg_dict['ncurves'][0] = 3
-
-        # C func returns true if the graphmodel object loock acceptable
-        truep = ffi.new("bool*", True)
-        return truep[0]
-
-    def test_title_field_is_not_empty(self):
-        """
-        'title' field in graphmodel object is not empty
-        """
-
-        graphmodel_get = self.mock_lib.gwyfile_object_graphmodel_get
-        graphmodel_get.side_effect = self._title_is_not_empty
-        metadata = self.gwyfile.get_graphmodel_metadata(self.gwyfile,
-                                                        self.graph_id)
-        self.assertEqual(metadata['title'], "test title")
-
-    def _title_is_not_empty(self, *args):
-        """
-        Write "test title" C string to title field
-        """
-
-        title = ffi.new("char[]", b"test title")
-
-        # combine fields names and fields pointers in one dictionary
-        arg_keys = [ffi.string(key).decode('utf-8') for key in args[2:-1:2]]
-        arg_pointers = [pointer for pointer in args[3:-1:2]]
-        arg_dict = dict(zip(arg_keys, arg_pointers))
-
-        arg_dict['title'][0] = title
-
-        # C func returns true if the graphmodel object loock acceptable
-        truep = ffi.new("bool*", True)
-        return truep[0]
-
-    def test_title_field_is_empty(self):
-        """
-        'title' field in graphmodel object is empty
-        """
-
-        graphmodel_get = self.mock_lib.gwyfile_object_graphmodel_get
-        graphmodel_get.side_effect = self._title_is_empty
-        metadata = self.gwyfile.get_graphmodel_metadata(self.gwyfile,
-                                                        self.graph_id)
-        self.assertEqual(metadata['title'], '')
-
-    def _title_is_empty(self, *args):
-        """
-        Write NULL to title field
-        """
-
-        # combine fields names and fields pointers in one dictionary
-        arg_keys = [ffi.string(key).decode('utf-8') for key in args[2:-1:2]]
-        arg_pointers = [pointer for pointer in args[3:-1:2]]
-        arg_dict = dict(zip(arg_keys, arg_pointers))
-
-        arg_dict['title'][0] = ffi.NULL
-
-        # C func returns true if the graphmodel object loock acceptable
-        truep = ffi.new("bool*", True)
-        return truep[0]
-
-    def test_top_label_field_is_not_empty(self):
-        """
-        'top_label' field in graphmodel object is not empty
-        """
-
-        graphmodel_get = self.mock_lib.gwyfile_object_graphmodel_get
-        graphmodel_get.side_effect = self._top_label_is_not_empty
-        metadata = self.gwyfile.get_graphmodel_metadata(self.gwyfile,
-                                                        self.graph_id)
-        self.assertEqual(metadata['top_label'], "test top label")
-
-    def _top_label_is_not_empty(self, *args):
-        """
-        Write "test top label" C string to 'top_label' field
-        """
-
-        top_label = ffi.new("char[]", b"test top label")
-
-        # combine fields names and fields pointers in one dictionary
-        arg_keys = [ffi.string(key).decode('utf-8') for key in args[2:-1:2]]
-        arg_pointers = [pointer for pointer in args[3:-1:2]]
-        arg_dict = dict(zip(arg_keys, arg_pointers))
-
-        arg_dict['top_label'][0] = top_label
-
-        # C func returns true if the graphmodel object loock acceptable
-        truep = ffi.new("bool*", True)
-        return truep[0]
-
-    def test_top_label_field_is_empty(self):
-        """
-        'top_label' field in graphmodel object is empty
-        """
-
-        graphmodel_get = self.mock_lib.gwyfile_object_graphmodel_get
-        graphmodel_get.side_effect = self._top_label_is_empty
-        metadata = self.gwyfile.get_graphmodel_metadata(self.gwyfile,
-                                                        self.graph_id)
-        self.assertEqual(metadata['top_label'], '')
-
-    def _top_label_is_empty(self, *args):
-        """
-        Write NULL to top_label field
-        """
-
-        # combine fields names and fields pointers in one dictionary
-        arg_keys = [ffi.string(key).decode('utf-8') for key in args[2:-1:2]]
-        arg_pointers = [pointer for pointer in args[3:-1:2]]
-        arg_dict = dict(zip(arg_keys, arg_pointers))
-
-        arg_dict['top_label'][0] = ffi.NULL
-
-        # C func returns true if the graphmodel object loock acceptable
-        truep = ffi.new("bool*", True)
-        return truep[0]
-
-    def test_left_label_field_is_not_empty(self):
-        """
-        'left_label' field in graphmodel object is not empty
-        """
-
-        graphmodel_get = self.mock_lib.gwyfile_object_graphmodel_get
-        graphmodel_get.side_effect = self._left_label_is_not_empty
-        metadata = self.gwyfile.get_graphmodel_metadata(self.gwyfile,
-                                                        self.graph_id)
-        self.assertEqual(metadata['left_label'], "test left label")
-
-    def _left_label_is_not_empty(self, *args):
-        """
-        Write "test left label" C string to 'left_label' field
-        """
-
-        left_label = ffi.new("char[]", b"test left label")
-
-        # combine fields names and fields pointers in one dictionary
-        arg_keys = [ffi.string(key).decode('utf-8') for key in args[2:-1:2]]
-        arg_pointers = [pointer for pointer in args[3:-1:2]]
-        arg_dict = dict(zip(arg_keys, arg_pointers))
-
-        arg_dict['left_label'][0] = left_label
-
-        # C func returns true if the graphmodel object loock acceptable
-        truep = ffi.new("bool*", True)
-        return truep[0]
-
-    def test_left_label_field_is_empty(self):
-        """
-        'left_label' field in graphmodel object is empty
-        """
-
-        graphmodel_get = self.mock_lib.gwyfile_object_graphmodel_get
-        graphmodel_get.side_effect = self._left_label_is_empty
-        metadata = self.gwyfile.get_graphmodel_metadata(self.gwyfile,
-                                                        self.graph_id)
-        self.assertEqual(metadata['left_label'], '')
-
-    def _left_label_is_empty(self, *args):
-        """
-        Write NULL to left_label field
-        """
-
-        # combine fields names and fields pointers in one dictionary
-        arg_keys = [ffi.string(key).decode('utf-8') for key in args[2:-1:2]]
-        arg_pointers = [pointer for pointer in args[3:-1:2]]
-        arg_dict = dict(zip(arg_keys, arg_pointers))
-
-        arg_dict['left_label'][0] = ffi.NULL
-
-        # C func returns true if the graphmodel object loock acceptable
-        truep = ffi.new("bool*", True)
-        return truep[0]
-
-    def test_right_label_field_is_not_empty(self):
-        """
-        'right_label' field in graphmodel object is not empty
-        """
-
-        graphmodel_get = self.mock_lib.gwyfile_object_graphmodel_get
-        graphmodel_get.side_effect = self._right_label_is_not_empty
-        metadata = self.gwyfile.get_graphmodel_metadata(self.gwyfile,
-                                                        self.graph_id)
-        self.assertEqual(metadata['right_label'], "test right label")
-
-    def _right_label_is_not_empty(self, *args):
-        """
-        Write "test right label" C string to 'right_label' field
-        """
-
-        right_label = ffi.new("char[]", b"test right label")
-
-        # combine fields names and fields pointers in one dictionary
-        arg_keys = [ffi.string(key).decode('utf-8') for key in args[2:-1:2]]
-        arg_pointers = [pointer for pointer in args[3:-1:2]]
-        arg_dict = dict(zip(arg_keys, arg_pointers))
-
-        arg_dict['right_label'][0] = right_label
-
-        # C func returns true if the graphmodel object loock acceptable
-        truep = ffi.new("bool*", True)
-        return truep[0]
-
-    def test_right_label_field_is_empty(self):
-        """
-        'right_label' field in graphmodel object is empty
-        """
-
-        graphmodel_get = self.mock_lib.gwyfile_object_graphmodel_get
-        graphmodel_get.side_effect = self._right_label_is_empty
-        metadata = self.gwyfile.get_graphmodel_metadata(self.gwyfile,
-                                                        self.graph_id)
-        self.assertEqual(metadata['right_label'], '')
-
-    def _right_label_is_empty(self, *args):
-        """
-        Write NULL to right_label field
-        """
-
-        # combine fields names and fields pointers in one dictionary
-        arg_keys = [ffi.string(key).decode('utf-8') for key in args[2:-1:2]]
-        arg_pointers = [pointer for pointer in args[3:-1:2]]
-        arg_dict = dict(zip(arg_keys, arg_pointers))
-
-        arg_dict['right_label'][0] = ffi.NULL
-
-        # C func returns true if the graphmodel object loock acceptable
-        truep = ffi.new("bool*", True)
-        return truep[0]
-
-    def test_bottom_label_field_is_not_empty(self):
-        """
-        'bottom_label' field in graphmodel object is not empty
-        """
-
-        graphmodel_get = self.mock_lib.gwyfile_object_graphmodel_get
-        graphmodel_get.side_effect = self._bottom_label_is_not_empty
-        metadata = self.gwyfile.get_graphmodel_metadata(self.gwyfile,
-                                                        self.graph_id)
-        self.assertEqual(metadata['bottom_label'], "test bottom label")
-
-    def _bottom_label_is_not_empty(self, *args):
-        """
-        Write "test bottom label" C string to 'bottom_label' field
-        """
-
-        bottom_label = ffi.new("char[]", b"test bottom label")
-
-        # combine fields names and fields pointers in one dictionary
-        arg_keys = [ffi.string(key).decode('utf-8') for key in args[2:-1:2]]
-        arg_pointers = [pointer for pointer in args[3:-1:2]]
-        arg_dict = dict(zip(arg_keys, arg_pointers))
-
-        arg_dict['bottom_label'][0] = bottom_label
-
-        # C func returns true if the graphmodel object loock acceptable
-        truep = ffi.new("bool*", True)
-        return truep[0]
-
-    def test_bottom_label_field_is_empty(self):
-        """
-        'bottom_label' field in graphmodel object is empty
-        """
-
-        graphmodel_get = self.mock_lib.gwyfile_object_graphmodel_get
-        graphmodel_get.side_effect = self._bottom_label_is_empty
-        metadata = self.gwyfile.get_graphmodel_metadata(self.gwyfile,
-                                                        self.graph_id)
-        self.assertEqual(metadata['bottom_label'], '')
-
-    def _bottom_label_is_empty(self, *args):
-        """
-        Write NULL to bottom_label field
-        """
-
-        # combine fields names and fields pointers in one dictionary
-        arg_keys = [ffi.string(key).decode('utf-8') for key in args[2:-1:2]]
-        arg_pointers = [pointer for pointer in args[3:-1:2]]
-        arg_dict = dict(zip(arg_keys, arg_pointers))
-
-        arg_dict['bottom_label'][0] = ffi.NULL
-
-        # C func returns true if the graphmodel object loock acceptable
-        truep = ffi.new("bool*", True)
-        return truep[0]
-
-    def test_x_unit_field_is_not_empty(self):
-        """
-        'x_unit' field in graphmodel object is not empty
-        """
-
-        graphmodel_get = self.mock_lib.gwyfile_object_graphmodel_get
-        graphmodel_get.side_effect = self._x_unit_is_not_empty
-        metadata = self.gwyfile.get_graphmodel_metadata(self.gwyfile,
-                                                        self.graph_id)
-        self.assertEqual(metadata['x_unit'], 'm')
-
-    def _x_unit_is_not_empty(self, *args):
-        """
-        Write "m" C string to 'x_unit' field
-        """
-
-        x_unit = ffi.new("char[]", b"m")
-
-        # combine fields names and fields pointers in one dictionary
-        arg_keys = [ffi.string(key).decode('utf-8') for key in args[2:-1:2]]
-        arg_pointers = [pointer for pointer in args[3:-1:2]]
-        arg_dict = dict(zip(arg_keys, arg_pointers))
-
-        arg_dict['x_unit'][0] = x_unit
-
-        # C func returns true if the graphmodel object loock acceptable
-        truep = ffi.new("bool*", True)
-        return truep[0]
-
-    def test_x_unit_field_is_empty(self):
-        """
-        'x_unit' field in graphmodel object is empty
-        """
-
-        graphmodel_get = self.mock_lib.gwyfile_object_graphmodel_get
-        graphmodel_get.side_effect = self._x_unit_is_empty
-        metadata = self.gwyfile.get_graphmodel_metadata(self.gwyfile,
-                                                        self.graph_id)
-        self.assertEqual(metadata['x_unit'], '')
-
-    def _x_unit_is_empty(self, *args):
-        """
-        Write NULL to x_unit field
-        """
-
-        # combine fields names and fields pointers in one dictionary
-        arg_keys = [ffi.string(key).decode('utf-8') for key in args[2:-1:2]]
-        arg_pointers = [pointer for pointer in args[3:-1:2]]
-        arg_dict = dict(zip(arg_keys, arg_pointers))
-
-        arg_dict['x_unit'][0] = ffi.NULL
-
-        # C func returns true if the graphmodel object loock acceptable
-        truep = ffi.new("bool*", True)
-        return truep[0]
-
-    def test_y_unit_field_is_not_empty(self):
-        """
-        'y_unit' field in graphmodel object is not empty
-        """
-
-        graphmodel_get = self.mock_lib.gwyfile_object_graphmodel_get
-        graphmodel_get.side_effect = self._y_unit_is_not_empty
-        metadata = self.gwyfile.get_graphmodel_metadata(self.gwyfile,
-                                                        self.graph_id)
-        self.assertEqual(metadata['y_unit'], 'm')
-
-    def _y_unit_is_not_empty(self, *args):
-        """
-        Write "m" C string to 'y_unit' field
-        """
-
-        y_unit = ffi.new("char[]", b"m")
-
-        # combine fields names and fields pointers in one dictionary
-        arg_keys = [ffi.string(key).decode('utf-8') for key in args[2:-1:2]]
-        arg_pointers = [pointer for pointer in args[3:-1:2]]
-        arg_dict = dict(zip(arg_keys, arg_pointers))
-
-        arg_dict['y_unit'][0] = y_unit
-
-        # C func returns true if the graphmodel object loock acceptable
-        truep = ffi.new("bool*", True)
-        return truep[0]
-
-    def test_y_unit_field_is_empty(self):
-        """
-        'y_unit' field in graphmodel object is empty
-        """
-
-        graphmodel_get = self.mock_lib.gwyfile_object_graphmodel_get
-        graphmodel_get.side_effect = self._y_unit_is_empty
-        metadata = self.gwyfile.get_graphmodel_metadata(self.gwyfile,
-                                                        self.graph_id)
-        self.assertEqual(metadata['y_unit'], '')
-
-    def _y_unit_is_empty(self, *args):
-        """
-        Write NULL to y_unit field
-        """
-
-        # combine fields names and fields pointers in one dictionary
-        arg_keys = [ffi.string(key).decode('utf-8') for key in args[2:-1:2]]
-        arg_pointers = [pointer for pointer in args[3:-1:2]]
-        arg_dict = dict(zip(arg_keys, arg_pointers))
-
-        arg_dict['y_unit'][0] = ffi.NULL
-
-        # C func returns true if the graphmodel object loock acceptable
-        truep = ffi.new("bool*", True)
-        return truep[0]
-
-    def test_x_min_set_is_true(self):
-        """
-        Check metadata dictionary if 'x_min_set' is True
-        """
-
-        graphmodel_get = self.mock_lib.gwyfile_object_graphmodel_get
-        graphmodel_get.side_effect = self._x_min_set_is_true
-        metadata = self.gwyfile.get_graphmodel_metadata(self.gwyfile,
-                                                        self.graph_id)
-        self.assertIs(metadata['x_min_set'], True)
-        self.assertEqual(metadata['x_min'], 0.)
-
-    def _x_min_set_is_true(self, *args):
-        """
-        Write True in 'x_min_set' field and 0. in 'x_min' field
-        """
-
-        # combine fields names and fields pointers in one dictionary
-        arg_keys = [ffi.string(key).decode('utf-8') for key in args[2:-1:2]]
-        arg_pointers = [pointer for pointer in args[3:-1:2]]
-        arg_dict = dict(zip(arg_keys, arg_pointers))
-
-        truep = ffi.new("bool*", True)
-
-        arg_dict['x_min_set'][0] = truep[0]
-        arg_dict['x_min'][0] = 0.
-
-        # C func returns true if the graphmodel object loock acceptable
-        return truep[0]
-
-    def test_x_min_set_is_false(self):
-        """
-        Check metadata dictionary if 'x_min_set' is False
-        """
-
-        graphmodel_get = self.mock_lib.gwyfile_object_graphmodel_get
-        graphmodel_get.side_effect = self._x_min_set_is_false
-        metadata = self.gwyfile.get_graphmodel_metadata(self.gwyfile,
-                                                        self.graph_id)
-        self.assertIs(metadata['x_min_set'], False)
-        self.assertIsNone(metadata['x_min'])
-
-    def _x_min_set_is_false(self, *args):
-        """
-        Write False in 'x_min_set' field and 0. in 'x_min' field
-        """
-
-        # combine fields names and fields pointers in one dictionary
-        arg_keys = [ffi.string(key).decode('utf-8') for key in args[2:-1:2]]
-        arg_pointers = [pointer for pointer in args[3:-1:2]]
-        arg_dict = dict(zip(arg_keys, arg_pointers))
-
-        truep = ffi.new("bool*", True)
-        falsep = ffi.new("bool*", False)
-
-        arg_dict['x_min_set'][0] = falsep[0]
-        arg_dict['x_min'][0] = 0.
-
-        # C func returns true if the graphmodel object loock acceptable
-        return truep[0]
-
-    def test_x_max_set_is_true(self):
-        """
-        Check metadata dictionary if 'x_max_set' is True
-        """
-
-        graphmodel_get = self.mock_lib.gwyfile_object_graphmodel_get
-        graphmodel_get.side_effect = self._x_max_set_is_true
-        metadata = self.gwyfile.get_graphmodel_metadata(self.gwyfile,
-                                                        self.graph_id)
-        self.assertIs(metadata['x_max_set'], True)
-        self.assertEqual(metadata['x_max'], 0.)
-
-    def _x_max_set_is_true(self, *args):
-        """
-        Write True in 'x_max_set' field and 0. in 'x_max' field
-        """
-
-        # combine fields names and fields pointers in one dictionary
-        arg_keys = [ffi.string(key).decode('utf-8') for key in args[2:-1:2]]
-        arg_pointers = [pointer for pointer in args[3:-1:2]]
-        arg_dict = dict(zip(arg_keys, arg_pointers))
-
-        truep = ffi.new("bool*", True)
-
-        arg_dict['x_max_set'][0] = truep[0]
-        arg_dict['x_max'][0] = 0.
-
-        # C func returns true if the graphmodel object loock acceptable
-        return truep[0]
-
-    def test_x_max_set_is_false(self):
-        """
-        Check metadata dictionary if 'x_max_set' is False
-        """
-
-        graphmodel_get = self.mock_lib.gwyfile_object_graphmodel_get
-        graphmodel_get.side_effect = self._x_max_set_is_false
-        metadata = self.gwyfile.get_graphmodel_metadata(self.gwyfile,
-                                                        self.graph_id)
-        self.assertIs(metadata['x_max_set'], False)
-        self.assertIsNone(metadata['x_max'])
-
-    def _x_max_set_is_false(self, *args):
-        """
-        Write False in 'x_max_set' field and 0. in 'x_max' field
-        """
-
-        # combine fields names and fields pointers in one dictionary
-        arg_keys = [ffi.string(key).decode('utf-8') for key in args[2:-1:2]]
-        arg_pointers = [pointer for pointer in args[3:-1:2]]
-        arg_dict = dict(zip(arg_keys, arg_pointers))
-
-        truep = ffi.new("bool*", True)
-        falsep = ffi.new("bool*", False)
-
-        arg_dict['x_max_set'][0] = falsep[0]
-        arg_dict['x_max'][0] = 0.
-
-        # C func returns true if the graphmodel object loock acceptable
-        return truep[0]
-
-    def test_y_min_set_is_true(self):
-        """
-        Check metadata dictionary if 'y_min_set' is True
-        """
-
-        graphmodel_get = self.mock_lib.gwyfile_object_graphmodel_get
-        graphmodel_get.side_effect = self._y_min_set_is_true
-        metadata = self.gwyfile.get_graphmodel_metadata(self.gwyfile,
-                                                        self.graph_id)
-        self.assertIs(metadata['y_min_set'], True)
-        self.assertEqual(metadata['y_min'], 0.)
-
-    def _y_min_set_is_true(self, *args):
-        """
-        Write True in 'y_min_set' field and 0. in 'y_min' field
-        """
-
-        # combine fields names and fields pointers in one dictionary
-        arg_keys = [ffi.string(key).decode('utf-8') for key in args[2:-1:2]]
-        arg_pointers = [pointer for pointer in args[3:-1:2]]
-        arg_dict = dict(zip(arg_keys, arg_pointers))
-
-        truep = ffi.new("bool*", True)
-
-        arg_dict['y_min_set'][0] = truep[0]
-        arg_dict['y_min'][0] = 0.
-
-        # C func returns true if the graphmodel object loock acceptable
-        return truep[0]
-
-    def test_y_min_set_is_false(self):
-        """
-        Check metadata dictionary if 'y_min_set' is False
-        """
-
-        graphmodel_get = self.mock_lib.gwyfile_object_graphmodel_get
-        graphmodel_get.side_effect = self._y_min_set_is_false
-        metadata = self.gwyfile.get_graphmodel_metadata(self.gwyfile,
-                                                        self.graph_id)
-        self.assertIs(metadata['y_min_set'], False)
-        self.assertIsNone(metadata['y_min'])
-
-    def _y_min_set_is_false(self, *args):
-        """
-        Write False in 'y_min_set' field and 0. in 'y_min' field
-        """
-
-        # combine fields names and fields pointers in one dictionary
-        arg_keys = [ffi.string(key).decode('utf-8') for key in args[2:-1:2]]
-        arg_pointers = [pointer for pointer in args[3:-1:2]]
-        arg_dict = dict(zip(arg_keys, arg_pointers))
-
-        truep = ffi.new("bool*", True)
-        falsep = ffi.new("bool*", False)
-
-        arg_dict['y_min_set'][0] = falsep[0]
-        arg_dict['y_min'][0] = 0.
-
-        # C func returns true if the graphmodel object loock acceptable
-        return truep[0]
-
-    def test_y_max_set_is_true(self):
-        """
-        Check metadata dictionary if 'y_max_set' is True
-        """
-
-        graphmodel_get = self.mock_lib.gwyfile_object_graphmodel_get
-        graphmodel_get.side_effect = self._y_max_set_is_true
-        metadata = self.gwyfile.get_graphmodel_metadata(self.gwyfile,
-                                                        self.graph_id)
-        self.assertIs(metadata['y_max_set'], True)
-        self.assertEqual(metadata['y_max'], 0.)
-
-    def _y_max_set_is_true(self, *args):
-        """
-        Write True in 'y_max_set' field and 0. in 'y_max' field
-        """
-
-        # combine fields names and fields pointers in one dictionary
-        arg_keys = [ffi.string(key).decode('utf-8') for key in args[2:-1:2]]
-        arg_pointers = [pointer for pointer in args[3:-1:2]]
-        arg_dict = dict(zip(arg_keys, arg_pointers))
-
-        truep = ffi.new("bool*", True)
-
-        arg_dict['y_max_set'][0] = truep[0]
-        arg_dict['y_max'][0] = 0.
-
-        # C func returns true if the graphmodel object loock acceptable
-        return truep[0]
-
-    def test_y_max_set_is_false(self):
-        """
-        Check metadata dictionary if 'y_max_set' is False
-        """
-
-        graphmodel_get = self.mock_lib.gwyfile_object_graphmodel_get
-        graphmodel_get.side_effect = self._y_max_set_is_false
-        metadata = self.gwyfile.get_graphmodel_metadata(self.gwyfile,
-                                                        self.graph_id)
-        self.assertIs(metadata['y_max_set'], False)
-        self.assertIsNone(metadata['y_max'])
-
-    def _y_max_set_is_false(self, *args):
-        """
-        Write False in 'y_max_set' field and 0. in 'y_max' field
-        """
-
-        # combine fields names and fields pointers in one dictionary
-        arg_keys = [ffi.string(key).decode('utf-8') for key in args[2:-1:2]]
-        arg_pointers = [pointer for pointer in args[3:-1:2]]
-        arg_dict = dict(zip(arg_keys, arg_pointers))
-
-        truep = ffi.new("bool*", True)
-        falsep = ffi.new("bool*", False)
-
-        arg_dict['y_max_set'][0] = falsep[0]
-        arg_dict['y_max'][0] = 0.
-
-        # C func returns true if the graphmodel object loock acceptable
-        return truep[0]
-
-    def test_x_is_logarithmic_true(self):
-        """
-        'x_is_logarithmic' field is True
-        """
-
-        graphmodel_get = self.mock_lib.gwyfile_object_graphmodel_get
-        graphmodel_get.side_effect = self._x_is_logarithmic
-
-        self.x_is_logarithmic = True
-
-        metadata = self.gwyfile.get_graphmodel_metadata(self.gwyfile,
-                                                        self.graph_id)
-        self.assertIs(metadata['x_is_logarithmic'], True)
-
-    def test_x_is_logarithmic_false(self):
-        """
-        'x_is_logarithmic' field is False
-        """
-
-        graphmodel_get = self.mock_lib.gwyfile_object_graphmodel_get
-        graphmodel_get.side_effect = self._x_is_logarithmic
-
-        self.x_is_logarithmic = False
-
-        metadata = self.gwyfile.get_graphmodel_metadata(self.gwyfile,
-                                                        self.graph_id)
-        self.assertIs(metadata['x_is_logarithmic'], False)
-
-    def _x_is_logarithmic(self, *args):
-        """
-        Write self.x_is_logarithmic in 'x_is_logarithmic' field
-        """
-
-        # combine fields names and fields pointers in one dictionary
-        arg_keys = [ffi.string(key).decode('utf-8') for key in args[2:-1:2]]
-        arg_pointers = [pointer for pointer in args[3:-1:2]]
-        arg_dict = dict(zip(arg_keys, arg_pointers))
-
-        truep = ffi.new("bool*", True)
-        falsep = ffi.new("bool*", False)
-
-        if self.x_is_logarithmic:
-            arg_dict['x_is_logarithmic'][0] = truep[0]
-        else:
-            arg_dict['x_is_logarithmic'][0] = falsep[0]
-
-        # C func returns true if the graphmodel object loock acceptable
-        return truep[0]
-
-    def test_y_is_logarithmic_true(self):
-        """
-        'y_is_logarithmic' field is True
-        """
-
-        graphmodel_get = self.mock_lib.gwyfile_object_graphmodel_get
-        graphmodel_get.side_effect = self._y_is_logarithmic
-
-        self.y_is_logarithmic = True
-
-        metadata = self.gwyfile.get_graphmodel_metadata(self.gwyfile,
-                                                        self.graph_id)
-        self.assertIs(metadata['y_is_logarithmic'], True)
-
-    def test_y_is_logarithmic_false(self):
-        """
-        'y_is_logarithmic' field is False
-        """
-
-        graphmodel_get = self.mock_lib.gwyfile_object_graphmodel_get
-        graphmodel_get.side_effect = self._y_is_logarithmic
-
-        self.y_is_logarithmic = False
-
-        metadata = self.gwyfile.get_graphmodel_metadata(self.gwyfile,
-                                                        self.graph_id)
-        self.assertIs(metadata['y_is_logarithmic'], False)
-
-    def _y_is_logarithmic(self, *args):
-        """
-        Write self.y_is_logarithmic in 'y_is_logarithmic' field
-        """
-
-        # combine fields names and fields pointers in one dictionary
-        arg_keys = [ffi.string(key).decode('utf-8') for key in args[2:-1:2]]
-        arg_pointers = [pointer for pointer in args[3:-1:2]]
-        arg_dict = dict(zip(arg_keys, arg_pointers))
-
-        truep = ffi.new("bool*", True)
-        falsep = ffi.new("bool*", False)
-
-        if self.y_is_logarithmic:
-            arg_dict['y_is_logarithmic'][0] = truep[0]
-        else:
-            arg_dict['y_is_logarithmic'][0] = falsep[0]
-
-        # C func returns true if the graphmodel object loock acceptable
-        return truep[0]
-
-    def test_label_visible_is_true(self):
-        """
-        'label.visible' field is True
-        """
-
-        graphmodel_get = self.mock_lib.gwyfile_object_graphmodel_get
-        graphmodel_get.side_effect = self._label_visible
-
-        self.label_visible = True
-
-        metadata = self.gwyfile.get_graphmodel_metadata(self.gwyfile,
-                                                        self.graph_id)
-        self.assertIs(metadata['label.visible'], True)
-
-    def test_label_visible_is_false(self):
-        """
-        'label.visible' field is False
-        """
-
-        graphmodel_get = self.mock_lib.gwyfile_object_graphmodel_get
-        graphmodel_get.side_effect = self._label_visible
-
-        self.label_visible = False
-
-        metadata = self.gwyfile.get_graphmodel_metadata(self.gwyfile,
-                                                        self.graph_id)
-        self.assertIs(metadata['label.visible'], False)
-
-    def _label_visible(self, *args):
-        """
-        Write self.label_visible in 'label.visible' field
-        """
-
-        # combine fields names and fields pointers in one dictionary
-        arg_keys = [ffi.string(key).decode('utf-8') for key in args[2:-1:2]]
-        arg_pointers = [pointer for pointer in args[3:-1:2]]
-        arg_dict = dict(zip(arg_keys, arg_pointers))
-
-        truep = ffi.new("bool*", True)
-        falsep = ffi.new("bool*", False)
-
-        if self.label_visible:
-            arg_dict['label.visible'][0] = truep[0]
-        else:
-            arg_dict['label.visible'][0] = falsep[0]
-
-        # C func returns true if the graphmodel object loock acceptable
-        return truep[0]
-
-    def test_label_has_frame_is_true(self):
-        """
-        'label.has_frame' field is True
-        """
-
-        graphmodel_get = self.mock_lib.gwyfile_object_graphmodel_get
-        graphmodel_get.side_effect = self._label_has_frame
-
-        self.label_has_frame = True
-
-        metadata = self.gwyfile.get_graphmodel_metadata(self.gwyfile,
-                                                        self.graph_id)
-        self.assertIs(metadata['label.has_frame'], True)
-
-    def test_label_has_frame_is_false(self):
-        """
-        'label.has_frame' field is False
-        """
-
-        graphmodel_get = self.mock_lib.gwyfile_object_graphmodel_get
-        graphmodel_get.side_effect = self._label_has_frame
-
-        self.label_has_frame = False
-
-        metadata = self.gwyfile.get_graphmodel_metadata(self.gwyfile,
-                                                        self.graph_id)
-        self.assertIs(metadata['label.has_frame'], False)
-
-    def _label_has_frame(self, *args):
-        """
-        Write self.label_has_frame in 'label.has_frame' field
-        """
-
-        # combine fields names and fields pointers in one dictionary
-        arg_keys = [ffi.string(key).decode('utf-8') for key in args[2:-1:2]]
-        arg_pointers = [pointer for pointer in args[3:-1:2]]
-        arg_dict = dict(zip(arg_keys, arg_pointers))
-
-        truep = ffi.new("bool*", True)
-        falsep = ffi.new("bool*", False)
-
-        if self.label_has_frame:
-            arg_dict['label.has_frame'][0] = truep[0]
-        else:
-            arg_dict['label.has_frame'][0] = falsep[0]
-
-        # C func returns true if the graphmodel object loock acceptable
-        return truep[0]
-
-    def test_label_reverse_is_true(self):
-        """
-        'label.reverse' field is True
-        """
-
-        graphmodel_get = self.mock_lib.gwyfile_object_graphmodel_get
-        graphmodel_get.side_effect = self._label_reverse
-
-        self.label_reverse = True
-
-        metadata = self.gwyfile.get_graphmodel_metadata(self.gwyfile,
-                                                        self.graph_id)
-        self.assertIs(metadata['label.reverse'], True)
-
-    def test_label_reverse_is_false(self):
-        """
-        'label.reverse' field is False
-        """
-
-        graphmodel_get = self.mock_lib.gwyfile_object_graphmodel_get
-        graphmodel_get.side_effect = self._label_reverse
-
-        self.label_reverse = False
-
-        metadata = self.gwyfile.get_graphmodel_metadata(self.gwyfile,
-                                                        self.graph_id)
-        self.assertIs(metadata['label.reverse'], False)
-
-    def _label_reverse(self, *args):
-        """
-        Write self.label_reverse in 'label.reverse' field
-        """
-
-        # combine fields names and fields pointers in one dictionary
-        arg_keys = [ffi.string(key).decode('utf-8') for key in args[2:-1:2]]
-        arg_pointers = [pointer for pointer in args[3:-1:2]]
-        arg_dict = dict(zip(arg_keys, arg_pointers))
-
-        truep = ffi.new("bool*", True)
-        falsep = ffi.new("bool*", False)
-
-        if self.label_reverse:
-            arg_dict['label.reverse'][0] = truep[0]
-        else:
-            arg_dict['label.reverse'][0] = falsep[0]
-
-        # C func returns true if the graphmodel object loock acceptable
-        return truep[0]
-
-    def test_label_frame_thickness(self):
-        """
-        Check 'label.frame_thickness' field in metadata dictionary
-        """
-
-        graphmodel_get = self.mock_lib.gwyfile_object_graphmodel_get
-        graphmodel_get.side_effect = self._label_frame_thickness
-
-        self.label_frame_thickness = 1
-
-        metadata = self.gwyfile.get_graphmodel_metadata(self.gwyfile,
-                                                        self.graph_id)
-        self.assertEqual(metadata['label.frame_thickness'],
-                         self.label_frame_thickness)
-
-    def _label_frame_thickness(self, *args):
-        """
-        Write self.label_frame_thickness in 'label.frame_thickness' field
-        """
-
-        # combine fields names and fields pointers in one dictionary
-        arg_keys = [ffi.string(key).decode('utf-8') for key in args[2:-1:2]]
-        arg_pointers = [pointer for pointer in args[3:-1:2]]
-        arg_dict = dict(zip(arg_keys, arg_pointers))
-
-        arg_dict['label.frame_thickness'][0] = self.label_frame_thickness
-        # C func returns true if the graphmodel object loock acceptable
-        truep = ffi.new("bool*", True)
-        return truep[0]
-
-    def test_label_position(self):
-        """
-        Check 'label.position' field in metadata dictionary
-        """
-
-        graphmodel_get = self.mock_lib.gwyfile_object_graphmodel_get
-        graphmodel_get.side_effect = self._label_position
-
-        self.label_position = 1
-
-        metadata = self.gwyfile.get_graphmodel_metadata(self.gwyfile,
-                                                        self.graph_id)
-        self.assertEqual(metadata['label.position'],
-                         self.label_position)
-
-    def _label_position(self, *args):
-        """
-        Write self.label_position in 'label.position' field
-        """
-
-        # combine fields names and fields pointers in one dictionary
-        arg_keys = [ffi.string(key).decode('utf-8') for key in args[2:-1:2]]
-        arg_pointers = [pointer for pointer in args[3:-1:2]]
-        arg_dict = dict(zip(arg_keys, arg_pointers))
-
-        arg_dict['label.position'][0] = self.label_position
-        # C func returns true if the graphmodel object loock acceptable
-        truep = ffi.new("bool*", True)
-        return truep[0]
-
-    def test_grid_type(self):
-        """
-        Check 'grid-type' field in metadata dictionary
-        """
-
-        graphmodel_get = self.mock_lib.gwyfile_object_graphmodel_get
-        graphmodel_get.side_effect = self._grid_type
-
-        self.grid_type = 1
-
-        metadata = self.gwyfile.get_graphmodel_metadata(self.gwyfile,
-                                                        self.graph_id)
-        self.assertEqual(metadata['grid-type'],
-                         self.grid_type)
-
-    def _grid_type(self, *args):
-        """
-        Write self.grid_type in 'grid-type' field
-        """
-
-        # combine fields names and fields pointers in one dictionary
-        arg_keys = [ffi.string(key).decode('utf-8') for key in args[2:-1:2]]
-        arg_pointers = [pointer for pointer in args[3:-1:2]]
-        arg_dict = dict(zip(arg_keys, arg_pointers))
-
-        arg_dict['grid-type'][0] = self.grid_type
-
-        # C func returns true if the graphmodel object loock acceptable
-        truep = ffi.new("bool*", True)
-        return truep[0]
-
-    def test_raise_exception_if_graphmodel_object_looks_unacceptable(self):
-        """
-        Raise GwyfileErrorCMsg if gwyfile_object_graphmodel_get returns False
-        """
-
-        falsep = ffi.new("bool*", False)
-        graphmodel_get = self.mock_lib.gwyfile_object_graphmodel_get
-        graphmodel_get.return_value = falsep[0]
-        self.assertRaises(GwyfileErrorCMsg,
-                          self.gwyfile.get_graphmodel_metadata,
-                          self.gwyfile,
-                          self.graph_id)
-
-
-class Gwyfile_get_graphmodel_curves(unittest.TestCase):
-    """
-    Test get_graphmodel_curves method of Gwyfile class
-    """
-
-    def setUp(self):
-        self.gwyfile = Mock(spec=Gwyfile)
-        self.gwyfile.get_graphmodel_curves = Gwyfile.get_graphmodel_curves
-
-        self.graph_id = 1  # id of graphmodel object
-        self.ncurves = 3   # number of curves in graphmodel object
-        self.curves_array = ffi.new("GwyfileObject*[]", self.ncurves)
-        self.graphmodel = Mock()
-
-        patcher_lib = patch('gwydb.gwy.gwyfile.lib',
-                            autospec=True)
-        self.addCleanup(patcher_lib.stop)
-        self.mock_lib = patcher_lib.start()
-
-    def test_graphmodel_object_does_not_exist(self):
-        """
-        Return empty list if graphmodel object does not exist
-        """
-
-        key = "/0/graph/graph/{:d}".format(self.graph_id)
-        self.gwyfile._gwyobject_check.return_value = False
-
-        curves = self.gwyfile.get_graphmodel_curves(self.gwyfile,
-                                                    self.graph_id,
-                                                    self.ncurves)
-
-        self.gwyfile._gwyobject_check.assert_has_calls(
-            [call(key)])
-
-        self.assertListEqual(curves, [])
-
-    def test_raise_exception_if_graphmodel_object_looks_unacceptable(self):
-        """
-        Raise GwyfileErrorCMsg if gwyfile_object_graphmodel_get returns False
-        """
-
-        falsep = ffi.new("bool*", False)
-        self.mock_lib.gwyfile_object_graphmodel_get.return_value = falsep[0]
-        self.assertRaises(GwyfileErrorCMsg,
-                          self.gwyfile.get_graphmodel_curves,
-                          self.gwyfile,
-                          self.graph_id,
-                          self.ncurves)
-
-    def test_get_curves_array(self):
-        """
-        Get array of curves (GwyfileObjects) from graphmodel object
-        """
-
-        self.gwyfile._gwyfile_get_object.return_value = self.graphmodel
-        graphmodel_get = self.mock_lib.gwyfile_object_graphmodel_get
-        graphmodel_get.side_effect = self._side_effect
-        curves = self.gwyfile.get_graphmodel_curves(self.gwyfile,
-                                                    self.graph_id,
-                                                    self.ncurves)
-        self.assertListEqual(curves, list(self.curves_array))
-
-    def _side_effect(self, *args):
-        """
-        Check args of gwyfile_object_graphmodel_get func
-        and write self.curves_array in 'curves' field
-        """
-
-        # first arg is GwyDatafield returned by _gwyfile_get_object
-        self.assertEqual(args[0], self.graphmodel)
-
-        # second arg is GwyfileError**
-        assert ffi.typeof(args[1]) == ffi.typeof(ffi.new("GwyfileError**"))
-
-        # last arg in Null
-        self.assertEqual(args[-1], ffi.NULL)
-
-        # combine fields names and fields pointers in one dictionary
-        arg_keys = [ffi.string(key).decode('utf-8') for key in args[2:-1:2]]
-        arg_pointers = [pointer for pointer in args[3:-1:2]]
-        arg_dict = dict(zip(arg_keys, arg_pointers))
-
-        arg_dict['curves'][0] = self.curves_array
-
-        # C func returns true if the graphmodel object loock acceptable
-        truep = ffi.new("bool*", True)
-        return truep[0]
-
-
-class Gwyfile_get_graphcurvemodel_metadata(unittest.TestCase):
-    """
-    Test get_graphcurvemodel_metadata method of Gwyfile class
-    """
-
-    def setUp(self):
-        self.gwyfile = Mock(spec=Gwyfile)
-        self.gwyfile.get_graphcurvemodel_metadata = (
-            Gwyfile.get_graphcurvemodel_metadata)
-        self.curve = Mock()
-        patcher_lib = patch('gwydb.gwy.gwyfile.lib',
-                            autospec=True)
-        self.addCleanup(patcher_lib.stop)
-        self.mock_lib = patcher_lib.start()
-
-        self.ndata = 256
-        self.description = "Curve label"
-        self.curve_type = 1
-        self.point_type = 1
-        self.line_style = 1
-        self.point_size = 3
-        self.line_size = 3
-        self.color_red = 0.1
-        self.color_green = 0.2
-        self.color_blue = 0.3
-
-    def test_raise_exception_if_graphcurvemodel_looks_unacceptable(self):
-        """
-        Raise GwyfileErrorCMsg if GwyGraphCurveModel looks unacceptable
-        """
-
-        falsep = ffi.new("bool*", False)
-        self.mock_lib.gwyfile_object_graphcurvemodel_get.return_value = (
-            falsep[0])
-        self.assertRaises(GwyfileErrorCMsg,
-                          self.gwyfile.get_graphcurvemodel_metadata,
-                          self.gwyfile,
-                          self.curve)
-
-    def test_positional_args_of_libgwyfile_func_call(self):
-        """
-        Test positional args in gwyfile_object_graphcurvemodel_get call
-
-        First arg is GwyGraphCurveModel*
-        Second arg is GwyfileError**
-        Last arg is NULL
-        """
-
-        self.mock_lib.gwyfile_object_graphcurvemodel_get.side_effect = (
-            self._positional_args_side_effect)
-        self.gwyfile.get_graphcurvemodel_metadata(self.gwyfile,
-                                                  self.curve)
-
-    def _positional_args_side_effect(self, *args):
-        """
-        Check positional args in gwyfile_object_graphcurvemodel_get call
-        """
-
-        # first arg is GwyGraphCurveModel
-        self.assertEqual(args[0], self.curve)
-
-        # second arg is GwyfileError**
-        assert ffi.typeof(args[1]) == ffi.typeof(ffi.new("GwyfileError**"))
-
-        # last arg in Null
-        self.assertEqual(args[-1], ffi.NULL)
-
-        # C func returns true if the graphcurvemodel object loock acceptable
-        truep = ffi.new("bool*", True)
-        return truep[0]
-
-    def test_getting_number_of_curves_in_graphcurvemodel(self):
-        """
-        Test getting 'ndata' field from GwyGraphCurveModel object
-        """
-
-        self.mock_lib.gwyfile_object_graphcurvemodel_get.side_effect = (
-            self._getting_number_of_points_side_effect)
-        metadata = self.gwyfile.get_graphcurvemodel_metadata(self.gwyfile,
-                                                             self.curve)
-        self.assertEqual(metadata['ndata'], self.ndata)
-
-    def _getting_number_of_points_side_effect(self, *args):
-        """
-        Write self.ndata in 'ndata' field and return True
-        """
-
-        # combine fields names and fields pointers in one dictionary
-        arg_keys = [ffi.string(key).decode('utf-8') for key in args[2:-1:2]]
-        arg_pointers = [pointer for pointer in args[3:-1:2]]
-        arg_dict = dict(zip(arg_keys, arg_pointers))
-
-        arg_dict['ndata'][0] = self.ndata
-
-        # C func returns true if the graphcurvemodel object loock acceptable
-        truep = ffi.new("bool*", True)
-        return truep[0]
-
-    def test_getting_description_of_gwycurvemodel(self):
-        """
-        Test getting 'description' field from GwyGraphCurveModel object
-        """
-
-        self.mock_lib.gwyfile_object_graphcurvemodel_get.side_effect = (
-            self._getting_description_of_curve)
-        metadata = self.gwyfile.get_graphcurvemodel_metadata(self.gwyfile,
-                                                             self.curve)
-        self.assertEqual(metadata['description'], self.description)
-
-    def _getting_description_of_curve(self, *args):
-        """
-        Write self.description in 'description' field and return True
-        """
-
-        # combine fields names and fields pointers in one dictionary
-        arg_keys = [ffi.string(key).decode('utf-8') for key in args[2:-1:2]]
-        arg_pointers = [pointer for pointer in args[3:-1:2]]
-        arg_dict = dict(zip(arg_keys, arg_pointers))
-
-        arg_dict['description'][0] = ffi.new("char[]",
-                                             self.description.encode('utf-8'))
-
-        # C func returns true if the graphcurvemodel object loock acceptable
-        truep = ffi.new("bool*", True)
-        return truep[0]
-
-    def test_getting_null_description_of_gwycurvemodel(self):
-        """
-        Test getting NULL in 'description' field from GwyGraphCurveModel
-        """
-
-        self.mock_lib.gwyfile_object_graphcurvemodel_get.side_effect = (
-            self._getting_null_description_of_curve)
-        metadata = self.gwyfile.get_graphcurvemodel_metadata(self.gwyfile,
-                                                             self.curve)
-        self.assertEqual(metadata['description'], '')
-
-    def _getting_null_description_of_curve(self, *args):
-        """
-        Write Null in 'description' field and return True
-        """
-
-        # combine fields names and fields pointers in one dictionary
-        arg_keys = [ffi.string(key).decode('utf-8') for key in args[2:-1:2]]
-        arg_pointers = [pointer for pointer in args[3:-1:2]]
-        arg_dict = dict(zip(arg_keys, arg_pointers))
-
-        arg_dict['description'][0] = ffi.NULL
-
-        # C func returns true if the graphcurvemodel object loock acceptable
-        truep = ffi.new("bool*", True)
-        return truep[0]
-
-    def test_getting_type_of_graphcurvemodel(self):
-        """
-        Test getting 'type' field from GwyGraphCurveModel
-        """
-
-        self.mock_lib.gwyfile_object_graphcurvemodel_get.side_effect = (
-            self._getting_type_of_curve_side_effect)
-        metadata = self.gwyfile.get_graphcurvemodel_metadata(self.gwyfile,
-                                                             self.curve)
-        self.assertEqual(metadata['type'], self.curve_type)
-
-    def _getting_type_of_curve_side_effect(self, *args):
-        """
-        Write self.curve_type in 'type' field and return True
-        """
-
-        # combine fields names and fields pointers in one dictionary
-        arg_keys = [ffi.string(key).decode('utf-8') for key in args[2:-1:2]]
-        arg_pointers = [pointer for pointer in args[3:-1:2]]
-        arg_dict = dict(zip(arg_keys, arg_pointers))
-
-        arg_dict['type'][0] = self.curve_type
-
-        # C func returns true if the graphcurvemodel object loock acceptable
-        truep = ffi.new("bool*", True)
-        return truep[0]
-
-    def test_getting_point_type_of_graphcurvemodel(self):
-        """
-        Test getting 'point_type' field from GwyGraphCurveModel
-        """
-
-        self.mock_lib.gwyfile_object_graphcurvemodel_get.side_effect = (
-            self._getting_point_type_side_effect)
-        metadata = self.gwyfile.get_graphcurvemodel_metadata(self.gwyfile,
-                                                             self.curve)
-        self.assertEqual(metadata['point_type'], self.point_type)
-
-    def _getting_point_type_side_effect(self, *args):
-        """
-        Write self.point_type in 'point_type' field and return True
-        """
-
-        # combine fields names and fields pointers in one dictionary
-        arg_keys = [ffi.string(key).decode('utf-8') for key in args[2:-1:2]]
-        arg_pointers = [pointer for pointer in args[3:-1:2]]
-        arg_dict = dict(zip(arg_keys, arg_pointers))
-
-        arg_dict['point_type'][0] = self.point_type
-
-        # C func returns true if the graphcurvemodel object loock acceptable
-        truep = ffi.new("bool*", True)
-        return truep[0]
-
-    def test_getting_line_style_of_graphcurvemodel(self):
-        """
-        Test getting 'line_style' field from GwyGraphCurveModel
-        """
-
-        self.mock_lib.gwyfile_object_graphcurvemodel_get.side_effect = (
-            self._getting_line_style_side_effect)
-        metadata = self.gwyfile.get_graphcurvemodel_metadata(self.gwyfile,
-                                                             self.curve)
-        self.assertEqual(metadata['line_style'], self.line_style)
-
-    def _getting_line_style_side_effect(self, *args):
-        """
-        Write self.line_style in 'line_style' field and return True
-        """
-
-        # combine fields names and fields pointers in one dictionary
-        arg_keys = [ffi.string(key).decode('utf-8') for key in args[2:-1:2]]
-        arg_pointers = [pointer for pointer in args[3:-1:2]]
-        arg_dict = dict(zip(arg_keys, arg_pointers))
-
-        arg_dict['line_style'][0] = self.line_style
-
-        # C func returns true if the graphcurvemodel object loock acceptable
-        truep = ffi.new("bool*", True)
-        return truep[0]
-
-    def test_getting_point_size_of_graphcurvemodel(self):
-        """
-        Test getting 'point_size' field from GwyGraphCurveModel
-        """
-
-        self.mock_lib.gwyfile_object_graphcurvemodel_get.side_effect = (
-            self._getting_point_size_side_effect)
-        metadata = self.gwyfile.get_graphcurvemodel_metadata(self.gwyfile,
-                                                             self.curve)
-        self.assertEqual(metadata['point_size'], self.point_size)
-
-    def _getting_point_size_side_effect(self, *args):
-        """
-        Write self.point_size in 'point_size' field and return True
-        """
-
-        # combine fields names and fields pointers in one dictionary
-        arg_keys = [ffi.string(key).decode('utf-8') for key in args[2:-1:2]]
-        arg_pointers = [pointer for pointer in args[3:-1:2]]
-        arg_dict = dict(zip(arg_keys, arg_pointers))
-
-        arg_dict['point_size'][0] = self.point_size
-
-        # C func returns true if the graphcurvemodel object loock acceptable
-        truep = ffi.new("bool*", True)
-        return truep[0]
-
-    def test_getting_line_size_of_graphcurvemodel(self):
-        """
-        Test getting 'line_size' field from GwyGraphCurveModel
-        """
-
-        self.mock_lib.gwyfile_object_graphcurvemodel_get.side_effect = (
-            self._getting_line_size_side_effect)
-        metadata = self.gwyfile.get_graphcurvemodel_metadata(self.gwyfile,
-                                                             self.curve)
-        self.assertEqual(metadata['line_size'], self.point_size)
-
-    def _getting_line_size_side_effect(self, *args):
-        """
-        Write self.line_size in 'line_size' field and return True
-        """
-
-        # combine fields names and fields pointers in one dictionary
-        arg_keys = [ffi.string(key).decode('utf-8') for key in args[2:-1:2]]
-        arg_pointers = [pointer for pointer in args[3:-1:2]]
-        arg_dict = dict(zip(arg_keys, arg_pointers))
-
-        arg_dict['line_size'][0] = self.line_size
-
-        # C func returns true if the graphcurvemodel object loock acceptable
-        truep = ffi.new("bool*", True)
-        return truep[0]
-
-    def test_getting_color_of_graphcurvemodel(self):
-        """
-        Test getting 'color.red', 'color.green', 'color.blue' fields
-        """
-
-        self.mock_lib.gwyfile_object_graphcurvemodel_get.side_effect = (
-            self._getting_color_side_effect)
-        metadata = self.gwyfile.get_graphcurvemodel_metadata(self.gwyfile,
-                                                             self.curve)
-        self.assertEqual(metadata['color.red'], self.color_red)
-        self.assertEqual(metadata['color.green'], self.color_green)
-        self.assertEqual(metadata['color.blue'], self.color_blue)
-
-    def _getting_color_side_effect(self, *args):
-        """
-        Write self.color_red, self.color_green, self.color_blue in
-        'color.red', 'color.green', 'color.blue' fields and return True
-        """
-
-        # combine fields names and fields pointers in one dictionary
-        arg_keys = [ffi.string(key).decode('utf-8') for key in args[2:-1:2]]
-        arg_pointers = [pointer for pointer in args[3:-1:2]]
-        arg_dict = dict(zip(arg_keys, arg_pointers))
-
-        arg_dict['color.red'][0] = self.color_red
-        arg_dict['color.green'][0] = self.color_green
-        arg_dict['color.blue'][0] = self.color_blue
-
-        # C func returns true if the graphcurvemodel object loock acceptable
-        truep = ffi.new("bool*", True)
-        return truep[0]
-
-
-class Gwyfile_get_graphcurvemodel_data(unittest.TestCase):
-    """
-    Test get_graphcurvemodel_data method of Gwyfile class
-    """
-
-    def setUp(self):
-        self.gwyfile = Mock(spec=Gwyfile)
-        self.gwyfile.get_graphcurvemodel_data = (
-            Gwyfile.get_graphcurvemodel_data)
-        self.curve = Mock()
-        patcher_lib = patch('gwydb.gwy.gwyfile.lib',
-                            autospec=True)
-        self.addCleanup(patcher_lib.stop)
-        self.mock_lib = patcher_lib.start()
-
-        self.npoints = 256
-        self.xdata = np.random.rand(self.npoints)
-        self.ydata = np.random.rand(self.npoints)
-
-    def test_raise_exception_if_graphcurvemodel_looks_unacceptable(self):
-        """
-        Raise GwyfileErrorCMsg if GwyGraphCurveModel looks unacceptable
-        """
-
-        falsep = ffi.new("bool*", False)
-        self.mock_lib.gwyfile_object_graphcurvemodel_get.return_value = (
-            falsep[0])
-        self.assertRaises(GwyfileErrorCMsg,
-                          self.gwyfile.get_graphcurvemodel_data,
-                          self.gwyfile,
-                          self.curve,
-                          self.npoints)
-
-    def test_positional_args_of_libgwyfile_func_call(self):
-        """
-        Test positional args in gwyfile_object_graphcurvemodel_get call
-
-        First arg is GwyGraphCurveModel*
-        Second arg is GwyfileError**
-        Last arg is NULL
-        """
-
-        self.mock_lib.gwyfile_object_graphcurvemodel_get.side_effect = (
-            self._positional_args_side_effect)
-        self.gwyfile.get_graphcurvemodel_data(self.gwyfile,
-                                              self.curve,
-                                              self.npoints)
-
-    def _positional_args_side_effect(self, *args):
-        """
-        Check positional args in gwyfile_object_graphcurvemodel_get call
-        """
-
-        # first arg is GwyGraphCurveModel
-        self.assertEqual(args[0], self.curve)
-
-        # second arg is GwyfileError**
-        assert ffi.typeof(args[1]) == ffi.typeof(ffi.new("GwyfileError**"))
-
-        # last arg in Null
-        self.assertEqual(args[-1], ffi.NULL)
-
-        # C func returns true if the graphcurvemodel object loock acceptable
-        truep = ffi.new("bool*", True)
-        return truep[0]
-
-    def test_returned_value(self):
-        """
-        Test the value returned by get_graphcurvemodel_data method"
-        """
-
-        self.mock_lib.gwyfile_object_graphcurvemodel_get.side_effect = (
-            self._returned_value_side_effect)
-
-        data = self.gwyfile.get_graphcurvemodel_data(self.gwyfile,
-                                                     self.curve,
-                                                     self.npoints)
-        np.testing.assert_almost_equal(self.xdata, data[0])
-        np.testing.assert_almost_equal(self.ydata, data[1])
-
-    def _returned_value_side_effect(self, *args):
-        """
-        Write self.xdata and self.ydata as C arrays to 'xdata' and 'ydata'
-        and return True
-        """
-        # combine fields names and fields pointers in one dictionary
-        arg_keys = [ffi.string(key).decode('utf-8') for key in args[2:-1:2]]
-        arg_pointers = [pointer for pointer in args[3:-1:2]]
-        arg_dict = dict(zip(arg_keys, arg_pointers))
-
-        arg_dict['xdata'][0] = ffi.cast("double*", self.xdata.ctypes.data)
-        arg_dict['ydata'][0] = ffi.cast("double*", self.ydata.ctypes.data)
-
-        # C func returns true if the graphcurvemodel object loock acceptable
-        truep = ffi.new("bool*", True)
-        return truep[0]
 
 
 class GwyPointSelections_init(unittest.TestCase):
@@ -4378,6 +2412,532 @@ class GwyGraphModel_init(unittest.TestCase):
         mock_gwygraphcurve.assert_has_calls(
             [call(curve) for curve in cgwycurves_array])
         self.assertEqual(graphmodel.curves, graphmodel._curves)
+
+
+class GwyChannel_get_title(unittest.TestCase):
+    """Test _get_title method of GwyChannel class
+    """
+
+    def setUp(self):
+        self.gwyfile = Mock(spec=Gwyfile)
+        self.channel_id = 0
+        self.gwyfile._gwyfile_get_object.return_value = (
+            ffi.new("char[]", b"Title"))
+
+    def test_raise_exception_if_gwyobject_does_not_exist(self):
+        """Raise GwyFileError is title gwyobject does not exist
+        """
+        self.gwyfile._gwyobject_check.return_value = False
+        self.assertRaises(GwyfileError,
+                          GwyChannel._get_title,
+                          self.gwyfile,
+                          self.channel_id)
+
+    def test_check_args_passing_to__gwyfile_get_object(self):
+        """
+        Check args passing to Gwyfile._gwyfile_get_object method
+        """
+
+        GwyChannel._get_title(self.gwyfile, self.channel_id)
+        self.gwyfile._gwyfile_get_object.assert_has_calls(
+            [call("/{:d}/data/title".format(self.channel_id))])
+
+    def test_returned_value(self):
+        """
+        Check returned value of get_title method
+        """
+
+        title = GwyChannel._get_title(self.gwyfile, self.channel_id)
+        self.assertEqual(title, 'Title')
+
+
+class GwyChannel_get_data(unittest.TestCase):
+    """Test _get_data method of GwyChannel class
+    """
+
+    def setUp(self):
+        self.gwyfile = Mock(spec=Gwyfile)
+        self.channel_id = 0
+        patcher = patch('gwydb.gwy.gwyfile.GwyDataField',
+                        autospec=True)
+        self.addCleanup(patcher.stop)
+        self.mock_GwyDataField = patcher.start()
+
+    def test_raise_exception_if_gwydatafield_does_not_exist(self):
+        """Raise GwyFileError is <GwyDataField*>  object does not exist
+        """
+        self.gwyfile._gwyobject_check.return_value = False
+        self.assertRaises(GwyfileError,
+                          GwyChannel._get_data,
+                          self.gwyfile,
+                          self.channel_id)
+
+    def test_check_args_passing_to__gwyfile_get_object(self):
+        """
+        Check args passing to Gwyfile._gwyfile_get_object method
+        """
+
+        GwyChannel._get_data(self.gwyfile, self.channel_id)
+        self.gwyfile._gwyfile_get_object.assert_has_calls(
+            [call("/{:d}/data".format(self.channel_id))])
+
+    def test_call_GwyDataField_constructor(self):
+        """
+        Pass gwydatafield object to GwyDataField constructor
+        """
+
+        gwydatafield = self.gwyfile._gwyfile_get_object.return_value
+        GwyChannel._get_data(self.gwyfile, self.channel_id)
+        self.mock_GwyDataField.assert_has_calls(
+            [call(gwydatafield)])
+
+    def test_check_returned_value(self):
+        """
+        Return object returned by GwyDataField constructor
+        """
+
+        expected_return = self.mock_GwyDataField.return_value
+        actual_return = GwyChannel._get_data(self.gwyfile, self.channel_id)
+        self.assertIs(expected_return, actual_return)
+
+
+class GwyChannel_get_mask(unittest.TestCase):
+    """Test _get_mask method of GwyChannel class
+    """
+
+    def setUp(self):
+        self.gwyfile = Mock(spec=Gwyfile)
+        self.channel_id = 0
+        patcher = patch('gwydb.gwy.gwyfile.GwyDataField',
+                        autospec=True)
+        self.addCleanup(patcher.stop)
+        self.mock_GwyDataField = patcher.start()
+
+    def test_check_existence_of_mask_datafield(self):
+        """Check that mask <GwyDataField*> exists
+        """
+        GwyChannel._get_mask(self.gwyfile, self.channel_id)
+        self.gwyfile._gwyobject_check.assert_has_calls(
+            [call("/{:d}/mask".format(self.channel_id))])
+
+    def test_return_None_if_mask_datafield_does_not_exist(self):
+        """Return None if mask <GwyDataField*> does not exist
+        """
+        self.gwyfile._gwyobject_check.return_value = False
+        actual_return = GwyChannel._get_mask(self.gwyfile,
+                                             self.channel_id)
+        self.assertIsNone(actual_return)
+
+    def test_check_args_passing_to__gwyfile_get_object(self):
+        """
+        Check args passing to Gwyfile._gwyfile_get_object method
+        """
+
+        GwyChannel._get_mask(self.gwyfile, self.channel_id)
+        self.gwyfile._gwyfile_get_object.assert_has_calls(
+            [call("/{:d}/mask".format(self.channel_id))])
+
+    def test_call_GwyDataField_constructor(self):
+        """
+        Pass gwydatafield object to GwyDataField constructor
+        """
+
+        gwydatafield = self.gwyfile._gwyfile_get_object.return_value
+        GwyChannel._get_mask(self.gwyfile, self.channel_id)
+        self.mock_GwyDataField.assert_has_calls(
+            [call(gwydatafield)])
+
+    def test_check_returned_value(self):
+        """
+        Return object returned by GwyDataField constructor
+        """
+
+        expected_return = self.mock_GwyDataField.return_value
+        actual_return = GwyChannel._get_mask(self.gwyfile, self.channel_id)
+        self.assertIs(expected_return, actual_return)
+
+
+class GwyChannel_get_show(unittest.TestCase):
+    """Test _get_show method of GwyChannel class
+    """
+
+    def setUp(self):
+        self.gwyfile = Mock(spec=Gwyfile)
+        self.channel_id = 0
+        patcher = patch('gwydb.gwy.gwyfile.GwyDataField',
+                        autospec=True)
+        self.addCleanup(patcher.stop)
+        self.mock_GwyDataField = patcher.start()
+
+    def test_check_existence_of_show_datafield(self):
+        """Check that presentation <GwyDataField*> exists
+        """
+        GwyChannel._get_show(self.gwyfile, self.channel_id)
+        self.gwyfile._gwyobject_check.assert_has_calls(
+            [call("/{:d}/show".format(self.channel_id))])
+
+    def test_return_None_if_show_datafield_does_not_exist(self):
+        """Return None if presentation <GwyDataField*> does not exist
+        """
+        self.gwyfile._gwyobject_check.return_value = False
+        actual_return = GwyChannel._get_show(self.gwyfile,
+                                             self.channel_id)
+        self.assertIsNone(actual_return)
+
+    def test_check_args_passing_to__gwyfile_get_object(self):
+        """
+        Check args passing to Gwyfile._gwyfile_get_object method
+        """
+
+        GwyChannel._get_show(self.gwyfile, self.channel_id)
+        self.gwyfile._gwyfile_get_object.assert_has_calls(
+            [call("/{:d}/show".format(self.channel_id))])
+
+    def test_call_GwyDataField_constructor(self):
+        """
+        Pass gwydatafield object to GwyDataField constructor
+        """
+
+        gwydatafield = self.gwyfile._gwyfile_get_object.return_value
+        GwyChannel._get_show(self.gwyfile, self.channel_id)
+        self.mock_GwyDataField.assert_has_calls(
+            [call(gwydatafield)])
+
+    def test_check_returned_value(self):
+        """
+        Return object returned by GwyDataField constructor
+        """
+
+        expected_return = self.mock_GwyDataField.return_value
+        actual_return = GwyChannel._get_show(self.gwyfile, self.channel_id)
+        self.assertIs(expected_return, actual_return)
+
+
+class GwyChannel_get_point_sel(unittest.TestCase):
+    """Test _get_point_sel method of GwyChannel class
+    """
+
+    def setUp(self):
+        self.gwyfile = Mock(spec=Gwyfile)
+        self.channel_id = 0
+        patcher = patch('gwydb.gwy.gwyfile.GwyPointSelections',
+                        autospec=True)
+        self.addCleanup(patcher.stop)
+        self.mock_GwyPointSelections = patcher.start()
+
+    def test_check_existence_of_point_selections(self):
+        """Check that point selections exists in the channel
+        """
+        GwyChannel._get_point_sel(self.gwyfile, self.channel_id)
+        self.gwyfile._gwyobject_check.assert_has_calls(
+            [call("/{:d}/select/point".format(self.channel_id))])
+
+    def test_return_None_if_point_selections_do_not_exist(self):
+        """Return None if point selections do not exist
+        """
+        self.gwyfile._gwyobject_check.return_value = False
+        actual_return = GwyChannel._get_point_sel(self.gwyfile,
+                                                  self.channel_id)
+        self.assertIsNone(actual_return)
+
+    def test_check_args_passing_to__gwyfile_get_object(self):
+        """
+        Check args passing to Gwyfile._gwyfile_get_object method
+        """
+
+        GwyChannel._get_point_sel(self.gwyfile, self.channel_id)
+        self.gwyfile._gwyfile_get_object.assert_has_calls(
+            [call("/{:d}/select/point".format(self.channel_id))])
+
+    def test_call_GwyPointSelections_constructor(self):
+        """
+        Pass gwypointselection object to GwyPointSelections constructor
+        """
+
+        gwypointsel = self.gwyfile._gwyfile_get_object.return_value
+        GwyChannel._get_point_sel(self.gwyfile, self.channel_id)
+        self.mock_GwyPointSelections.assert_has_calls(
+            [call(gwypointsel)])
+
+    def test_check_returned_value(self):
+        """
+        Return object returned by GwyPointSelections constructor
+        """
+
+        expected_return = self.mock_GwyPointSelections.return_value
+        actual_return = GwyChannel._get_point_sel(self.gwyfile,
+                                                  self.channel_id)
+        self.assertIs(expected_return, actual_return)
+
+
+class GwyChannel_get_pointer_sel(unittest.TestCase):
+    """Test _get_pointer_sel method of GwyChannel class
+    """
+
+    def setUp(self):
+        self.gwyfile = Mock(spec=Gwyfile)
+        self.channel_id = 0
+        patcher = patch('gwydb.gwy.gwyfile.GwyPointerSelections',
+                        autospec=True)
+        self.addCleanup(patcher.stop)
+        self.mock_GwyPointerSelections = patcher.start()
+
+    def test_check_existence_of_pointer_selections(self):
+        """Check that pointer selections exists in the channel
+        """
+        GwyChannel._get_pointer_sel(self.gwyfile, self.channel_id)
+        self.gwyfile._gwyobject_check.assert_has_calls(
+            [call("/{:d}/select/pointer".format(self.channel_id))])
+
+    def test_return_None_if_pointer_selections_do_not_exist(self):
+        """Return None if pointer selections do not exist
+        """
+        self.gwyfile._gwyobject_check.return_value = False
+        actual_return = GwyChannel._get_pointer_sel(self.gwyfile,
+                                                    self.channel_id)
+        self.assertIsNone(actual_return)
+
+    def test_check_args_passing_to__gwyfile_get_object(self):
+        """
+        Check args passing to Gwyfile._gwyfile_get_object method
+        """
+
+        GwyChannel._get_pointer_sel(self.gwyfile, self.channel_id)
+        self.gwyfile._gwyfile_get_object.assert_has_calls(
+            [call("/{:d}/select/pointer".format(self.channel_id))])
+
+    def test_call_GwyPointSelections_constructor(self):
+        """
+        Pass gwypointselection object to GwyPointerSelections constructor
+        """
+
+        gwypointersel = self.gwyfile._gwyfile_get_object.return_value
+        GwyChannel._get_pointer_sel(self.gwyfile, self.channel_id)
+        self.mock_GwyPointerSelections.assert_has_calls(
+            [call(gwypointersel)])
+
+    def test_check_returned_value(self):
+        """
+        Return object returned by GwyPointerSelections constructor
+        """
+
+        expected_return = self.mock_GwyPointerSelections.return_value
+        actual_return = GwyChannel._get_pointer_sel(self.gwyfile,
+                                                    self.channel_id)
+        self.assertIs(expected_return, actual_return)
+
+
+class GwyChannel_get_line_sel(unittest.TestCase):
+    """Test _get_line_sel method of GwyChannel class
+    """
+
+    def setUp(self):
+        self.gwyfile = Mock(spec=Gwyfile)
+        self.channel_id = 0
+        patcher = patch('gwydb.gwy.gwyfile.GwyLineSelections',
+                        autospec=True)
+        self.addCleanup(patcher.stop)
+        self.mock_GwyLineSelections = patcher.start()
+
+    def test_check_existence_of_line_selections(self):
+        """Check that line selections exists in the channel
+        """
+        GwyChannel._get_line_sel(self.gwyfile, self.channel_id)
+        self.gwyfile._gwyobject_check.assert_has_calls(
+            [call("/{:d}/select/line".format(self.channel_id))])
+
+    def test_return_None_if_line_selections_do_not_exist(self):
+        """Return None if line selections do not exist
+        """
+        self.gwyfile._gwyobject_check.return_value = False
+        actual_return = GwyChannel._get_line_sel(self.gwyfile,
+                                                 self.channel_id)
+        self.assertIsNone(actual_return)
+
+    def test_check_args_passing_to__gwyfile_get_object(self):
+        """
+        Check args passing to Gwyfile._gwyfile_get_object method
+        """
+
+        GwyChannel._get_line_sel(self.gwyfile, self.channel_id)
+        self.gwyfile._gwyfile_get_object.assert_has_calls(
+            [call("/{:d}/select/line".format(self.channel_id))])
+
+    def test_call_GwyLineSelections_constructor(self):
+        """
+        Pass gwylineselection object to GwyLineSelections constructor
+        """
+
+        gwylinesel = self.gwyfile._gwyfile_get_object.return_value
+        GwyChannel._get_line_sel(self.gwyfile, self.channel_id)
+        self.mock_GwyLineSelections.assert_has_calls(
+            [call(gwylinesel)])
+
+    def test_check_returned_value(self):
+        """
+        Return object returned by GwyLineSelections constructor
+        """
+
+        expected_return = self.mock_GwyLineSelections.return_value
+        actual_return = GwyChannel._get_line_sel(self.gwyfile,
+                                                 self.channel_id)
+        self.assertIs(expected_return, actual_return)
+
+
+class GwyChannel_get_rectangle_sel(unittest.TestCase):
+    """Test _get_rectangle_sel method of GwyChannel class
+    """
+
+    def setUp(self):
+        self.gwyfile = Mock(spec=Gwyfile)
+        self.channel_id = 0
+        patcher = patch('gwydb.gwy.gwyfile.GwyRectangleSelections',
+                        autospec=True)
+        self.addCleanup(patcher.stop)
+        self.mock_GwyRectangleSelections = patcher.start()
+
+    def test_check_existence_of_rectangle_selections(self):
+        """Check that rectangle selections exists in the channel
+        """
+        GwyChannel._get_rectangle_sel(self.gwyfile, self.channel_id)
+        self.gwyfile._gwyobject_check.assert_has_calls(
+            [call("/{:d}/select/rectangle".format(self.channel_id))])
+
+    def test_return_None_if_rectangle_selections_do_not_exist(self):
+        """Return None if rectangle selections do not exist
+        """
+        self.gwyfile._gwyobject_check.return_value = False
+        actual_return = GwyChannel._get_rectangle_sel(self.gwyfile,
+                                                      self.channel_id)
+        self.assertIsNone(actual_return)
+
+    def test_check_args_passing_to__gwyfile_get_object(self):
+        """
+        Check args passing to Gwyfile._gwyfile_get_object method
+        """
+
+        GwyChannel._get_rectangle_sel(self.gwyfile, self.channel_id)
+        self.gwyfile._gwyfile_get_object.assert_has_calls(
+            [call("/{:d}/select/rectangle".format(self.channel_id))])
+
+    def test_call_GwyRectangleSelections_constructor(self):
+        """
+        Pass gwyrectangleselection object to GwyRectangleSelections constructor
+        """
+
+        gwyrectsel = self.gwyfile._gwyfile_get_object.return_value
+        GwyChannel._get_rectangle_sel(self.gwyfile, self.channel_id)
+        self.mock_GwyRectangleSelections.assert_has_calls(
+            [call(gwyrectsel)])
+
+    def test_check_returned_value(self):
+        """
+        Return object returned by GwyRectangleSelections constructor
+        """
+
+        expected_return = self.mock_GwyRectangleSelections.return_value
+        actual_return = GwyChannel._get_rectangle_sel(self.gwyfile,
+                                                      self.channel_id)
+        self.assertIs(expected_return, actual_return)
+
+
+class GwyChannel_get_ellipse_sel(unittest.TestCase):
+    """Test _get_ellipse_sel method of GwyChannel class
+    """
+
+    def setUp(self):
+        self.gwyfile = Mock(spec=Gwyfile)
+        self.channel_id = 0
+        patcher = patch('gwydb.gwy.gwyfile.GwyEllipseSelections',
+                        autospec=True)
+        self.addCleanup(patcher.stop)
+        self.mock_GwyEllipseSelections = patcher.start()
+
+    def test_check_existence_of_ellipse_selections(self):
+        """Check that ellipse selections exists in the channel
+        """
+        GwyChannel._get_ellipse_sel(self.gwyfile, self.channel_id)
+        self.gwyfile._gwyobject_check.assert_has_calls(
+            [call("/{:d}/select/ellipse".format(self.channel_id))])
+
+    def test_return_None_if_ellipse_selections_do_not_exist(self):
+        """Return None if ellipse selections do not exist
+        """
+        self.gwyfile._gwyobject_check.return_value = False
+        actual_return = GwyChannel._get_ellipse_sel(self.gwyfile,
+                                                    self.channel_id)
+        self.assertIsNone(actual_return)
+
+    def test_check_args_passing_to__gwyfile_get_object(self):
+        """
+        Check args passing to Gwyfile._gwyfile_get_object method
+        """
+
+        GwyChannel._get_ellipse_sel(self.gwyfile, self.channel_id)
+        self.gwyfile._gwyfile_get_object.assert_has_calls(
+            [call("/{:d}/select/ellipse".format(self.channel_id))])
+
+    def test_call_GwyEllipseSelections_constructor(self):
+        """
+        Pass gwyellipseselection object to GwyEllipseSelections constructor
+        """
+
+        gwyellipsesel = self.gwyfile._gwyfile_get_object.return_value
+        GwyChannel._get_ellipse_sel(self.gwyfile, self.channel_id)
+        self.mock_GwyEllipseSelections.assert_has_calls(
+            [call(gwyellipsesel)])
+
+    def test_check_returned_value(self):
+        """
+        Return object returned by GwyEllipseSelections constructor
+        """
+
+        expected_return = self.mock_GwyEllipseSelections.return_value
+        actual_return = GwyChannel._get_ellipse_sel(self.gwyfile,
+                                                    self.channel_id)
+        self.assertIs(expected_return, actual_return)
+
+
+class GwyChannel_init(unittest.TestCase):
+    """Test __init__ method of GwyChannel class
+    """
+
+    @patch.object(GwyChannel, '_get_title')
+    @patch.object(GwyChannel, '_get_data')
+    @patch.object(GwyChannel, '_get_mask')
+    @patch.object(GwyChannel, '_get_show')
+    @patch.object(GwyChannel, '_get_point_sel')
+    @patch.object(GwyChannel, '_get_pointer_sel')
+    @patch.object(GwyChannel, '_get_line_sel')
+    @patch.object(GwyChannel, '_get_rectangle_sel')
+    @patch.object(GwyChannel, '_get_ellipse_sel')
+    def test_GwyGraphModel_init(self,
+                                mock_get_ellipse_sel,
+                                mock_get_rectangle_sel,
+                                mock_get_line_sel,
+                                mock_get_pointer_sel,
+                                mock_get_point_sel,
+                                mock_get_show,
+                                mock_get_mask,
+                                mock_get_data,
+                                mock_get_title):
+        gwyfile = Mock(spec=Gwyfile)
+        channel_id = 0
+        channel = GwyChannel(gwyfile, channel_id)
+        self.assertEqual(channel.title, mock_get_title.return_value)
+        self.assertEqual(channel.data, mock_get_data.return_value)
+        self.assertEqual(channel.mask, mock_get_mask.return_value)
+        self.assertEqual(channel.show, mock_get_show.return_value)
+        self.assertEqual(channel.point_selections,
+                         mock_get_point_sel.return_value)
+        self.assertEqual(channel.pointer_selections,
+                         mock_get_pointer_sel.return_value)
+        self.assertEqual(channel.line_selections,
+                         mock_get_line_sel.return_value)
+        self.assertEqual(channel.rectangle_selections,
+                         mock_get_rectangle_sel.return_value)
+        self.assertEqual(channel.ellipse_selections,
+                         mock_get_ellipse_sel.return_value)
 
 
 if __name__ == '__main__':
