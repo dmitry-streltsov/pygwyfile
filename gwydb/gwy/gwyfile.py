@@ -938,8 +938,9 @@ class GwySelection(ABC):
         return pairs
 
     def __repr__(self):
-        return "<{} instance.\n data: {}>".format(
+        return "<{} instance at {}.\n data: {}>".format(
             self.__class__.__name__,
+            hex(id(self)),
             self.data.__repr__())
 
 
@@ -1204,8 +1205,9 @@ class GwyDataField:
             raise GwyfileErrorCMsg(errorp[0].message)
 
     def __repr__(self):
-        return "<{} instance.\n meta: {},\n data: {}>".format(
+        return "<{} instance at {}.\n meta: {},\n data: {}>".format(
             self.__class__.__name__,
+            hex(id(self)),
             self.meta.__repr__(),
             self.data.__repr__())
 
@@ -1367,9 +1369,292 @@ class GwyGraphCurve:
             return data_array
 
     def __repr__(self):
-        return "<{} instance. Description: {}>".format(
+        return "<{} instance at {}. Description: {}>".format(
             self.__class__.__name__,
+            hex(id(self)),
             self.meta['description'])
+
+
+class GwyGraphModel:
+    """Class for GwyGraphModel representation
+    """
+
+    def __init__(self, gwygraphmodel):
+        self._meta = self._get_meta(gwygraphmodel)
+        ncurves = self._meta['ncurves']
+        curves = self._get_curves(gwygraphmodel, ncurves)
+        self._curves = [GwyGraphCurve(curve) for curve in curves]
+
+    @property
+    def meta(self):
+        return self._meta
+
+    @property
+    def curves(self):
+        return self._curves
+
+    @staticmethod
+    def _get_meta(gwygraphmodel):
+        """Get metadata from a GwyGraphModel object (libgwyfile)
+
+        Args:
+            gwygraphmodel (GwyGraphModel*):
+                GwyGraphModel object from Libgwyfile C library
+
+        Returns:
+           meta (dict):
+                python dictionary with metadata from the GwyGraphModel
+        """
+
+        error = ffi.new("GwyfileError*")
+        errorp = ffi.new("GwyfileError**", error)
+        ncurvesp = ffi.new("int32_t*")
+        titlep = ffi.new("char**")
+        top_labelp = ffi.new("char**")
+        left_labelp = ffi.new("char**")
+        right_labelp = ffi.new("char**")
+        bottom_labelp = ffi.new("char**")
+        x_unitp = ffi.new("char**")
+        y_unitp = ffi.new("char**")
+        x_minp = ffi.new("double*")
+        x_min_setp = ffi.new("bool*")
+        x_maxp = ffi.new("double*")
+        x_max_setp = ffi.new("bool*")
+        y_minp = ffi.new("double*")
+        y_min_setp = ffi.new("bool*")
+        y_maxp = ffi.new("double*")
+        y_max_setp = ffi.new("bool*")
+        x_is_logarithmicp = ffi.new("bool*")
+        y_is_logarithmicp = ffi.new("bool*")
+        label_visiblep = ffi.new("bool*")
+        label_has_framep = ffi.new("bool*")
+        label_reversep = ffi.new("bool*")
+        label_frame_thicknessp = ffi.new("int32_t*")
+        label_positionp = ffi.new("int32_t*")
+        grid_typep = ffi.new("int32_t*")
+
+        meta = {}
+
+        if lib.gwyfile_object_graphmodel_get(gwygraphmodel,
+                                             errorp,
+                                             ffi.new("char[]",
+                                                     b"ncurves"),
+                                             ncurvesp,
+                                             ffi.new("char[]",
+                                                     b"title"),
+                                             titlep,
+                                             ffi.new("char[]",
+                                                     b"top_label"),
+                                             top_labelp,
+                                             ffi.new("char[]",
+                                                     b"left_label"),
+                                             left_labelp,
+                                             ffi.new("char[]",
+                                                     b"right_label"),
+                                             right_labelp,
+                                             ffi.new("char[]",
+                                                     b"bottom_label"),
+                                             bottom_labelp,
+                                             ffi.new("char[]",
+                                                     b"x_unit"),
+                                             x_unitp,
+                                             ffi.new("char[]",
+                                                     b"y_unit"),
+                                             y_unitp,
+                                             ffi.new("char[]",
+                                                     b"x_min"),
+                                             x_minp,
+                                             ffi.new("char[]",
+                                                     b"x_min_set"),
+                                             x_min_setp,
+                                             ffi.new("char[]",
+                                                     b"x_max"),
+                                             x_maxp,
+                                             ffi.new("char[]",
+                                                     b"x_max_set"),
+                                             x_max_setp,
+                                             ffi.new("char[]",
+                                                     b"y_min"),
+                                             y_minp,
+                                             ffi.new("char[]",
+                                                     b"y_min_set"),
+                                             y_min_setp,
+                                             ffi.new("char[]",
+                                                     b"y_max"),
+                                             y_maxp,
+                                             ffi.new("char[]",
+                                                     b"y_max_set"),
+                                             y_max_setp,
+                                             ffi.new("char[]",
+                                                     b"x_is_logarithmic"),
+                                             x_is_logarithmicp,
+                                             ffi.new("char[]",
+                                                     b"y_is_logarithmic"),
+                                             y_is_logarithmicp,
+                                             ffi.new("char[]",
+                                                     b"label.visible"),
+                                             label_visiblep,
+                                             ffi.new("char[]",
+                                                     b"label.has_frame"),
+                                             label_has_framep,
+                                             ffi.new("char[]",
+                                                     b"label.reverse"),
+                                             label_reversep,
+                                             ffi.new("char[]",
+                                                     b"label.frame_thickness"),
+                                             label_frame_thicknessp,
+                                             ffi.new("char[]",
+                                                     b"label.position"),
+                                             label_positionp,
+                                             ffi.new("char[]",
+                                                     b"grid-type"),
+                                             grid_typep,
+                                             ffi.NULL):
+            meta["ncurves"] = ncurvesp[0]
+
+            if titlep[0]:
+                title = ffi.string(titlep[0]).decode('utf-8')
+                meta["title"] = title
+            else:
+                meta["title"] = ''
+
+            if top_labelp[0]:
+                top_label = ffi.string(top_labelp[0]).decode('utf-8')
+                meta["top_label"] = top_label
+            else:
+                meta["top_label"] = ''
+
+            if left_labelp[0]:
+                left_label = ffi.string(left_labelp[0]).decode('utf-8')
+                meta["left_label"] = left_label
+            else:
+                meta["left_label"] = ''
+
+            if right_labelp[0]:
+                right_label = ffi.string(right_labelp[0]).decode('utf-8')
+                meta["right_label"] = right_label
+            else:
+                meta["right_label"] = ''
+
+            if bottom_labelp[0]:
+                bottom_label = ffi.string(bottom_labelp[0]).decode('utf-8')
+                meta["bottom_label"] = bottom_label
+            else:
+                meta["bottom_label"] = ''
+
+            if x_unitp[0]:
+                x_unit = ffi.string(x_unitp[0]).decode('utf-8')
+                meta["x_unit"] = x_unit
+            else:
+                meta["x_unit"] = ''
+
+            if y_unitp[0]:
+                y_unit = ffi.string(y_unitp[0]).decode('utf-8')
+                meta["y_unit"] = y_unit
+            else:
+                meta["y_unit"] = ''
+
+            if x_min_setp[0]:
+                meta["x_min_set"] = True
+                meta["x_min"] = x_minp[0]
+            else:
+                meta["x_min_set"] = False
+                meta["x_min"] = None
+
+            if x_max_setp[0]:
+                meta["x_max_set"] = True
+                meta["x_max"] = x_maxp[0]
+            else:
+                meta["x_max_set"] = False
+                meta["x_max"] = None
+
+            if y_min_setp[0]:
+                meta["y_min_set"] = True
+                meta["y_min"] = y_minp[0]
+            else:
+                meta["y_min_set"] = False
+                meta["y_min"] = None
+
+            if y_max_setp[0]:
+                meta["y_max_set"] = True
+                meta["y_max"] = y_maxp[0]
+            else:
+                meta["y_max_set"] = False
+                meta["y_max"] = None
+
+            if x_is_logarithmicp[0]:
+                meta["x_is_logarithmic"] = True
+            else:
+                meta["x_is_logarithmic"] = False
+
+            if y_is_logarithmicp[0]:
+                meta["y_is_logarithmic"] = True
+            else:
+                meta["y_is_logarithmic"] = False
+
+            if label_visiblep[0]:
+                meta["label.visible"] = True
+            else:
+                meta["label.visible"] = False
+
+            if label_has_framep[0]:
+                meta["label.has_frame"] = True
+            else:
+                meta["label.has_frame"] = False
+
+            if label_reversep[0]:
+                meta["label.reverse"] = True
+            else:
+                meta["label.reverse"] = False
+
+            meta["label.frame_thickness"] = label_frame_thicknessp[0]
+
+            meta["label.position"] = label_positionp[0]
+
+            meta["grid-type"] = grid_typep[0]
+
+            return meta
+        else:
+            raise GwyfileErrorCMsg(errorp[0].message)
+
+    @staticmethod
+    def _get_curves(gwygraphmodel, ncurves):
+        """Get list of GwyGraphCurveModel object pointers
+
+        Args:
+            gwygraphmodel (GwyGraphModel*):
+                GwyGraphModel object from Libgwyfile C library
+            ncurves (int):
+                number of curves in the GwyGraphModel object
+
+        Returns:
+            curves (list):
+                list of GwyGraphCurveModel* Libgwyfile objects
+        """
+
+        error = ffi.new("GwyfileError*")
+        errorp = ffi.new("GwyfileError**", error)
+        curves_arrayp = ffi.new("GwyfileObject***")
+
+        curves = []
+
+        if lib.gwyfile_object_graphmodel_get(gwygraphmodel,
+                                             errorp,
+                                             ffi.new("char[]",
+                                                     b"curves"),
+                                             curves_arrayp,
+                                             ffi.NULL):
+            curves_array = curves_arrayp[0]
+            curves = [curves_array[curve_id] for curve_id in range(ncurves)]
+            return curves
+        else:
+            raise GwyfileErrorCMsg(errorp[0].message)
+
+    def __repr__(self):
+        return "<{} instance at {}. Curves: {}>".format(
+            self.__class__.__name__,
+            hex(id(self)),
+            self.curves)
 
 
 def read_gwyfile(filename):
