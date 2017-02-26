@@ -5,14 +5,14 @@ import numpy as np
 
 from gwydb.gwy.gwyfile import Gwyfile
 from gwydb.gwy.gwyfile import GwyfileError, GwyfileErrorCMsg
-from gwydb.gwy.gwyfile import GwySelection
-from gwydb.gwy.gwyfile import GwyPointSelections, GwyPointerSelections
-from gwydb.gwy.gwyfile import GwyLineSelections, GwyRectangleSelections
-from gwydb.gwy.gwyfile import GwyEllipseSelections
+from gwydb.gwy.gwyfile import (GwySelection, GwyPointSelections,
+                               GwyPointerSelections, GwyLineSelections,
+                               GwyRectangleSelections, GwyEllipseSelections)
 from gwydb.gwy.gwyfile import GwyDataField
 from gwydb.gwy.gwyfile import GwyGraphCurve
 from gwydb.gwy.gwyfile import GwyGraphModel
 from gwydb.gwy.gwyfile import GwyChannel
+from gwydb.gwy.gwyfile import GwyContainer
 from gwydb.gwy.gwyfile import ffi, lib
 from gwydb.gwy.gwyfile import read_gwyfile
 
@@ -161,50 +161,6 @@ class Gwyfile_init_TestCase(unittest.TestCase):
         mock_lib.gwyfile_object_name.return_value = test_name
         test_instance = Gwyfile(c_gwyfile)
         self.assertIs(c_gwyfile, test_instance.c_gwyfile)
-
-
-class Gwyfile_get_channels_ids_TestCase(unittest.TestCase):
-    """
-    Test get_channels_ids method in Gwyfile class
-    """
-
-    def setUp(self):
-        self.gwyfile = Mock(spec=Gwyfile)
-        self.gwyfile.c_gwyfile = Mock()
-        self.gwyfile.get_channels_ids = Gwyfile.get_channels_ids
-
-        patcher_lib = patch('gwydb.gwy.gwyfile.lib', autospec=True)
-        self.addCleanup(patcher_lib.stop)
-        self.mock_lib = patcher_lib.start()
-
-    def test_libgwyfile_function_returns_non_zero_channels(self):
-        """
-        Returns list of channels ids if their number is not zero
-        """
-
-        enum_chs = self.mock_lib.gwyfile_object_container_enumerate_channels
-        enum_chs.side_effect = self._side_effect_non_zero_channels
-        ids = self.gwyfile.get_channels_ids(self.gwyfile)
-        self.assertEqual(ids, [0, 1, 2])
-
-    def _side_effect_non_zero_channels(self, c_gwyfile, nchannelsp):
-        """
-        Returns 3 channels with ids = 0, 1 and 2
-        """
-
-        nchannelsp[0] = 3
-        ids = ffi.new("int[]", [0, 1, 2])
-        return ids
-
-    def test_libgwyfile_function_returns_null(self):
-        """
-        Returns empty list if libgwyfile function returns NULL
-        """
-
-        enum_ch = self.mock_lib.gwyfile_object_container_enumerate_channels
-        enum_ch.return_value = ffi.NULL
-        ids = self.gwyfile.get_channels_ids(self.gwyfile)
-        self.assertEqual(ids, [])
 
 
 class Gwyfile_get_gwyobject_TestCase(unittest.TestCase):
@@ -2938,6 +2894,196 @@ class GwyChannel_init(unittest.TestCase):
                          mock_get_rectangle_sel.return_value)
         self.assertEqual(channel.ellipse_selections,
                          mock_get_ellipse_sel.return_value)
+
+
+class GwyContainer_get_channel_ids_TestCase(unittest.TestCase):
+    """
+    Test _get_channel_ids method in GwyContainer class
+    """
+
+    def setUp(self):
+        self.gwyfile = Mock(spec=Gwyfile)
+        self.gwyfile.c_gwyfile = Mock()
+
+        patcher_lib = patch('gwydb.gwy.gwyfile.lib', autospec=True)
+        self.addCleanup(patcher_lib.stop)
+        self.mock_lib = patcher_lib.start()
+
+    def test_libgwyfile_function_returns_non_zero_channels(self):
+        """
+        Returns list of channel ids if their number is not zero
+        """
+
+        enum_chs = self.mock_lib.gwyfile_object_container_enumerate_channels
+        enum_chs.side_effect = self._side_effect_non_zero_channels
+        ids = GwyContainer._get_channel_ids(self.gwyfile)
+        self.assertEqual(ids, [0, 1, 2])
+
+    def _side_effect_non_zero_channels(self, c_gwyfile, nchannelsp):
+        """
+        Returns 3 channels with ids = 0, 1 and 2
+        """
+
+        nchannelsp[0] = 3
+        ids = ffi.new("int[]", [0, 1, 2])
+        return ids
+
+    def test_libgwyfile_function_returns_null(self):
+        """
+        Returns empty list if libgwyfile function returns NULL
+        """
+
+        enum_ch = self.mock_lib.gwyfile_object_container_enumerate_channels
+        enum_ch.return_value = ffi.NULL
+        ids = GwyContainer._get_channel_ids(self.gwyfile)
+        self.assertEqual(ids, [])
+
+
+class GwyContainer_get_graph_ids_TestCase(unittest.TestCase):
+    """
+    Test _get_graph_ids method in GwyContainer class
+    """
+
+    def setUp(self):
+        self.gwyfile = Mock(spec=Gwyfile)
+        self.gwyfile.c_gwyfile = Mock()
+
+        patcher_lib = patch('gwydb.gwy.gwyfile.lib', autospec=True)
+        self.addCleanup(patcher_lib.stop)
+        self.mock_lib = patcher_lib.start()
+
+    def test_libgwyfile_function_returns_non_zero_channels(self):
+        """
+        Returns list of graph ids if their number is not zero
+        """
+
+        self.mock_lib.gwyfile_object_container_enumerate_graphs.side_effect = (
+            self._side_effect_non_zero_graphs)
+        ids = GwyContainer._get_graph_ids(self.gwyfile)
+        self.assertEqual(ids, [1, 2])
+
+    def _side_effect_non_zero_graphs(self, c_gwyfile, ngraphsp):
+        """
+        Returns 2 graphs with ids = 1 and 2
+        """
+
+        ngraphsp[0] = 2
+        ids = ffi.new("int[]", [1, 2])
+        return ids
+
+    def test_libgwyfile_function_returns_null(self):
+        """
+        Returns empty list if libgwyfile function returns NULL
+        """
+
+        enum_graphs = self.mock_lib.gwyfile_object_container_enumerate_graphs
+        enum_graphs.return_value = ffi.NULL
+        ids = GwyContainer._get_graph_ids(self.gwyfile)
+        self.assertEqual(ids, [])
+
+
+class GwyContainer_dump_channels(unittest.TestCase):
+    """Test _dump_channels method of GwyContainer class
+    """
+
+    @patch.object(GwyContainer, '_get_channel_ids')
+    def test_no_channels_in_container(self, mock_get_channel_ids):
+        """Return empty list if channel_ids list is empty
+        """
+        mock_get_channel_ids.return_value = []
+        gwyfile = Mock(spec=Gwyfile)
+        channels = GwyContainer._dump_channels(gwyfile)
+        self.assertEqual(channels, [])
+
+    @patch('gwydb.gwy.gwyfile.GwyChannel', autospec=True)
+    @patch.object(GwyContainer, '_get_channel_ids')
+    def test_convert_channel_ids_to_GwyChannel_list(self,
+                                                    mock_get_channel_ids,
+                                                    mock_GwyChannel):
+        """Convert list of channel_ids to list of GwyChannel objects
+        and return the latter
+        """
+        channel_ids = [0, 1, 2]
+        mock_get_channel_ids.return_value = channel_ids
+        gwyfile = Mock(spec=Gwyfile)
+        channels = GwyContainer._dump_channels(gwyfile)
+
+        self.assertListEqual(channels,
+                             [mock_GwyChannel(gwyfile, channel_id)
+                              for channel_id in channel_ids])
+
+
+class GwyContainer_dump_graphs(unittest.TestCase):
+    """Test _dump_graphs method of GwyContainer class
+    """
+
+    @patch.object(GwyContainer, '_get_graph_ids')
+    def test_no_graphs_in_container(self, mock_get_graph_ids):
+        """Return empty list if graph_ids list is empty
+        """
+        mock_get_graph_ids.return_value = []
+        gwyfile = Mock(spec=Gwyfile)
+        graphs = GwyContainer._dump_graphs(gwyfile)
+        self.assertEqual(graphs, [])
+
+    @patch.object(Gwyfile, 'get_gwyobject')
+    @patch('gwydb.gwy.gwyfile.GwyGraphModel', autospec=True)
+    @patch.object(GwyContainer, '_get_graph_ids')
+    def test_getting_gwygraphmodel_objects(self,
+                                           mock_get_graph_ids,
+                                           mock_GwyGraphModel,
+                                           mock_get_gwyobject):
+        """Get <GwyGraphModel*> objects from gwyfile
+        """
+        graph_ids = [1, 2, 3]
+        graph_keys = ["/0/graph/graph/1",
+                      "/0/graph/graph/2",
+                      "/0/graph/graph/3"]
+        mock_get_graph_ids.return_value = graph_ids
+        gwyfile = Mock(spec=Gwyfile)
+        mock_get_gwyobject.return_value = Mock()
+        GwyContainer._dump_graphs(gwyfile)
+        mock_get_gwyobject.assert_has_calls(
+            [call(gwyfile, graph_key) for graph_key in graph_keys])
+
+    @patch.object(Gwyfile, 'get_gwyobject')
+    @patch('gwydb.gwy.gwyfile.GwyGraphModel', autospec=True)
+    @patch.object(GwyContainer, '_get_graph_ids')
+    def test_returned_value(self,
+                            mock_get_graph_ids,
+                            mock_GwyGraphModel,
+                            mock_get_gwyobject):
+        """Convert <GwyGraphModel*> object to GwyGraphModel objects
+        and return the latter
+        """
+        graph_ids = [1, 2, 3]
+        mock_get_graph_ids.return_value = graph_ids
+        gwygraphmodels = [Mock() for graph_id in graph_ids]
+        gwyfile = Mock(spec=Gwyfile)
+        mock_get_gwyobject.return_value = gwygraphmodels
+        graphs = GwyContainer._dump_graphs(gwyfile)
+        self.assertListEqual(graphs,
+                             [mock_GwyGraphModel(gwygraphmodel)
+                              for gwygraphmodel in gwygraphmodels])
+
+
+class GwyContainer_init(unittest.TestCase):
+    """Test __init__ method of GwyContainer
+    """
+
+    @patch.object(GwyContainer, '_dump_graphs')
+    @patch.object(GwyContainer, '_dump_channels')
+    def test_init_method_of_GwyContainer(self,
+                                         mock_dump_channels,
+                                         mock_dump_graphs):
+        gwyfile = Mock(spec=Gwyfile)
+        channels = Mock(spec=list)
+        graphs = Mock(spec=list)
+        mock_dump_channels.return_value = channels
+        mock_dump_graphs.return_value = graphs
+        container = GwyContainer(gwyfile)
+        self.assertEqual(container.channels, channels)
+        self.assertEqual(container.graphs, graphs)
 
 
 if __name__ == '__main__':

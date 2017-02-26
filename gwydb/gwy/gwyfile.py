@@ -64,39 +64,22 @@ class Gwyfile:
 
         self.c_gwyfile = c_gwyfile
 
-    def get_channels_ids(self):
-        """Get list of channels ids
+    def check_gwyobject(self, key):
+        """Check the presence of the object
+
+        Args:
+            key(str): object key
 
         Returns:
-            [list (int)]: list of channels ids, e.g. [0, 1, 2]
+            True if object exists, otherwise False
 
         """
 
-        nchannelsp = ffi.new("unsigned int*")
-        ids = lib.gwyfile_object_container_enumerate_channels(self.c_gwyfile,
-                                                              nchannelsp)
-        if ids:
-            return [ids[i] for i in range(nchannelsp[0])]
+        item = lib.gwyfile_object_get(self.c_gwyfile, key.encode('utf-8'))
+        if not item:
+            return False
         else:
-            return []
-
-    def get_graph_ids(self):
-        """Get list of graph model object ids
-
-        Returns:
-            [list (int)]:
-                list of graph model objects ids, e.g. [1, 2]
-
-        """
-
-        ngraphsp = ffi.new("unsigned int*")
-        ids = lib.gwyfile_object_container_enumerate_graphs(self.c_gwyfile,
-                                                            ngraphsp)
-
-        if ids:
-            return [ids[i] for i in range(ngraphsp[0])]
-        else:
-            return []
+            return True
 
     def get_gwyobject(self, key):
         """Get the object value with a name "key"
@@ -117,23 +100,6 @@ class Gwyfile:
             raise GwyfileError(
                 "Cannot find the object value of the item \"{}\"".format(key))
         return item_object
-
-    def check_gwyobject(self, key):
-        """Check the presence of the object
-
-        Args:
-            key(str): object key
-
-        Returns:
-            True if object exists, otherwise False
-
-        """
-
-        item = lib.gwyfile_object_get(self.c_gwyfile, key.encode('utf-8'))
-        if not item:
-            return False
-        else:
-            return True
 
 
 class GwySelection(ABC):
@@ -257,10 +223,10 @@ class GwySelection(ABC):
         return pairs
 
     def __repr__(self):
-        return "<{} instance at {}.\n data: {}>".format(
+        return "<{} instance at {}. Selections: {}>".format(
             self.__class__.__name__,
             hex(id(self)),
-            self.data.__repr__())
+            len(self.data))
 
 
 class GwyPointSelections(GwySelection):
@@ -970,10 +936,11 @@ class GwyGraphModel:
             raise GwyfileErrorCMsg(errorp[0].message)
 
     def __repr__(self):
-        return "<{} instance at {}. Curves: {}>".format(
+        return "<{} instance at {}. Title: {}. Curves: {}.>".format(
             self.__class__.__name__,
             hex(id(self)),
-            self.curves)
+            self.meta['title'],
+            len(self.curves))
 
 
 class GwyChannel:
@@ -1117,6 +1084,118 @@ class GwyChannel:
             self.__class__.__name__,
             hex(id(self)),
             self.title)
+
+
+class GwyContainer:
+    """Class for GwyContainer representation
+
+    Attributes:
+        channels: list of GwyChannel instances
+            All channels in Gwyfile instance
+
+        graphs: list of GwyGraphModel instances
+            All graphs in Gwyfile instance
+
+    """
+
+    def __init__(self, gwyfile):
+        """
+        Args:
+            gwyfile: instance of Gwyfile object
+
+        """
+
+        self.channels = self._dump_channels(gwyfile)
+        self.graphs = self._dump_graphs(gwyfile)
+
+    @staticmethod
+    def _get_channel_ids(gwyfile):
+        """Get list of channel ids
+
+        Args:
+            gwyfile: Gwyfile object
+
+        Returns:
+            [list (int)]: list of channel ids, e.g. [0, 1, 2]
+
+        """
+
+        nchannelsp = ffi.new("unsigned int*")
+        ids = lib.gwyfile_object_container_enumerate_channels(
+            gwyfile.c_gwyfile,
+            nchannelsp)
+        if ids:
+            return [ids[i] for i in range(nchannelsp[0])]
+        else:
+            return []
+
+    @classmethod
+    def _dump_channels(cls, gwyfile):
+        """Dump all channels from Gwyfile instance
+
+        Args:
+            gwyfile: Gwyfile object
+
+        Returns
+            channels: list of GwyChannel objects
+
+        """
+        channel_ids = cls._get_channel_ids(gwyfile)
+        channels = [GwyChannel(gwyfile, channel_id)
+                    for channel_id in channel_ids]
+        return channels
+
+    @staticmethod
+    def _get_graph_ids(gwyfile):
+        """Get list of graphmodel object ids
+
+        Args:
+            gwyfile: Gwyfile object
+
+        Returns:
+            [list (int)]:
+                list of graphmodel object ids, e.g. [1, 2]
+
+        """
+
+        ngraphsp = ffi.new("unsigned int*")
+        ids = lib.gwyfile_object_container_enumerate_graphs(gwyfile.c_gwyfile,
+                                                            ngraphsp)
+
+        if ids:
+            return [ids[i] for i in range(ngraphsp[0])]
+        else:
+            return []
+
+    @classmethod
+    def _dump_graphs(cls, gwyfile):
+        """Dump all graphs from Gwyfile instance
+
+        Args:
+            gwyfile: Gwyfile object
+
+        Returns
+            graphs: list of GwyGraphModel objects
+
+        """
+
+        graph_ids = cls._get_graph_ids(gwyfile)
+        graph_keys = ["/0/graph/graph/{:d}".format(graph_id)
+                      for graph_id in graph_ids]
+        gwygraphmodels = [Gwyfile.get_gwyobject(gwyfile, key)
+                          for key in graph_keys]
+        graphs = [GwyGraphModel(gwygraphmodel)
+                  for gwygraphmodel in gwygraphmodels]
+        return graphs
+
+    def __repr__(self):
+        return "<{} instance at {}. " \
+            "Channels: {}. " \
+            "Graphs: {}.>".format(
+                self.__class__.__name__,
+                hex(id(self)),
+                len(self.channels),
+                len(self.graphs))
 
 
 def read_gwyfile(filename):
