@@ -1,7 +1,6 @@
 """
 Wrapper for GwyfileObject from Libgwyfile C library
 """
-
 import os.path
 from abc import ABC, abstractmethod
 
@@ -99,7 +98,7 @@ class Gwyfile:
         else:
             return []
 
-    def _gwyfile_get_object(self, key):
+    def get_gwyobject(self, key):
         """Get the object value with a name "key"
 
         Args:
@@ -119,7 +118,7 @@ class Gwyfile:
                 "Cannot find the object value of the item \"{}\"".format(key))
         return item_object
 
-    def _gwyobject_check(self, key):
+    def check_gwyobject(self, key):
         """Check the presence of the object
 
         Args:
@@ -1031,8 +1030,8 @@ class GwyChannel:
     @staticmethod
     def _get_title(gwyfile, channel_id):
         key = "/{:d}/data/title".format(channel_id)
-        if gwyfile._gwyobject_check(key):
-            gwyobject = gwyfile._gwyfile_get_object(key)
+        if gwyfile.check_gwyobject(key):
+            gwyobject = gwyfile.get_gwyobject(key)
             title = ffi.string(ffi.cast("char*", gwyobject)).decode('utf-8')
             return title
         else:
@@ -1043,8 +1042,8 @@ class GwyChannel:
     @staticmethod
     def _get_data(gwyfile, channel_id):
         key = "/{:d}/data".format(channel_id)
-        if gwyfile._gwyobject_check(key):
-            gwydf = gwyfile._gwyfile_get_object(key)
+        if gwyfile.check_gwyobject(key):
+            gwydf = gwyfile.get_gwyobject(key)
             return GwyDataField(gwydf)
         else:
             raise GwyfileError(
@@ -1053,8 +1052,8 @@ class GwyChannel:
     @staticmethod
     def _get_mask(gwyfile, channel_id):
         key = "/{:d}/mask".format(channel_id)
-        if gwyfile._gwyobject_check(key):
-            gwydf = gwyfile._gwyfile_get_object(key)
+        if gwyfile.check_gwyobject(key):
+            gwydf = gwyfile.get_gwyobject(key)
             return GwyDataField(gwydf)
         else:
             return None
@@ -1062,8 +1061,8 @@ class GwyChannel:
     @staticmethod
     def _get_show(gwyfile, channel_id):
         key = "/{:d}/show".format(channel_id)
-        if gwyfile._gwyobject_check(key):
-            gwydf = gwyfile._gwyfile_get_object(key)
+        if gwyfile.check_gwyobject(key):
+            gwydf = gwyfile.get_gwyobject(key)
             return GwyDataField(gwydf)
         else:
             return None
@@ -1071,8 +1070,8 @@ class GwyChannel:
     @staticmethod
     def _get_point_sel(gwyfile, channel_id):
         key = "/{:d}/select/point".format(channel_id)
-        if gwyfile._gwyobject_check(key):
-            gwysel = gwyfile._gwyfile_get_object(key)
+        if gwyfile.check_gwyobject(key):
+            gwysel = gwyfile.get_gwyobject(key)
             return GwyPointSelections(gwysel)
         else:
             return None
@@ -1080,8 +1079,8 @@ class GwyChannel:
     @staticmethod
     def _get_pointer_sel(gwyfile, channel_id):
         key = "/{:d}/select/pointer".format(channel_id)
-        if gwyfile._gwyobject_check(key):
-            gwysel = gwyfile._gwyfile_get_object(key)
+        if gwyfile.check_gwyobject(key):
+            gwysel = gwyfile.get_gwyobject(key)
             return GwyPointerSelections(gwysel)
         else:
             return None
@@ -1089,8 +1088,8 @@ class GwyChannel:
     @staticmethod
     def _get_line_sel(gwyfile, channel_id):
         key = "/{:d}/select/line".format(channel_id)
-        if gwyfile._gwyobject_check(key):
-            gwysel = gwyfile._gwyfile_get_object(key)
+        if gwyfile.check_gwyobject(key):
+            gwysel = gwyfile.get_gwyobject(key)
             return GwyLineSelections(gwysel)
         else:
             return None
@@ -1098,8 +1097,8 @@ class GwyChannel:
     @staticmethod
     def _get_rectangle_sel(gwyfile, channel_id):
         key = "/{:d}/select/rectangle".format(channel_id)
-        if gwyfile._gwyobject_check(key):
-            gwysel = gwyfile._gwyfile_get_object(key)
+        if gwyfile.check_gwyobject(key):
+            gwysel = gwyfile.get_gwyobject(key)
             return GwyRectangleSelections(gwysel)
         else:
             return None
@@ -1107,8 +1106,8 @@ class GwyChannel:
     @staticmethod
     def _get_ellipse_sel(gwyfile, channel_id):
         key = "/{:d}/select/ellipse".format(channel_id)
-        if gwyfile._gwyobject_check(key):
-            gwysel = gwyfile._gwyfile_get_object(key)
+        if gwyfile.check_gwyobject(key):
+            gwysel = gwyfile.get_gwyobject(key)
             return GwyEllipseSelections(gwysel)
         else:
             return None

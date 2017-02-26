@@ -207,15 +207,15 @@ class Gwyfile_get_channels_ids_TestCase(unittest.TestCase):
         self.assertEqual(ids, [])
 
 
-class Gwyfile__gwyfile_get_object_TestCase(unittest.TestCase):
+class Gwyfile_get_gwyobject_TestCase(unittest.TestCase):
     """
-    Test _gwyfile_get_object method in Gwyfile class
+    Test get_gwyobject method in Gwyfile class
     """
 
     def setUp(self):
         self.gwyfile = Mock(spec=Gwyfile)
         self.gwyfile.c_gwyfile = Mock()
-        self.gwyfile._gwyfile_get_object = Gwyfile._gwyfile_get_object
+        self.gwyfile.get_gwyobject = Gwyfile.get_gwyobject
 
         patcher_lib = patch('gwydb.gwy.gwyfile.lib', autospec=True)
         self.addCleanup(patcher_lib.stop)
@@ -230,7 +230,7 @@ class Gwyfile__gwyfile_get_object_TestCase(unittest.TestCase):
 
         self.mock_lib.gwyfile_object_get.return_value = ffi.NULL
         self.assertRaises(GwyfileError,
-                          self.gwyfile._gwyfile_get_object,
+                          self.gwyfile.get_gwyobject,
                           self.gwyfile, self.test_key)
 
     def test_raise_exception_if_object_is_not_found(self):
@@ -241,7 +241,7 @@ class Gwyfile__gwyfile_get_object_TestCase(unittest.TestCase):
         self.mock_lib.gwyfile_item_get_object.return_value = ffi.NULL
         mock_item = self.mock_lib.gwyfile_object_get.return_value
         self.assertRaises(GwyfileError,
-                          self.gwyfile._gwyfile_get_object,
+                          self.gwyfile.get_gwyobject,
                           self.gwyfile, mock_item)
 
     def test_check_args_of_libgwyfile_functions(self):
@@ -251,7 +251,7 @@ class Gwyfile__gwyfile_get_object_TestCase(unittest.TestCase):
 
         mock_item = self.mock_lib.gwyfile_object_get.return_value
 
-        self.gwyfile._gwyfile_get_object(self.gwyfile, self.test_key)
+        self.gwyfile.get_gwyobject(self.gwyfile, self.test_key)
 
         self.mock_lib.gwyfile_object_get.assert_has_calls(
             [call(self.gwyfile.c_gwyfile, self.test_key.encode('utf-8'))])
@@ -264,8 +264,8 @@ class Gwyfile__gwyfile_get_object_TestCase(unittest.TestCase):
         """
 
         mock_object = self.mock_lib.gwyfile_item_get_object.return_value
-        returned_object = self.gwyfile._gwyfile_get_object(self.gwyfile,
-                                                           self.test_key)
+        returned_object = self.gwyfile.get_gwyobject(self.gwyfile,
+                                                     self.test_key)
         self.assertIs(mock_object, returned_object)
 
 
@@ -277,7 +277,7 @@ class Gwyfile__getobject_check(unittest.TestCase):
     def setUp(self):
         self.gwyfile = Mock(spec=Gwyfile)
         self.gwyfile.c_gwyfile = Mock()
-        self.gwyfile._gwyobject_check = Gwyfile._gwyobject_check
+        self.gwyfile.check_gwyobject = Gwyfile.check_gwyobject
         self.key = '/0/mask'
 
         patcher_lib = patch('gwydb.gwy.gwyfile.lib', autospec=True)
@@ -289,7 +289,7 @@ class Gwyfile__getobject_check(unittest.TestCase):
         Check args passed to gwyfile_object_get function
         """
 
-        self.gwyfile._gwyobject_check(self.gwyfile, self.key)
+        self.gwyfile.check_gwyobject(self.gwyfile, self.key)
         self.mock_lib.gwyfile_object_get.assert_has_calls(
             [call(self.gwyfile.c_gwyfile, self.key.encode('utf-8'))])
 
@@ -299,7 +299,7 @@ class Gwyfile__getobject_check(unittest.TestCase):
         """
 
         self.mock_lib.gwyfile_object_get.return_value = ffi.NULL
-        value = self.gwyfile._gwyobject_check(self.gwyfile, self.key)
+        value = self.gwyfile.check_gwyobject(self.gwyfile, self.key)
         self.assertIs(value, False)
 
     def test_return_True_if_libgwyfile_func_returns_nonNULL(self):
@@ -307,7 +307,7 @@ class Gwyfile__getobject_check(unittest.TestCase):
         Return True if gwyfile_object_get returns not NULL
         """
 
-        value = self.gwyfile._gwyobject_check(self.gwyfile, self.key)
+        value = self.gwyfile.check_gwyobject(self.gwyfile, self.key)
         self.assertIs(value, True)
 
 
@@ -2365,7 +2365,7 @@ class GwyGraphModel_get_curves(unittest.TestCase):
         and write self.curves_array in 'curves' field
         """
 
-        # first arg is GwyDatafield returned by _gwyfile_get_object
+        # first arg is GwyDatafield returned by get_gwyobject
         self.assertEqual(args[0], self.gwygraphmodel)
 
         # second arg is GwyfileError**
@@ -2421,25 +2421,25 @@ class GwyChannel_get_title(unittest.TestCase):
     def setUp(self):
         self.gwyfile = Mock(spec=Gwyfile)
         self.channel_id = 0
-        self.gwyfile._gwyfile_get_object.return_value = (
+        self.gwyfile.get_gwyobject.return_value = (
             ffi.new("char[]", b"Title"))
 
     def test_raise_exception_if_gwyobject_does_not_exist(self):
         """Raise GwyFileError is title gwyobject does not exist
         """
-        self.gwyfile._gwyobject_check.return_value = False
+        self.gwyfile.check_gwyobject.return_value = False
         self.assertRaises(GwyfileError,
                           GwyChannel._get_title,
                           self.gwyfile,
                           self.channel_id)
 
-    def test_check_args_passing_to__gwyfile_get_object(self):
+    def test_check_args_passing_to_get_gwyobject(self):
         """
-        Check args passing to Gwyfile._gwyfile_get_object method
+        Check args passing to Gwyfile.get_gwyobject method
         """
 
         GwyChannel._get_title(self.gwyfile, self.channel_id)
-        self.gwyfile._gwyfile_get_object.assert_has_calls(
+        self.gwyfile.get_gwyobject.assert_has_calls(
             [call("/{:d}/data/title".format(self.channel_id))])
 
     def test_returned_value(self):
@@ -2466,19 +2466,19 @@ class GwyChannel_get_data(unittest.TestCase):
     def test_raise_exception_if_gwydatafield_does_not_exist(self):
         """Raise GwyFileError is <GwyDataField*>  object does not exist
         """
-        self.gwyfile._gwyobject_check.return_value = False
+        self.gwyfile.check_gwyobject.return_value = False
         self.assertRaises(GwyfileError,
                           GwyChannel._get_data,
                           self.gwyfile,
                           self.channel_id)
 
-    def test_check_args_passing_to__gwyfile_get_object(self):
+    def test_check_args_passing_to_get_gwyobject(self):
         """
-        Check args passing to Gwyfile._gwyfile_get_object method
+        Check args passing to Gwyfile.get_gwyobject method
         """
 
         GwyChannel._get_data(self.gwyfile, self.channel_id)
-        self.gwyfile._gwyfile_get_object.assert_has_calls(
+        self.gwyfile.get_gwyobject.assert_has_calls(
             [call("/{:d}/data".format(self.channel_id))])
 
     def test_call_GwyDataField_constructor(self):
@@ -2486,7 +2486,7 @@ class GwyChannel_get_data(unittest.TestCase):
         Pass gwydatafield object to GwyDataField constructor
         """
 
-        gwydatafield = self.gwyfile._gwyfile_get_object.return_value
+        gwydatafield = self.gwyfile.get_gwyobject.return_value
         GwyChannel._get_data(self.gwyfile, self.channel_id)
         self.mock_GwyDataField.assert_has_calls(
             [call(gwydatafield)])
@@ -2517,24 +2517,24 @@ class GwyChannel_get_mask(unittest.TestCase):
         """Check that mask <GwyDataField*> exists
         """
         GwyChannel._get_mask(self.gwyfile, self.channel_id)
-        self.gwyfile._gwyobject_check.assert_has_calls(
+        self.gwyfile.check_gwyobject.assert_has_calls(
             [call("/{:d}/mask".format(self.channel_id))])
 
     def test_return_None_if_mask_datafield_does_not_exist(self):
         """Return None if mask <GwyDataField*> does not exist
         """
-        self.gwyfile._gwyobject_check.return_value = False
+        self.gwyfile.check_gwyobject.return_value = False
         actual_return = GwyChannel._get_mask(self.gwyfile,
                                              self.channel_id)
         self.assertIsNone(actual_return)
 
-    def test_check_args_passing_to__gwyfile_get_object(self):
+    def test_check_args_passing_to_get_gwyobject(self):
         """
-        Check args passing to Gwyfile._gwyfile_get_object method
+        Check args passing to Gwyfile.get_gwyobject method
         """
 
         GwyChannel._get_mask(self.gwyfile, self.channel_id)
-        self.gwyfile._gwyfile_get_object.assert_has_calls(
+        self.gwyfile.get_gwyobject.assert_has_calls(
             [call("/{:d}/mask".format(self.channel_id))])
 
     def test_call_GwyDataField_constructor(self):
@@ -2542,7 +2542,7 @@ class GwyChannel_get_mask(unittest.TestCase):
         Pass gwydatafield object to GwyDataField constructor
         """
 
-        gwydatafield = self.gwyfile._gwyfile_get_object.return_value
+        gwydatafield = self.gwyfile.get_gwyobject.return_value
         GwyChannel._get_mask(self.gwyfile, self.channel_id)
         self.mock_GwyDataField.assert_has_calls(
             [call(gwydatafield)])
@@ -2573,24 +2573,24 @@ class GwyChannel_get_show(unittest.TestCase):
         """Check that presentation <GwyDataField*> exists
         """
         GwyChannel._get_show(self.gwyfile, self.channel_id)
-        self.gwyfile._gwyobject_check.assert_has_calls(
+        self.gwyfile.check_gwyobject.assert_has_calls(
             [call("/{:d}/show".format(self.channel_id))])
 
     def test_return_None_if_show_datafield_does_not_exist(self):
         """Return None if presentation <GwyDataField*> does not exist
         """
-        self.gwyfile._gwyobject_check.return_value = False
+        self.gwyfile.check_gwyobject.return_value = False
         actual_return = GwyChannel._get_show(self.gwyfile,
                                              self.channel_id)
         self.assertIsNone(actual_return)
 
-    def test_check_args_passing_to__gwyfile_get_object(self):
+    def test_check_args_passing_to_get_gwyobject(self):
         """
-        Check args passing to Gwyfile._gwyfile_get_object method
+        Check args passing to Gwyfile.get_gwyobject method
         """
 
         GwyChannel._get_show(self.gwyfile, self.channel_id)
-        self.gwyfile._gwyfile_get_object.assert_has_calls(
+        self.gwyfile.get_gwyobject.assert_has_calls(
             [call("/{:d}/show".format(self.channel_id))])
 
     def test_call_GwyDataField_constructor(self):
@@ -2598,7 +2598,7 @@ class GwyChannel_get_show(unittest.TestCase):
         Pass gwydatafield object to GwyDataField constructor
         """
 
-        gwydatafield = self.gwyfile._gwyfile_get_object.return_value
+        gwydatafield = self.gwyfile.get_gwyobject.return_value
         GwyChannel._get_show(self.gwyfile, self.channel_id)
         self.mock_GwyDataField.assert_has_calls(
             [call(gwydatafield)])
@@ -2629,24 +2629,24 @@ class GwyChannel_get_point_sel(unittest.TestCase):
         """Check that point selections exists in the channel
         """
         GwyChannel._get_point_sel(self.gwyfile, self.channel_id)
-        self.gwyfile._gwyobject_check.assert_has_calls(
+        self.gwyfile.check_gwyobject.assert_has_calls(
             [call("/{:d}/select/point".format(self.channel_id))])
 
     def test_return_None_if_point_selections_do_not_exist(self):
         """Return None if point selections do not exist
         """
-        self.gwyfile._gwyobject_check.return_value = False
+        self.gwyfile.check_gwyobject.return_value = False
         actual_return = GwyChannel._get_point_sel(self.gwyfile,
                                                   self.channel_id)
         self.assertIsNone(actual_return)
 
-    def test_check_args_passing_to__gwyfile_get_object(self):
+    def test_check_args_passing_to_get_gwyobject(self):
         """
-        Check args passing to Gwyfile._gwyfile_get_object method
+        Check args passing to Gwyfile.get_gwyobject method
         """
 
         GwyChannel._get_point_sel(self.gwyfile, self.channel_id)
-        self.gwyfile._gwyfile_get_object.assert_has_calls(
+        self.gwyfile.get_gwyobject.assert_has_calls(
             [call("/{:d}/select/point".format(self.channel_id))])
 
     def test_call_GwyPointSelections_constructor(self):
@@ -2654,7 +2654,7 @@ class GwyChannel_get_point_sel(unittest.TestCase):
         Pass gwypointselection object to GwyPointSelections constructor
         """
 
-        gwypointsel = self.gwyfile._gwyfile_get_object.return_value
+        gwypointsel = self.gwyfile.get_gwyobject.return_value
         GwyChannel._get_point_sel(self.gwyfile, self.channel_id)
         self.mock_GwyPointSelections.assert_has_calls(
             [call(gwypointsel)])
@@ -2686,24 +2686,24 @@ class GwyChannel_get_pointer_sel(unittest.TestCase):
         """Check that pointer selections exists in the channel
         """
         GwyChannel._get_pointer_sel(self.gwyfile, self.channel_id)
-        self.gwyfile._gwyobject_check.assert_has_calls(
+        self.gwyfile.check_gwyobject.assert_has_calls(
             [call("/{:d}/select/pointer".format(self.channel_id))])
 
     def test_return_None_if_pointer_selections_do_not_exist(self):
         """Return None if pointer selections do not exist
         """
-        self.gwyfile._gwyobject_check.return_value = False
+        self.gwyfile.check_gwyobject.return_value = False
         actual_return = GwyChannel._get_pointer_sel(self.gwyfile,
                                                     self.channel_id)
         self.assertIsNone(actual_return)
 
-    def test_check_args_passing_to__gwyfile_get_object(self):
+    def test_check_args_passing_to_get_gwyobject(self):
         """
-        Check args passing to Gwyfile._gwyfile_get_object method
+        Check args passing to Gwyfile.get_gwyobject method
         """
 
         GwyChannel._get_pointer_sel(self.gwyfile, self.channel_id)
-        self.gwyfile._gwyfile_get_object.assert_has_calls(
+        self.gwyfile.get_gwyobject.assert_has_calls(
             [call("/{:d}/select/pointer".format(self.channel_id))])
 
     def test_call_GwyPointSelections_constructor(self):
@@ -2711,7 +2711,7 @@ class GwyChannel_get_pointer_sel(unittest.TestCase):
         Pass gwypointselection object to GwyPointerSelections constructor
         """
 
-        gwypointersel = self.gwyfile._gwyfile_get_object.return_value
+        gwypointersel = self.gwyfile.get_gwyobject.return_value
         GwyChannel._get_pointer_sel(self.gwyfile, self.channel_id)
         self.mock_GwyPointerSelections.assert_has_calls(
             [call(gwypointersel)])
@@ -2743,24 +2743,24 @@ class GwyChannel_get_line_sel(unittest.TestCase):
         """Check that line selections exists in the channel
         """
         GwyChannel._get_line_sel(self.gwyfile, self.channel_id)
-        self.gwyfile._gwyobject_check.assert_has_calls(
+        self.gwyfile.check_gwyobject.assert_has_calls(
             [call("/{:d}/select/line".format(self.channel_id))])
 
     def test_return_None_if_line_selections_do_not_exist(self):
         """Return None if line selections do not exist
         """
-        self.gwyfile._gwyobject_check.return_value = False
+        self.gwyfile.check_gwyobject.return_value = False
         actual_return = GwyChannel._get_line_sel(self.gwyfile,
                                                  self.channel_id)
         self.assertIsNone(actual_return)
 
-    def test_check_args_passing_to__gwyfile_get_object(self):
+    def test_check_args_passing_to_get_gwyobject(self):
         """
-        Check args passing to Gwyfile._gwyfile_get_object method
+        Check args passing to Gwyfile.get_gwyobject method
         """
 
         GwyChannel._get_line_sel(self.gwyfile, self.channel_id)
-        self.gwyfile._gwyfile_get_object.assert_has_calls(
+        self.gwyfile.get_gwyobject.assert_has_calls(
             [call("/{:d}/select/line".format(self.channel_id))])
 
     def test_call_GwyLineSelections_constructor(self):
@@ -2768,7 +2768,7 @@ class GwyChannel_get_line_sel(unittest.TestCase):
         Pass gwylineselection object to GwyLineSelections constructor
         """
 
-        gwylinesel = self.gwyfile._gwyfile_get_object.return_value
+        gwylinesel = self.gwyfile.get_gwyobject.return_value
         GwyChannel._get_line_sel(self.gwyfile, self.channel_id)
         self.mock_GwyLineSelections.assert_has_calls(
             [call(gwylinesel)])
@@ -2800,24 +2800,24 @@ class GwyChannel_get_rectangle_sel(unittest.TestCase):
         """Check that rectangle selections exists in the channel
         """
         GwyChannel._get_rectangle_sel(self.gwyfile, self.channel_id)
-        self.gwyfile._gwyobject_check.assert_has_calls(
+        self.gwyfile.check_gwyobject.assert_has_calls(
             [call("/{:d}/select/rectangle".format(self.channel_id))])
 
     def test_return_None_if_rectangle_selections_do_not_exist(self):
         """Return None if rectangle selections do not exist
         """
-        self.gwyfile._gwyobject_check.return_value = False
+        self.gwyfile.check_gwyobject.return_value = False
         actual_return = GwyChannel._get_rectangle_sel(self.gwyfile,
                                                       self.channel_id)
         self.assertIsNone(actual_return)
 
-    def test_check_args_passing_to__gwyfile_get_object(self):
+    def test_check_args_passing_to_get_gwyobject(self):
         """
-        Check args passing to Gwyfile._gwyfile_get_object method
+        Check args passing to Gwyfile.get_gwyobject method
         """
 
         GwyChannel._get_rectangle_sel(self.gwyfile, self.channel_id)
-        self.gwyfile._gwyfile_get_object.assert_has_calls(
+        self.gwyfile.get_gwyobject.assert_has_calls(
             [call("/{:d}/select/rectangle".format(self.channel_id))])
 
     def test_call_GwyRectangleSelections_constructor(self):
@@ -2825,7 +2825,7 @@ class GwyChannel_get_rectangle_sel(unittest.TestCase):
         Pass gwyrectangleselection object to GwyRectangleSelections constructor
         """
 
-        gwyrectsel = self.gwyfile._gwyfile_get_object.return_value
+        gwyrectsel = self.gwyfile.get_gwyobject.return_value
         GwyChannel._get_rectangle_sel(self.gwyfile, self.channel_id)
         self.mock_GwyRectangleSelections.assert_has_calls(
             [call(gwyrectsel)])
@@ -2857,24 +2857,24 @@ class GwyChannel_get_ellipse_sel(unittest.TestCase):
         """Check that ellipse selections exists in the channel
         """
         GwyChannel._get_ellipse_sel(self.gwyfile, self.channel_id)
-        self.gwyfile._gwyobject_check.assert_has_calls(
+        self.gwyfile.check_gwyobject.assert_has_calls(
             [call("/{:d}/select/ellipse".format(self.channel_id))])
 
     def test_return_None_if_ellipse_selections_do_not_exist(self):
         """Return None if ellipse selections do not exist
         """
-        self.gwyfile._gwyobject_check.return_value = False
+        self.gwyfile.check_gwyobject.return_value = False
         actual_return = GwyChannel._get_ellipse_sel(self.gwyfile,
                                                     self.channel_id)
         self.assertIsNone(actual_return)
 
-    def test_check_args_passing_to__gwyfile_get_object(self):
+    def test_check_args_passing_to_get_gwyobject(self):
         """
-        Check args passing to Gwyfile._gwyfile_get_object method
+        Check args passing to Gwyfile.get_gwyobject method
         """
 
         GwyChannel._get_ellipse_sel(self.gwyfile, self.channel_id)
-        self.gwyfile._gwyfile_get_object.assert_has_calls(
+        self.gwyfile.get_gwyobject.assert_has_calls(
             [call("/{:d}/select/ellipse".format(self.channel_id))])
 
     def test_call_GwyEllipseSelections_constructor(self):
@@ -2882,7 +2882,7 @@ class GwyChannel_get_ellipse_sel(unittest.TestCase):
         Pass gwyellipseselection object to GwyEllipseSelections constructor
         """
 
-        gwyellipsesel = self.gwyfile._gwyfile_get_object.return_value
+        gwyellipsesel = self.gwyfile.get_gwyobject.return_value
         GwyChannel._get_ellipse_sel(self.gwyfile, self.channel_id)
         self.mock_GwyEllipseSelections.assert_has_calls(
             [call(gwyellipsesel)])
