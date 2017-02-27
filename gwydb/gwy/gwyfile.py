@@ -105,88 +105,95 @@ class Gwyfile:
 class GwySelection(ABC):
     """Base class for GwySelection objects
 
-    Properties:
-        data: python list containing selection data
-              (list of points (x, y) for point and pointer selections,
-               list of pairs of points ((x1, y1), (x2, y2)) for line,
-               rectangle and ellipse selections
-    """
+    Attributes:
+        _get_sel_func (C func):
+            Libgwyfile C function to get selection.
+            Must be redefined in subclass
+        _npoints (int):
+            number of points in one selection (e.g. 1 for point sel.)
+            Must be redefined in subclass
+        data: list
+              list of selections
 
-    def __init__(self, gwysel, get_sel_func, npoints):
+    """
+    _get_sel_func = None
+    _npoints = 1
+    data = []
+
+    @abstractmethod
+    def __init__(self, points):
         """
+        Args:
+            points: list or tuple of points
+                    each point is a tuple of coordinates (x, y)
+        """
+        pass
+
+    @classmethod
+    @abstractmethod
+    def from_gwy(cls, gwysel):
+        """
+        Get points from <GwyfileObject*>
+
         Args:
             gwysel (GwyfileObject*):
                 GwySelection object from Libgwyfile
                 e.g. GwySelectionPoint object for point selection
-            get_sel_func:
-                Libgwyfile C function to get this selection
-            npoints (int):
-                number of points in one selection (e.g. 1 for point)
+
+        Returns:
+            [(x1, y1), ..., (xN, yN)]: list of tuples with point coordinates
+            or None :                  if there are no point selections
+
         """
 
-        nsel = self._get_selection_nsel(gwysel, get_sel_func)
-        points = self._get_selection_points(gwysel,
-                                            get_sel_func,
-                                            nsel,
-                                            npoints)
-        self._points = points
+        nsel = cls._get_selection_nsel(gwysel)
+        points = cls._get_selection_points(gwysel, nsel)
+        return points
 
-    @property
-    @abstractmethod
-    def data(self):
-        """This property contains selection points grouped in list
-
-        Method must be redefined in a subclass
-        """
-
-        return self._points
-
-    @staticmethod
-    def _get_selection_nsel(gwysel, get_sel_func):
+    @classmethod
+    def _get_selection_nsel(cls, gwysel):
         """Get number of selections from the object
 
         Args:
             gwysel (GwyfileObject*):
                 GwySelection object from Libgwyfile
                 e.g. GwySelectionPoint object for point selection
-            get_sel_func:
-                Libgwyfile C function to get this selection
 
         Returns:
             nsel (int):
-                number of selections of this type in the object
+                number of selections of this type in gwysel
         """
 
         error = ffi.new("GwyfileError*")
         errorp = ffi.new("GwyfileError**", error)
         nselp = ffi.new("int32_t*")
 
-        if get_sel_func(gwysel,
-                        errorp,
-                        ffi.new("char[]", b'nsel'),
-                        nselp,
-                        ffi.NULL):
+        if cls._get_sel_func(gwysel,
+                             errorp,
+                             ffi.new("char[]", b'nsel'),
+                             nselp,
+                             ffi.NULL):
             nsel = nselp[0]
         else:
             raise GwyfileErrorCMsg(errorp[0].message)
 
         return nsel
 
-    @staticmethod
-    def _get_selection_points(gwysel, get_sel_func, nsel, npoints):
+    @classmethod
+    def _get_selection_points(cls, gwysel, nsel):
         """Get all points of selection for the object
 
         Args:
             gwysel (GwyfileObject*):
                 GwySelection object from Libgwyfile
                 e.g. GwySelectionPoint object for point selection
-            get_sel_func:
-                Libgwyfile C function to get this selection
+            nsel (int):
+                number of selections of this type in gwysel
 
         Returns:
             [(x1, y1), ..., (xN, yN)]: list of tuples with point coordinates
 
-            or None :                  if there are no point selections
+            or None :                  if there are no selections
 
         """
 
@@ -196,17 +203,17 @@ class GwySelection(ABC):
         if nsel == 0:
             return None
         else:
-            data = ffi.new("double[]", 2 * nsel * npoints)
+            data = ffi.new("double[]", 2 * nsel * cls._npoints)
             datap = ffi.new("double**", data)
 
-        if get_sel_func(gwysel,
-                        errorp,
-                        ffi.new("char[]", b'data'),
-                        datap,
-                        ffi.NULL):
+        if cls._get_sel_func(gwysel,
+                             errorp,
+                             ffi.new("char[]", b'data'),
+                             datap,
+                             ffi.NULL):
             data = datap[0]
             points = [(data[i * 2], data[i * 2 + 1])
-                      for i in range(nsel * npoints)]
+                      for i in range(nsel * cls._npoints)]
         else:
             raise GwyfileErrorCMsg(errorp[0].message)
 
@@ -232,41 +239,64 @@ class GwySelection(ABC):
 class GwyPointSelections(GwySelection):
     """Class for point selections
 
-    Properties:
+    Attributes:
         data: list of points [(x1, y1), ...]
     """
 
     _npoints = 1  # number of points in one point selection
     _get_sel_func = lib.gwyfile_object_selectionpoint_get
 
-    def __init__(self, gwysel):
-        super().__init__(gwysel=gwysel,
-                         get_sel_func=GwyPointSelections._get_sel_func,
-                         npoints=GwyPointSelections._npoints)
+    def __init__(self, points):
+        """
+        Args:
+            points: list or tuple of points (x, y)
+        """
+        self.data = list(points)
 
-    @property
-    def data(self):
-        return super().data
+    
+    @classmethod
+    def from_gwy(cls, gwysel):
+        """
+        Get point selections from <GwySelectionPoint*> object
+
+        Args:
+            gwysel:
+                <GwySelectionPoint*> object from Libgwyfile library
+
+        Returns:
+            GwyPointSelections instance initialized by the point selections
+        """
+        points = super().from_gwy(gwysel)
+        return GwyPointSelections(points)
 
 
 class GwyPointerSelections(GwySelection):
     """Class for pointer selections
 
-    Properties:
+    Attributes:
         data: list of points [(x1, y1), ...]
     """
 
     _npoints = 1  # number of points in one pointer selection
     _get_sel_func = lib.gwyfile_object_selectionpoint_get
 
-    def __init__(self, gwysel):
-        super().__init__(gwysel=gwysel,
-                         get_sel_func=GwyPointerSelections._get_sel_func,
-                         npoints=GwyPointerSelections._npoints)
+    def __init__(self, points):
+        self.data = points
+    
+    @classmethod
+    def from_gwy(cls, gwysel):
+        """
+        Get point selections from <GwySelectionPoint*> object
 
-    @property
-    def data(self):
-        return super().data
+        Args:
+            gwysel:
+                <GwySelectionPoint*> object from Libgwyfile library
+
+        Returns:
+            GwyPointSelections instance initialized by the point selections
+        """
+        points = super().from_gwy(cls, gwysel)
+        return GwyPointerSelections(points)
 
 
 class GwyLineSelections(GwySelection):

@@ -267,40 +267,16 @@ class Gwyfile__getobject_check(unittest.TestCase):
         self.assertIs(value, True)
 
 
-class GwyPointSelections_init(unittest.TestCase):
-    """Test arguments passing to GwySelection __init__
-    """
-
-    @patch.object(GwySelection, '__init__')
-    def test_args_of_gwypointselection_init(self, mock_gwysel_cls):
-        """Test args of GwySelection.__init__ call
-        """
-
-        gwysel = Mock()
-        GwyPointSelections(gwysel)
-        mock_gwysel_cls.assert_has_calls(
-            [call(gwysel=gwysel,
-                  get_sel_func=lib.gwyfile_object_selectionpoint_get,
-                  npoints=1)])
-
-
-class GwyPointSelections_class(unittest.TestCase):
-    """Test  GwyPointSelections class
+class GwySelection_get_selection_nsel(unittest.TestCase):
+    """Test _get_selection_nsel methods of GwySelections class
     """
 
     def setUp(self):
         self.gwysel = Mock()
         self.nsel = 3
-
-        self.data = [(1., 1.), (2., 2.), (3., 3.)]
-        # C array representation of self.data
-        self.cdata = ffi.new("double[]", [1., 1., 2., 2., 3., 3.])
-
-        patcher_lib = (
-            patch('gwydb.gwy.gwyfile.GwyPointSelections._get_sel_func',
-                  autospec=True))
-        self.addCleanup(patcher_lib.stop)
-        self.get_sel_func = patcher_lib.start()
+        patcher = patch.object(GwySelection, '_get_sel_func')
+        self.get_sel_func = patcher.start()
+        self.addCleanup(patcher.stop)
 
     def test_raise_exception_in_get_selection_nsel(self):
         """Raise GwyfileErrorCMsg in GwySelection._get_selection_nsel
@@ -312,8 +288,123 @@ class GwyPointSelections_class(unittest.TestCase):
         self.get_sel_func.return_value = falsep[0]
         self.assertRaises(GwyfileErrorCMsg,
                           GwySelection._get_selection_nsel,
-                          self.gwysel,
-                          self.get_sel_func)
+                          self.gwysel)
+
+    def test_pos_arguments(self):
+        """Test positional arguments in gwyfile_object_selectionpoint_get
+
+        First argument must be GwySelectionPoint libgwyfile object
+        Second argument must be GwyfileError** libgwyfile object
+        Last argument must be NULL
+        """
+
+        self.get_sel_func.side_effect = self._test_pos_args_side_effect
+        self.gwysel = Mock()
+        GwySelection._get_selection_nsel(self.gwysel)
+
+    def _test_pos_args_side_effect(self, *args):
+        # first arg is GwyfileSelectionPoint object
+        self.assertEqual(args[0], self.gwysel)
+
+        # second arg is GwyfileError**
+        self.assertEqual(ffi.typeof(args[1]),
+                         ffi.typeof(ffi.new("GwyfileError**")))
+
+        # last arg in Null
+        self.assertEqual(args[-1], ffi.NULL)
+
+        # Function should return True if object looks acceptable
+        truep = ffi.new("bool*", True)
+        return truep[0]
+
+    def test_returned_value(self):
+        """Test returned value of _get_selection_nsel method
+        """
+        self.get_sel_func.side_effect = self._test_returned_value
+        self.gwysel = Mock()
+        returned_value = GwySelection._get_selection_nsel(self.gwysel)
+        self.assertEqual(returned_value, self.nsel)
+
+    def _test_returned_value(self, *args):
+        """Write self.nsel in 'nsel' and return True
+        """
+        # combine fields names and fields pointers in one dictionary
+        arg_keys = [ffi.string(key).decode('utf-8') for key in args[2:-1:2]]
+        arg_pointers = [pointer for pointer in args[3:-1:2]]
+        arg_dict = dict(zip(arg_keys, arg_pointers))
+
+        arg_dict['nsel'][0] = self.nsel
+
+        # Function should return True if object looks acceptable
+        truep = ffi.new("bool*", True)
+        return truep[0]
+
+
+class GwyPointSelections_init(unittest.TestCase):
+    """Test constructor of GwyPointSelection class
+    """
+
+    def test_arg_is_list_of_points(self):
+        """GwyPointSelections.__init__ arg is a list
+        """
+        points = [(1, 2), (3, 4)]
+        point_sel = GwyPointSelections(points)
+        self.assertListEqual(point_sel.data, points)
+
+    def test_arg_is_tuple_of_points(self):
+        """GwyPointSelections.__init__ arg is a tuple
+        """
+        points = ((1, 2), (3, 4))
+        point_sel = GwyPointSelections(points)
+        self.assertListEqual(point_sel.data, [(1, 2), (3, 4)])
+
+    def test_arg_is_empty_list(self):
+        """GwyPointSelections.__init__ arg is an empty list
+        """
+        points = []
+        point_sel = GwyPointSelections(points)
+        self.assertListEqual(point_sel.data, [])
+
+
+class GwyPointSelections_from_gwy(unittest.TestCase):
+    """Test from_gwy method of  GwyPointSelections class
+    """
+
+    def setUp(self):
+        self.gwysel = Mock()
+        self.nsel = 3
+        self.points = [(1., 1.), (2., 2.), (3., 3.)]
+        
+        patcher_nsel = patch.object(GwyPointSelections, '_get_selection_nsel')
+        self.get_nsel = patcher_nsel.start()
+        self.addCleanup(patcher_nsel.stop)
+
+        patcher_points = patch.object(GwyPointSelections, '_get_selection_points')
+        self.get_points = patcher_points.start()
+        self.addCleanup(patcher_points.stop)
+
+    def test_getting_number_of_selections(self):
+        """Get number of selections from gwysel
+        """
+        GwyPointSelections.from_gwy(self.gwysel)
+        self.get_nsel.assert_has_calls([call(self.gwysel)])
+
+    def test_getting_number_of_selections(self):
+        """Get points of selections from gwysel
+        """
+        self.get_nsel.return_value = self.nsel
+        GwyPointSelections.from_gwy(self.gwysel)
+        self.get_points.assert_has_calls([call(self.gwysel, self.nsel)])
+
+    def test_returned_value(self):
+        """Return GwyPointSelections initiated by points from gwysel
+        """
+        self.get_points.return_value = self.points
+        point_sel = GwyPointSelections.from_gwy(self.gwysel)
+        self.assertListEqual(point_sel.data, self.points)
+
+
+class GwySelection_get_selection_points(unittest.TestCase):
 
     def test_raise_exception_in_get_selection_points(self):
         """Raise GwyfileErrorCMsg in GwySelection._get_selection_points
@@ -330,32 +421,6 @@ class GwyPointSelections_class(unittest.TestCase):
                           self.get_sel_func,
                           self.nsel,
                           npoints)
-
-    def test_pos_arguments(self):
-        """Test positional arguments in gwyfile_object_selectionpoint_get
-
-        First argument must be GwySelectionPoint libgwyfile object
-        Second argument must be GwyfileError** libgwyfile object
-        Last argument must be NULL
-        """
-
-        self.get_sel_func.side_effect = self._test_pos_args_side_effect
-        GwyPointSelections(self.gwysel)
-
-    def _test_pos_args_side_effect(self, *args):
-        # first arg is GwyfileSelectionPoint object
-        self.assertEqual(args[0], self.gwysel)
-
-        # second arg is GwyfileError**
-        self.assertEqual(ffi.typeof(args[1]),
-                         ffi.typeof(ffi.new("GwyfileError**")))
-
-        # last arg in Null
-        self.assertEqual(args[-1], ffi.NULL)
-
-        # Function should return True if object looks acceptable
-        truep = ffi.new("bool*", True)
-        return truep[0]
 
     def test_data_property_if_nsel_is_not_zero(self):
         """Test data property if number of selections is not zero
