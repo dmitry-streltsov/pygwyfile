@@ -13,7 +13,7 @@ from gwydb.gwy.gwyfile import GwyGraphCurve
 from gwydb.gwy.gwyfile import GwyGraphModel
 from gwydb.gwy.gwyfile import GwyChannel
 from gwydb.gwy.gwyfile import GwyContainer
-from gwydb.gwy.gwyfile import ffi, lib
+from gwydb.gwy.gwyfile import ffi
 from gwydb.gwy.gwyfile import read_gwyfile
 
 
@@ -267,7 +267,7 @@ class Gwyfile__getobject_check(unittest.TestCase):
         self.assertIs(value, True)
 
 
-class GwySelection_get_selection_nsel(unittest.TestCase):
+class GwySelection__get_selection_nsel(unittest.TestCase):
     """Test _get_selection_nsel methods of GwySelections class
     """
 
@@ -340,6 +340,83 @@ class GwySelection_get_selection_nsel(unittest.TestCase):
         return truep[0]
 
 
+class GwySelection_get_selection_points(unittest.TestCase):
+    """ Test _get_selection_points method of GwySelection class
+    """
+
+    def setUp(self):
+        self.gwysel = Mock()
+        self.nsel = 2
+        self.points = [(0., 0.), (1., 1.)]
+        self.cpoints = ffi.new("double[]", [0., 0., 1., 1.])
+        patcher = patch.object(GwySelection, '_get_sel_func')
+        self.get_sel_func = patcher.start()
+        self.addCleanup(patcher.stop)
+
+    def test_raise_exception_in_get_selection_points(self):
+        """Raise GwyfileErrorCMsg in GwySelection._get_selection_points
+
+        Raise GwyfileErrorCMsg in GwySelection._get_selection_points
+        if get_sel_func returns False
+        """
+        falsep = ffi.new("bool*", False)
+        self.get_sel_func.return_value = falsep[0]
+        self.assertRaises(GwyfileErrorCMsg,
+                          GwySelection._get_selection_points,
+                          self.gwysel,
+                          self.nsel)
+
+    def test_return_None_if_nsel_is_zero(self):
+        """Return None if number of selections is zero
+        """
+        nsel = 0
+        points = GwySelection._get_selection_points(self.gwysel,
+                                                    nsel)
+        self.assertIsNone(points)
+
+    def test_return_points_if_nsel_is_not_zero(self):
+        """Return list of points if number of selections is not zero
+        """
+        self.get_sel_func.side_effect = self._get_points_side_effect
+        points = GwySelection._get_selection_points(self.gwysel,
+                                                    self.nsel)
+        self.assertListEqual(self.points, points)
+
+    def _get_points_side_effect(self, *args):
+        """ Write self.cpoints in 'data' field  and return True
+        """
+        # combine fields names and fields pointers in one dictionary
+        arg_keys = [ffi.string(key).decode('utf-8') for key in args[2:-1:2]]
+        arg_pointers = [pointer for pointer in args[3:-1:2]]
+        arg_dict = dict(zip(arg_keys, arg_pointers))
+
+        arg_dict['data'][0] = self.cpoints
+
+        # Function should return True if object looks acceptable
+        truep = ffi.new("bool*", True)
+        return truep[0]
+
+
+class GwySelection__combine_points_in_pairs(unittest.TestCase):
+    """Test _combine_points_in_pair method of GwySelection
+    """
+
+    def test__combine_ponts_in_pairs_non_empty_arg(self):
+        """Combine points in pairs if points list is not empty
+        """
+        points = [(0., 0.), (1., 1.), (2., 2.), (3., 3.)]
+        pairs = GwySelection._combine_points_in_pair(points)
+        self.assertListEqual(pairs, [((0., 0.), (1., 1.)),
+                                     ((2., 2.), (3., 3.))])
+
+    def test__combine_ponts_in_pairs_empty_arg(self):
+        """Return empty list if points list is empty
+        """
+        points = []
+        pairs = GwySelection._combine_points_in_pair(points)
+        self.assertListEqual(pairs, [])
+
+
 class GwyPointSelections_init(unittest.TestCase):
     """Test constructor of GwyPointSelection class
     """
@@ -358,12 +435,13 @@ class GwyPointSelections_init(unittest.TestCase):
         point_sel = GwyPointSelections(points)
         self.assertListEqual(point_sel.data, [(1, 2), (3, 4)])
 
-    def test_arg_is_empty_list(self):
-        """GwyPointSelections.__init__ arg is an empty list
+    def test_arg_is_an_empty_list(self):
+        """Raise ValueError if GwyPointSelections.__init__ arg is empty
         """
         points = []
-        point_sel = GwyPointSelections(points)
-        self.assertListEqual(point_sel.data, [])
+        self.assertRaises(ValueError,
+                          GwyPointSelections,
+                          points)
 
 
 class GwyPointSelections_from_gwy(unittest.TestCase):
@@ -374,12 +452,13 @@ class GwyPointSelections_from_gwy(unittest.TestCase):
         self.gwysel = Mock()
         self.nsel = 3
         self.points = [(1., 1.), (2., 2.), (3., 3.)]
-        
+
         patcher_nsel = patch.object(GwyPointSelections, '_get_selection_nsel')
         self.get_nsel = patcher_nsel.start()
         self.addCleanup(patcher_nsel.stop)
 
-        patcher_points = patch.object(GwyPointSelections, '_get_selection_points')
+        patcher_points = patch.object(GwyPointSelections,
+                                      '_get_selection_points')
         self.get_points = patcher_points.start()
         self.addCleanup(patcher_points.stop)
 
@@ -389,7 +468,7 @@ class GwyPointSelections_from_gwy(unittest.TestCase):
         GwyPointSelections.from_gwy(self.gwysel)
         self.get_nsel.assert_has_calls([call(self.gwysel)])
 
-    def test_getting_number_of_selections(self):
+    def test_getting_points_of_selections(self):
         """Get points of selections from gwysel
         """
         self.get_nsel.return_value = self.nsel
@@ -403,334 +482,276 @@ class GwyPointSelections_from_gwy(unittest.TestCase):
         point_sel = GwyPointSelections.from_gwy(self.gwysel)
         self.assertListEqual(point_sel.data, self.points)
 
-
-class GwySelection_get_selection_points(unittest.TestCase):
-
-    def test_raise_exception_in_get_selection_points(self):
-        """Raise GwyfileErrorCMsg in GwySelection._get_selection_points
-
-        Raise GwyfileErrorCMsg in GwySelection._get_selection_points
-        if get_sel_func returns False
-        """
-        falsep = ffi.new("bool*", False)
-        self.get_sel_func.return_value = falsep[0]
-        npoints = 1
-        self.assertRaises(GwyfileErrorCMsg,
-                          GwySelection._get_selection_points,
-                          self.gwysel,
-                          self.get_sel_func,
-                          self.nsel,
-                          npoints)
-
-    def test_data_property_if_nsel_is_not_zero(self):
-        """Test data property if number of selections is not zero
-        """
-        self.get_sel_func.side_effect = self._test_data_side_effect
-        point_sel = GwyPointSelections(self.gwysel)
-        self.assertListEqual(self.data, point_sel.data)
-
-    def test_data_property_if_nsel_is_zero(self):
-        """data property should be None if number of selections is zero
-        """
-        self.nsel = 0
-        self.get_sel_func.side_effect = self._test_data_side_effect
-        point_sel = GwyPointSelections(self.gwysel)
-        self.assertIsNone(point_sel.data)
-
-    def _test_data_side_effect(self, *args):
-        """ Write self.nsel in 'nsel' field, self.cdata in 'data' field
-        and return True
-        """
-
-        # combine fields names and fields pointers in one dictionary
-        arg_keys = [ffi.string(key).decode('utf-8') for key in args[2:-1:2]]
-        arg_pointers = [pointer for pointer in args[3:-1:2]]
-        arg_dict = dict(zip(arg_keys, arg_pointers))
-
-        if 'nsel' in arg_dict:
-            arg_dict['nsel'][0] = self.nsel
-        if 'data' in arg_dict:
-            arg_dict['data'][0] = self.cdata
-
-        # Function should return True if object looks acceptable
-        truep = ffi.new("bool*", True)
-        return truep[0]
+    def test_return_None_if_there_are_no_points_in_sel(self):
+        self.get_points.return_value = None
+        point_sel = GwyPointSelections.from_gwy(self.gwysel)
+        self.assertIsNone(point_sel)
 
 
 class GwyPointerSelections_init(unittest.TestCase):
-    """Test arguments passing to GwySelection __init__
+    """Test constructor of GwyPointerSelection class
     """
 
-    @patch.object(GwySelection, '__init__')
-    def test_args_of_gwypointselection_init(self, mock_gwysel_cls):
-        """Test args of GwySelection.__init__ call
+    def test_arg_is_list_of_points(self):
+        """GwyPointerSelections.__init__ arg is a list
         """
-        gwysel = Mock()
-        GwyPointerSelections(gwysel)
-        mock_gwysel_cls.assert_has_calls(
-            [call(gwysel=gwysel,
-                  get_sel_func=lib.gwyfile_object_selectionpoint_get,
-                  npoints=1)])
+        points = [(1, 2), (3, 4)]
+        pointer_sel = GwyPointerSelections(points)
+        self.assertListEqual(pointer_sel.data, points)
+
+    def test_arg_is_tuple_of_points(self):
+        """GwyPointerSelections.__init__ arg is a tuple
+        """
+        points = ((1, 2), (3, 4))
+        pointer_sel = GwyPointSelections(points)
+        self.assertListEqual(pointer_sel.data, [(1, 2), (3, 4)])
+
+    def test_arg_is_an_empty_list(self):
+        """Raise ValueError if GwyPointerSelections.__init__ arg is empty
+        """
+        points = []
+        self.assertRaises(ValueError,
+                          GwyPointerSelections,
+                          points)
 
 
-class GwyPointerSelections_data(unittest.TestCase):
-    """Test data property of GwyPointerSelections class
+class GwyPointerSelections_from_gwy(unittest.TestCase):
+    """Test from_gwy method of GwyPointerSelections class
     """
 
     def setUp(self):
         self.gwysel = Mock()
-        self.nsel = 2
+        self.nsel = 3
+        self.points = [(1., 1.), (2., 2.), (3., 3.)]
 
-        self.data = [(1., 1.), (2., 2.)]
-        # C array representation of self.data
-        self.cdata = ffi.new("double[]", [1., 1., 2., 2.])
+        patcher = patch.object(GwySelection,
+                               'from_gwy')
+        self.from_gwy_parent = patcher.start()
+        self.addCleanup(patcher.stop)
 
-        patcher_lib = (
-            patch('gwydb.gwy.gwyfile.GwyPointerSelections._get_sel_func',
-                  autospec=True))
-        self.addCleanup(patcher_lib.stop)
-        self.get_sel_func = patcher_lib.start()
-
-    def test_data_property_if_nsel_is_not_zero(self):
-        """Test data property if number of selections is not zero
+    def test_arg_of_parent_from_gwy_method(self):
+        """Get selection points
         """
-        self.get_sel_func.side_effect = self._test_data_side_effect
-        pointer_sel = GwyPointerSelections(self.gwysel)
-        self.assertListEqual(self.data, pointer_sel.data)
+        GwyPointerSelections.from_gwy(self.gwysel)
+        self.from_gwy_parent.assert_has_calls([call(self.gwysel)])
 
-    def test_data_property_if_nsel_is_zero(self):
-        """data property should be None if number of selections is zero
+    def test_returned_value(self):
+        """Return GwyPointSelections initiated by points from gwysel
         """
-        self.nsel = 0
-        self.get_sel_func.side_effect = self._test_data_side_effect
-        pointer_sel = GwyPointerSelections(self.gwysel)
-        self.assertIsNone(pointer_sel.data)
+        self.from_gwy_parent.return_value = self.points
+        pointer_sel = GwyPointerSelections.from_gwy(self.gwysel)
+        self.assertListEqual(pointer_sel.data, self.points)
 
-    def _test_data_side_effect(self, *args):
-        """ Write self.nsel in 'nsel' field, self.cdata in 'data' field
-        and return True
+    def test_return_None_if_there_are_no_points_in_sel(self):
+        """Return None if there are no points in the selection
         """
-
-        # combine fields names and fields pointers in one dictionary
-        arg_keys = [ffi.string(key).decode('utf-8') for key in args[2:-1:2]]
-        arg_pointers = [pointer for pointer in args[3:-1:2]]
-        arg_dict = dict(zip(arg_keys, arg_pointers))
-
-        if 'nsel' in arg_dict:
-            arg_dict['nsel'][0] = self.nsel
-        if 'data' in arg_dict:
-            arg_dict['data'][0] = self.cdata
-
-        # Function should return True if object looks acceptable
-        truep = ffi.new("bool*", True)
-        return truep[0]
+        self.from_gwy_parent.return_value = None
+        pointer_sel = GwyPointerSelections.from_gwy(self.gwysel)
+        self.assertIsNone(pointer_sel)
 
 
 class GwyLineSelections_init(unittest.TestCase):
-    """Test arguments passing to GwySelection __init__
+    """Test constructor of GwyLineSelections class
     """
 
-    @patch.object(GwySelection, '__init__')
-    def test_args_of_gwyselection_init(self, mock_gwysel_cls):
-        """Test args of GwySelection.__init__ call
+    def test_arg_is_list_of_point_pairs(self):
+        """GwyLineSelections.__init__ arg is a list
         """
-        gwysel = Mock()
-        GwyLineSelections(gwysel)
-        mock_gwysel_cls.assert_has_calls(
-            [call(gwysel=gwysel,
-                  get_sel_func=lib.gwyfile_object_selectionline_get,
-                  npoints=2)])
+        point_pairs = [((0, 0), (1, 1)),
+                       ((2, 2), (3, 3))]
+        line_sel = GwyLineSelections(point_pairs)
+        self.assertListEqual(line_sel.data, point_pairs)
+
+    def test_arg_is_tuple_of_points(self):
+        """GwyLineSelections.__init__ arg is a tuple
+        """
+        point_pairs = (((0, 0), (1, 1)),
+                       ((2, 2), (3, 3)))
+        line_sel = GwyLineSelections(point_pairs)
+        self.assertListEqual(line_sel.data,
+                             [((0, 0), (1, 1)),
+                              ((2, 2), (3, 3))])
+
+    def test_arg_is_an_empty_list(self):
+        """Raise ValueError if GwyLineSelections.__init__ arg is empty
+        """
+        points = []
+        self.assertRaises(ValueError,
+                          GwyLineSelections,
+                          points)
 
 
-class GwyLineSelections_data(unittest.TestCase):
-    """Test data property of GwyLineSelections class
+class GwyLineSelections_from_gwy(unittest.TestCase):
+    """Test from_gwy method of GwyLineSelections class
     """
 
     def setUp(self):
         self.gwysel = Mock()
-        self.nsel = 2
+        self.points = [(0, 0), (1, 1), (2, 2), (3, 3)]
+        self.point_pairs = [((0, 0), (1, 1)),
+                            ((2, 2), (3, 3))]
 
-        self.data = [((1., 1.), (2., 2.)), ((3., 3.), (4., 4.))]
-        # C array representation of self.data
-        self.cdata = ffi.new("double[]", [1., 1., 2., 2., 3., 3., 4., 4.])
+        patcher = patch.object(GwySelection,
+                               'from_gwy')
+        self.from_gwy_parent = patcher.start()
+        self.addCleanup(patcher.stop)
 
-        patcher_lib = (
-            patch('gwydb.gwy.gwyfile.GwyLineSelections._get_sel_func',
-                  autospec=True))
-        self.addCleanup(patcher_lib.stop)
-        self.get_sel_func = patcher_lib.start()
-
-    def test_data_property_if_nsel_is_not_zero(self):
-        """Test data property if number of selections is not zero
+    def test_arg_of_parent_from_gwy_method(self):
+        """Get selection points
         """
-        self.get_sel_func.side_effect = self._test_data_side_effect
-        line_sel = GwyLineSelections(self.gwysel)
-        self.assertListEqual(self.data, line_sel.data)
+        self.from_gwy_parent.return_value = self.points
+        GwyLineSelections.from_gwy(self.gwysel)
+        self.from_gwy_parent.assert_has_calls([call(self.gwysel)])
 
-    def test_data_property_if_nsel_is_zero(self):
-        """data property should be None if number of selections is zero
+    def test_returned_value(self):
+        """Return GwyLineSelections initiated by point pairs from gwysel
         """
-        self.nsel = 0
-        self.get_sel_func.side_effect = self._test_data_side_effect
-        line_sel = GwyLineSelections(self.gwysel)
-        self.assertIsNone(line_sel.data)
+        self.from_gwy_parent.return_value = self.points
+        line_sel = GwyLineSelections.from_gwy(self.gwysel)
+        self.assertListEqual(line_sel.data, self.point_pairs)
 
-    def _test_data_side_effect(self, *args):
-        """ Write self.nsel in 'nsel' field, self.cdata in 'data' field
-        and return True
+    def test_return_None_if_there_are_no_points_in_sel(self):
+        """Return None if there are no points in the selection
         """
-
-        # combine fields names and fields pointers in one dictionary
-        arg_keys = [ffi.string(key).decode('utf-8') for key in args[2:-1:2]]
-        arg_pointers = [pointer for pointer in args[3:-1:2]]
-        arg_dict = dict(zip(arg_keys, arg_pointers))
-
-        if 'nsel' in arg_dict:
-            arg_dict['nsel'][0] = self.nsel
-        if 'data' in arg_dict:
-            arg_dict['data'][0] = self.cdata
-
-        # Function should return True if object looks acceptable
-        truep = ffi.new("bool*", True)
-        return truep[0]
+        self.from_gwy_parent.return_value = None
+        line_sel = GwyLineSelections.from_gwy(self.gwysel)
+        self.assertIsNone(line_sel)
 
 
 class GwyRectangleSelections_init(unittest.TestCase):
-    """Test arguments passing to GwySelection __init__
+    """Test constructor of GwyRectangleSelections class
     """
 
-    @patch.object(GwySelection, '__init__')
-    def test_args_of_gwyselection_init(self, mock_gwysel_cls):
-        """Test args of GwySelection.__init__ call
+    def test_arg_is_list_of_point_pairs(self):
+        """GwyRectangleSelections.__init__ arg is a list
         """
-        gwysel = Mock()
-        GwyRectangleSelections(gwysel)
-        mock_gwysel_cls.assert_has_calls(
-            [call(gwysel=gwysel,
-                  get_sel_func=lib.gwyfile_object_selectionrectangle_get,
-                  npoints=2)])
+        point_pairs = [((0, 0), (1, 1)),
+                       ((2, 2), (3, 3))]
+        rectangle_sel = GwyRectangleSelections(point_pairs)
+        self.assertListEqual(rectangle_sel.data, point_pairs)
+
+    def test_arg_is_tuple_of_points(self):
+        """GwyRectangleSelections.__init__ arg is a tuple
+        """
+        point_pairs = (((0, 0), (1, 1)),
+                       ((2, 2), (3, 3)))
+        rectangle_sel = GwyRectangleSelections(point_pairs)
+        self.assertListEqual(rectangle_sel.data,
+                             [((0, 0), (1, 1)),
+                              ((2, 2), (3, 3))])
+
+    def test_arg_is_an_empty_list(self):
+        """Raise ValueError if GwyRectangleSelections.__init__ arg is empty
+        """
+        points = []
+        self.assertRaises(ValueError,
+                          GwyRectangleSelections,
+                          points)
 
 
-class GwyRectangleSelections_data(unittest.TestCase):
-    """Test data property of GwyRectangleSelections class
+class GwyRectangleSelections_from_gwy(unittest.TestCase):
+    """Test from_gwy method of GwyRectangleSelections class
     """
 
     def setUp(self):
         self.gwysel = Mock()
-        self.nsel = 2
+        self.points = [(0, 0), (1, 1), (2, 2), (3, 3)]
+        self.point_pairs = [((0, 0), (1, 1)),
+                            ((2, 2), (3, 3))]
 
-        self.data = [((1., 1.), (2., 2.)), ((3., 3.), (4., 4.))]
-        # C array representation of self.data
-        self.cdata = ffi.new("double[]", [1., 1., 2., 2., 3., 3., 4., 4.])
+        patcher = patch.object(GwySelection,
+                               'from_gwy')
+        self.from_gwy_parent = patcher.start()
+        self.addCleanup(patcher.stop)
 
-        patcher_lib = (
-            patch('gwydb.gwy.gwyfile.GwyRectangleSelections._get_sel_func',
-                  autospec=True))
-        self.addCleanup(patcher_lib.stop)
-        self.get_sel_func = patcher_lib.start()
-
-    def test_data_property_if_nsel_is_not_zero(self):
-        """Test data property if number of selections is not zero
+    def test_arg_of_parent_from_gwy_method(self):
+        """Get selection points
         """
-        self.get_sel_func.side_effect = self._test_data_side_effect
-        rect_sel = GwyRectangleSelections(self.gwysel)
-        self.assertListEqual(self.data, rect_sel.data)
+        self.from_gwy_parent.return_value = self.points
+        GwyRectangleSelections.from_gwy(self.gwysel)
+        self.from_gwy_parent.assert_has_calls([call(self.gwysel)])
 
-    def test_data_property_if_nsel_is_zero(self):
-        """data property should be None if number of selections is zero
+    def test_returned_value(self):
+        """Return GwyRectangleSelections initiated by point pairs from gwysel
         """
-        self.nsel = 0
-        self.get_sel_func.side_effect = self._test_data_side_effect
-        rect_sel = GwyRectangleSelections(self.gwysel)
-        self.assertIsNone(rect_sel.data)
+        self.from_gwy_parent.return_value = self.points
+        rectangle_sel = GwyRectangleSelections.from_gwy(self.gwysel)
+        self.assertListEqual(rectangle_sel.data, self.point_pairs)
 
-    def _test_data_side_effect(self, *args):
-        """ Write self.nsel in 'nsel' field, self.cdata in 'data' field
-        and return True
+    def test_return_None_if_there_are_no_points_in_sel(self):
+        """Return None if there are no points in the selection
         """
-
-        # combine fields names and fields pointers in one dictionary
-        arg_keys = [ffi.string(key).decode('utf-8') for key in args[2:-1:2]]
-        arg_pointers = [pointer for pointer in args[3:-1:2]]
-        arg_dict = dict(zip(arg_keys, arg_pointers))
-
-        if 'nsel' in arg_dict:
-            arg_dict['nsel'][0] = self.nsel
-        if 'data' in arg_dict:
-            arg_dict['data'][0] = self.cdata
-
-        # Function should return True if object looks acceptable
-        truep = ffi.new("bool*", True)
-        return truep[0]
+        self.from_gwy_parent.return_value = None
+        rectangle_sel = GwyRectangleSelections.from_gwy(self.gwysel)
+        self.assertIsNone(rectangle_sel)
 
 
 class GwyEllipseSelections_init(unittest.TestCase):
-    """Test arguments passing to GwySelection __init__
+    """Test constructor of GwyEllipseSelections class
     """
 
-    @patch.object(GwySelection, '__init__')
-    def test_args_of_gwyselection_init(self, mock_gwysel_cls):
-        """Test args of GwySelection.__init__ call
+    def test_arg_is_list_of_point_pairs(self):
+        """GwyEllipseSelections.__init__ arg is a list
         """
-        gwysel = Mock()
-        GwyEllipseSelections(gwysel)
-        mock_gwysel_cls.assert_has_calls(
-            [call(gwysel=gwysel,
-                  get_sel_func=lib.gwyfile_object_selectionellipse_get,
-                  npoints=2)])
+        point_pairs = [((0, 0), (1, 1)),
+                       ((2, 2), (3, 3))]
+        ellipse_sel = GwyEllipseSelections(point_pairs)
+        self.assertListEqual(ellipse_sel.data, point_pairs)
+
+    def test_arg_is_tuple_of_points(self):
+        """GwyEllipseSelections.__init__ arg is a tuple
+        """
+        point_pairs = (((0, 0), (1, 1)),
+                       ((2, 2), (3, 3)))
+        ellipse_sel = GwyEllipseSelections(point_pairs)
+        self.assertListEqual(ellipse_sel.data,
+                             [((0, 0), (1, 1)),
+                              ((2, 2), (3, 3))])
+
+    def test_arg_is_an_empty_list(self):
+        """Raise ValueError if GwyEllipseSelections.__init__ arg is empty
+        """
+        points = []
+        self.assertRaises(ValueError,
+                          GwyEllipseSelections,
+                          points)
 
 
-class GwyEllipseSelections_data(unittest.TestCase):
-    """Test data property of GwyEllipseSelections class
+class GwyEllipseSelections_from_gwy(unittest.TestCase):
+    """Test from_gwy method of GwyEllipseSelections class
     """
 
     def setUp(self):
         self.gwysel = Mock()
-        self.nsel = 2
+        self.points = [(0, 0), (1, 1), (2, 2), (3, 3)]
+        self.point_pairs = [((0, 0), (1, 1)),
+                            ((2, 2), (3, 3))]
 
-        self.data = [((1., 1.), (2., 2.)), ((3., 3.), (4., 4.))]
-        # C array representation of self.data
-        self.cdata = ffi.new("double[]", [1., 1., 2., 2., 3., 3., 4., 4.])
+        patcher = patch.object(GwySelection,
+                               'from_gwy')
+        self.from_gwy_parent = patcher.start()
+        self.addCleanup(patcher.stop)
 
-        patcher_lib = (
-            patch('gwydb.gwy.gwyfile.GwyEllipseSelections._get_sel_func',
-                  autospec=True))
-        self.addCleanup(patcher_lib.stop)
-        self.get_sel_func = patcher_lib.start()
-
-    def test_data_property_if_nsel_is_not_zero(self):
-        """Test data property if number of selections is not zero
+    def test_arg_of_parent_from_gwy_method(self):
+        """Get selection points
         """
-        self.get_sel_func.side_effect = self._test_data_side_effect
-        ellipse_sel = GwyEllipseSelections(self.gwysel)
-        self.assertListEqual(self.data, ellipse_sel.data)
+        self.from_gwy_parent.return_value = self.points
+        GwyEllipseSelections.from_gwy(self.gwysel)
+        self.from_gwy_parent.assert_has_calls([call(self.gwysel)])
 
-    def test_data_property_if_nsel_is_zero(self):
-        """data property should be None if number of selections is zero
+    def test_returned_value(self):
+        """Return GwyEllipseSelections initiated by point pairs from gwysel
         """
-        self.nsel = 0
-        self.get_sel_func.side_effect = self._test_data_side_effect
-        ellipse_sel = GwyEllipseSelections(self.gwysel)
-        self.assertIsNone(ellipse_sel.data)
+        self.from_gwy_parent.return_value = self.points
+        ellipse_sel = GwyEllipseSelections.from_gwy(self.gwysel)
+        self.assertListEqual(ellipse_sel.data, self.point_pairs)
 
-    def _test_data_side_effect(self, *args):
-        """ Write self.nsel in 'nsel' field, self.cdata in 'data' field
-        and return True
+    def test_return_None_if_there_are_no_points_in_sel(self):
+        """Return None if there are no points in the selection
         """
-
-        # combine fields names and fields pointers in one dictionary
-        arg_keys = [ffi.string(key).decode('utf-8') for key in args[2:-1:2]]
-        arg_pointers = [pointer for pointer in args[3:-1:2]]
-        arg_dict = dict(zip(arg_keys, arg_pointers))
-
-        if 'nsel' in arg_dict:
-            arg_dict['nsel'][0] = self.nsel
-        if 'data' in arg_dict:
-            arg_dict['data'][0] = self.cdata
-
-        # Function should return True if object looks acceptable
-        truep = ffi.new("bool*", True)
-        return truep[0]
+        self.from_gwy_parent.return_value = None
+        ellipse_sel = GwyEllipseSelections.from_gwy(self.gwysel)
+        self.assertIsNone(ellipse_sel)
 
 
 class GwyDataField_init(unittest.TestCase):
@@ -2672,12 +2693,12 @@ class GwyChannel_get_point_sel(unittest.TestCase):
 
     def test_call_GwyPointSelections_constructor(self):
         """
-        Pass gwypointselection object to GwyPointSelections constructor
+        Pass gwypointselection object to GwyPointSelections.from_gwy method
         """
 
         gwypointsel = self.gwyfile.get_gwyobject.return_value
         GwyChannel._get_point_sel(self.gwyfile, self.channel_id)
-        self.mock_GwyPointSelections.assert_has_calls(
+        self.mock_GwyPointSelections.from_gwy.assert_has_calls(
             [call(gwypointsel)])
 
     def test_check_returned_value(self):
@@ -2685,7 +2706,7 @@ class GwyChannel_get_point_sel(unittest.TestCase):
         Return object returned by GwyPointSelections constructor
         """
 
-        expected_return = self.mock_GwyPointSelections.return_value
+        expected_return = self.mock_GwyPointSelections.from_gwy.return_value
         actual_return = GwyChannel._get_point_sel(self.gwyfile,
                                                   self.channel_id)
         self.assertIs(expected_return, actual_return)
@@ -2734,7 +2755,7 @@ class GwyChannel_get_pointer_sel(unittest.TestCase):
 
         gwypointersel = self.gwyfile.get_gwyobject.return_value
         GwyChannel._get_pointer_sel(self.gwyfile, self.channel_id)
-        self.mock_GwyPointerSelections.assert_has_calls(
+        self.mock_GwyPointerSelections.from_gwy.assert_has_calls(
             [call(gwypointersel)])
 
     def test_check_returned_value(self):
@@ -2742,7 +2763,7 @@ class GwyChannel_get_pointer_sel(unittest.TestCase):
         Return object returned by GwyPointerSelections constructor
         """
 
-        expected_return = self.mock_GwyPointerSelections.return_value
+        expected_return = self.mock_GwyPointerSelections.from_gwy.return_value
         actual_return = GwyChannel._get_pointer_sel(self.gwyfile,
                                                     self.channel_id)
         self.assertIs(expected_return, actual_return)
@@ -2791,7 +2812,7 @@ class GwyChannel_get_line_sel(unittest.TestCase):
 
         gwylinesel = self.gwyfile.get_gwyobject.return_value
         GwyChannel._get_line_sel(self.gwyfile, self.channel_id)
-        self.mock_GwyLineSelections.assert_has_calls(
+        self.mock_GwyLineSelections.from_gwy.assert_has_calls(
             [call(gwylinesel)])
 
     def test_check_returned_value(self):
@@ -2799,7 +2820,7 @@ class GwyChannel_get_line_sel(unittest.TestCase):
         Return object returned by GwyLineSelections constructor
         """
 
-        expected_return = self.mock_GwyLineSelections.return_value
+        expected_return = self.mock_GwyLineSelections.from_gwy.return_value
         actual_return = GwyChannel._get_line_sel(self.gwyfile,
                                                  self.channel_id)
         self.assertIs(expected_return, actual_return)
@@ -2848,7 +2869,7 @@ class GwyChannel_get_rectangle_sel(unittest.TestCase):
 
         gwyrectsel = self.gwyfile.get_gwyobject.return_value
         GwyChannel._get_rectangle_sel(self.gwyfile, self.channel_id)
-        self.mock_GwyRectangleSelections.assert_has_calls(
+        self.mock_GwyRectangleSelections.from_gwy.assert_has_calls(
             [call(gwyrectsel)])
 
     def test_check_returned_value(self):
@@ -2856,7 +2877,8 @@ class GwyChannel_get_rectangle_sel(unittest.TestCase):
         Return object returned by GwyRectangleSelections constructor
         """
 
-        expected_return = self.mock_GwyRectangleSelections.return_value
+        expected_return = (
+            self.mock_GwyRectangleSelections.from_gwy.return_value)
         actual_return = GwyChannel._get_rectangle_sel(self.gwyfile,
                                                       self.channel_id)
         self.assertIs(expected_return, actual_return)
@@ -2905,7 +2927,7 @@ class GwyChannel_get_ellipse_sel(unittest.TestCase):
 
         gwyellipsesel = self.gwyfile.get_gwyobject.return_value
         GwyChannel._get_ellipse_sel(self.gwyfile, self.channel_id)
-        self.mock_GwyEllipseSelections.assert_has_calls(
+        self.mock_GwyEllipseSelections.from_gwy.assert_has_calls(
             [call(gwyellipsesel)])
 
     def test_check_returned_value(self):
@@ -2913,7 +2935,7 @@ class GwyChannel_get_ellipse_sel(unittest.TestCase):
         Return object returned by GwyEllipseSelections constructor
         """
 
-        expected_return = self.mock_GwyEllipseSelections.return_value
+        expected_return = self.mock_GwyEllipseSelections.from_gwy.return_value
         actual_return = GwyChannel._get_ellipse_sel(self.gwyfile,
                                                     self.channel_id)
         self.assertIs(expected_return, actual_return)

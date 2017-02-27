@@ -181,7 +181,7 @@ class GwySelection(ABC):
 
     @classmethod
     def _get_selection_points(cls, gwysel, nsel):
-        """Get all points of selection for the object
+        """Get all points of selection from the gwysel object
 
         Args:
             gwysel (GwyfileObject*):
@@ -192,8 +192,7 @@ class GwySelection(ABC):
 
         Returns:
             [(x1, y1), ..., (xN, yN)]: list of tuples with point coordinates
-
-            or None :                  if there are no selections
+                                       or None if there are no selections
 
         """
 
@@ -240,7 +239,7 @@ class GwyPointSelections(GwySelection):
     """Class for point selections
 
     Attributes:
-        data: list of points [(x1, y1), ...]
+        data: non-empty list of points [(x1, y1), ...]
     """
 
     _npoints = 1  # number of points in one point selection
@@ -251,9 +250,11 @@ class GwyPointSelections(GwySelection):
         Args:
             points: list or tuple of points (x, y)
         """
-        self.data = list(points)
+        if points:
+            self.data = list(points)
+        else:
+            raise ValueError("points list is empty")
 
-    
     @classmethod
     def from_gwy(cls, gwysel):
         """
@@ -265,9 +266,13 @@ class GwyPointSelections(GwySelection):
 
         Returns:
             GwyPointSelections instance initialized by the point selections
+            or None if number of points is zero
         """
         points = super().from_gwy(gwysel)
-        return GwyPointSelections(points)
+        if points is not None:
+            return GwyPointSelections(points)
+        else:
+            return None
 
 
 class GwyPointerSelections(GwySelection):
@@ -281,28 +286,35 @@ class GwyPointerSelections(GwySelection):
     _get_sel_func = lib.gwyfile_object_selectionpoint_get
 
     def __init__(self, points):
-        self.data = points
-    
+        if points:
+            self.data = list(points)
+        else:
+            raise ValueError("points list is empty")
+
     @classmethod
     def from_gwy(cls, gwysel):
         """
-        Get point selections from <GwySelectionPoint*> object
+        Get point selections from <GwySelectionPointer*> object
 
         Args:
             gwysel:
-                <GwySelectionPoint*> object from Libgwyfile library
+                <GwySelectionPointer*> object from Libgwyfile library
 
         Returns:
-            GwyPointSelections instance initialized by the point selections
+            GwyPointerSelections instance initialized by the point selections
+            or None if number of points is zero
         """
-        points = super().from_gwy(cls, gwysel)
-        return GwyPointerSelections(points)
+        points = super().from_gwy(gwysel)
+        if points is not None:
+            return GwyPointerSelections(points)
+        else:
+            return None
 
 
 class GwyLineSelections(GwySelection):
     """Class for line selections
 
-    Properties:
+    Attributes:
         data: list of point pairs [((x1, y1), (x2, y2))...]
               (two points for one line selection)
     """
@@ -310,24 +322,37 @@ class GwyLineSelections(GwySelection):
     _npoints = 2  # number of points in one line selection
     _get_sel_func = lib.gwyfile_object_selectionline_get
 
-    def __init__(self, gwysel):
-        super().__init__(gwysel=gwysel,
-                         get_sel_func=GwyLineSelections._get_sel_func,
-                         npoints=GwyLineSelections._npoints)
-
-    @property
-    def data(self):
-        points = super().data
-        if points is None:
-            return None
+    def __init__(self, point_pairs):
+        if point_pairs:
+            self.data = list(point_pairs)
         else:
-            return super()._combine_points_in_pair(points)
+            raise ValueError("points list is empty")
+
+    @classmethod
+    def from_gwy(self, gwysel):
+        """
+        Get line selections from <GwySelectionLine*> object
+
+        Args:
+            gwysel:
+                <GwySelectionLine*> object from Libgwyfile library
+
+        Returns:
+            GwyLineSelections instance initialized by the point selections
+            or None if number of points is zero
+        """
+        points = super().from_gwy(gwysel)
+        if points is not None:
+            point_pairs = super()._combine_points_in_pair(points)
+            return GwyLineSelections(point_pairs)
+        else:
+            return None
 
 
 class GwyRectangleSelections(GwySelection):
     """Class for rectange selections
 
-    Properties:
+    Attributes:
         data: list of point pairs [((x1, y1), (x2, y2))...]
               (two points for one rectangle selection)
     """
@@ -335,24 +360,37 @@ class GwyRectangleSelections(GwySelection):
     _npoints = 2  # number of points in one rectangle selection
     _get_sel_func = lib.gwyfile_object_selectionrectangle_get
 
-    def __init__(self, gwysel):
-        super().__init__(gwysel=gwysel,
-                         get_sel_func=GwyRectangleSelections._get_sel_func,
-                         npoints=GwyRectangleSelections._npoints)
-
-    @property
-    def data(self):
-        points = super().data
-        if points is None:
-            return None
+    def __init__(self, point_pairs):
+        if point_pairs:
+            self.data = list(point_pairs)
         else:
-            return super()._combine_points_in_pair(points)
+            raise ValueError("points list is empty")
+
+    @classmethod
+    def from_gwy(self, gwysel):
+        """
+        Get rectangle selections from <GwySelectionRectangle*> object
+
+        Args:
+            gwysel:
+                <GwySelectionRectangle*> object from Libgwyfile library
+
+        Returns:
+            GwyRectangleSelections instance initialized by the rectangle sel.
+            or None if number of points is zero
+        """
+        points = super().from_gwy(gwysel)
+        if points is not None:
+            point_pairs = super()._combine_points_in_pair(points)
+            return GwyRectangleSelections(point_pairs)
+        else:
+            return None
 
 
 class GwyEllipseSelections(GwySelection):
     """Class for ellipse selections
 
-    Properties:
+    Attributes:
         data: list of point pairs [((x1, y1), (x2, y2))...]
               (two points for one ellipse selection)
     """
@@ -360,18 +398,31 @@ class GwyEllipseSelections(GwySelection):
     _npoints = 2  # number of points in one ellipse selection
     _get_sel_func = lib.gwyfile_object_selectionellipse_get
 
-    def __init__(self, gwysel):
-        super().__init__(gwysel=gwysel,
-                         get_sel_func=GwyEllipseSelections._get_sel_func,
-                         npoints=GwyEllipseSelections._npoints)
-
-    @property
-    def data(self):
-        points = super().data
-        if points is None:
-            return None
+    def __init__(self, point_pairs):
+        if point_pairs:
+            self.data = list(point_pairs)
         else:
-            return super()._combine_points_in_pair(points)
+            raise ValueError("points list is empty")
+
+    @classmethod
+    def from_gwy(self, gwysel):
+        """
+        Get ellipse selections from <GwySelectionEllipse*> object
+
+        Args:
+            gwysel:
+                <GwySelectionEllipse*> object from Libgwyfile library
+
+        Returns:
+            GwyEllipseSelections instance initialized by the ellipse selections
+            or None if number of points is zero
+        """
+        points = super().from_gwy(gwysel)
+        if points is not None:
+            point_pairs = super()._combine_points_in_pair(points)
+            return GwyEllipseSelections(point_pairs)
+        else:
+            return None
 
 
 class GwyDataField:
@@ -1069,7 +1120,7 @@ class GwyChannel:
         key = "/{:d}/select/point".format(channel_id)
         if gwyfile.check_gwyobject(key):
             gwysel = gwyfile.get_gwyobject(key)
-            return GwyPointSelections(gwysel)
+            return GwyPointSelections.from_gwy(gwysel)
         else:
             return None
 
@@ -1078,7 +1129,7 @@ class GwyChannel:
         key = "/{:d}/select/pointer".format(channel_id)
         if gwyfile.check_gwyobject(key):
             gwysel = gwyfile.get_gwyobject(key)
-            return GwyPointerSelections(gwysel)
+            return GwyPointerSelections.from_gwy(gwysel)
         else:
             return None
 
@@ -1087,7 +1138,7 @@ class GwyChannel:
         key = "/{:d}/select/line".format(channel_id)
         if gwyfile.check_gwyobject(key):
             gwysel = gwyfile.get_gwyobject(key)
-            return GwyLineSelections(gwysel)
+            return GwyLineSelections.from_gwy(gwysel)
         else:
             return None
 
@@ -1096,7 +1147,7 @@ class GwyChannel:
         key = "/{:d}/select/rectangle".format(channel_id)
         if gwyfile.check_gwyobject(key):
             gwysel = gwyfile.get_gwyobject(key)
-            return GwyRectangleSelections(gwysel)
+            return GwyRectangleSelections.from_gwy(gwysel)
         else:
             return None
 
@@ -1105,7 +1156,7 @@ class GwyChannel:
         key = "/{:d}/select/ellipse".format(channel_id)
         if gwyfile.check_gwyobject(key):
             gwysel = gwyfile.get_gwyobject(key)
-            return GwyEllipseSelections(gwysel)
+            return GwyEllipseSelections.from_gwy(gwysel)
         else:
             return None
 
