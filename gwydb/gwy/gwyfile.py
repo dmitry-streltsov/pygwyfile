@@ -428,45 +428,107 @@ class GwyEllipseSelections(GwySelection):
 class GwyDataField:
     """Class for GwyDataField representation
 
-    Properties:
+    Attributes:
         data (2D numpy array, float64):
             data from the datafield
 
         meta (python dictionary):
             datafield metadata
-            Keys of the metadata dictionary:
-                    'xres' (int):    Horizontal dimension in pixels
-                    'yres' (int):    Vertical dimension in pixels
-                    'xreal' (float): Horizontal size in physical units
-                    'yreal' (float): Vertical size in physical units
-                    'xoff' (double): Horizontal offset of the top-left corner
-                                     in physical units.
-                    'yoff' (double): Vertical offset of the top-left corner
-                                     in physical units.
-                    'si_unit_xy' (str): Physical units of lateral dimensions,
-                                        base SI units, e.g. "m"
-                    'si_unit_z' (str): Physical unit of vertical dimension,
-                                       base SI unit, e.g. "m"
+
     """
 
-    def __init__(self, gwydf):
+    def __init__(self, data, meta=None):
+        """
+        Args:
+            data (2D numpy array, float64):
+                data for the datafield
+            meta (python dictionary):
+
+                Possible items:
+
+                   'xres' (int):    Horizontal dimension in pixels
+                   'yres' (int):    Vertical dimension in pixels
+                   =if defined xres, yres must match shape of the data array=
+
+                   'xreal' (float): Horizontal size in physical units
+                                    Default value is 1. if not defined.
+                   'yreal' (float): Vertical size in physical units
+                                    Default value is 1. if not defined.
+                   'xoff' (double): Horizontal offset of the top-left corner
+                                    in physical units.
+                                    Default value is 0. if not defined
+                   'yoff' (double): Vertical offset of the top-left corner
+                                    in physical units.
+                                    Default value is 0. if not defined
+                   'si_unit_xy' (str): Physical units of lateral dimensions,
+                                       base SI units, e.g. "m"
+                                       Default value is '' if not defined
+                   'si_unit_z' (str): Physical unit of vertical dimension,
+                                      base SI unit, e.g. "m"
+                                      Default value is '' if not defined
+
+                Unknown additional items are simply ignored
+
+        """
+        if not meta:
+            meta = {}
+
+        self.meta = {}
+
+        if 'xres' in meta and 'yres' in meta:
+            if data.shape == (meta['xres'], meta['yres']):
+                self.data = data
+                self.meta['xres'] = meta['xres']
+                self.meta['yres'] = meta['yres']
+            else:
+                raise ValueError("data.shape is not equal "
+                                 "meta['xres'], meta['yres']")
+        else:
+            self.meta['xres'], self.meta['yres'] = data.shape
+            self.data = data
+
+        if 'xreal' in meta:
+            self.meta['xreal'] = meta['xreal']
+        else:
+            self.meta['xreal'] = 1.
+
+        if 'yreal' in meta:
+            self.meta['yreal'] = meta['yreal']
+        else:
+            self.meta['yreal'] = 1.
+
+        if 'xoff' in meta:
+            self.meta['xoff'] = meta['xoff']
+        else:
+            self.meta['xoff'] = 0.
+
+        if 'yoff' in meta:
+            self.meta['yoff'] = meta['yoff']
+        else:
+            self.meta['yoff'] = 0.
+
+        if 'si_unit_xy' in meta:
+            self.meta['si_unit_xy'] = meta['si_unit_xy']
+        else:
+            self.meta['si_unit_xy'] = ''
+
+        if 'si_unit_z' in meta:
+            self.meta['si_unit_z'] = meta['si_unit_z']
+        else:
+            self.meta['si_unit_z'] = ''
+
+    @classmethod
+    def from_gwy(cls, gwydf):
         """
         Args:
             gwydf (GwyDataField*):
                 GwyDataField object from Libgwyfile
         """
-        self._meta = self._get_meta(gwydf)
-        xres = self._meta['xres']
-        yres = self._meta['yres']
-        self._data = self._get_data(gwydf, xres, yres)
-
-    @property
-    def meta(self):
-        return self._meta
-
-    @property
-    def data(self):
-        return self._data
+        meta = cls._get_meta(gwydf)
+        xres = meta['xres']
+        yres = meta['yres']
+        data = cls._get_data(gwydf, xres, yres)
+        return GwyDataField(data=data, meta=meta)
 
     @staticmethod
     def _get_meta(gwydf):
@@ -1092,7 +1154,7 @@ class GwyChannel:
         key = "/{:d}/data".format(channel_id)
         if gwyfile.check_gwyobject(key):
             gwydf = gwyfile.get_gwyobject(key)
-            return GwyDataField(gwydf)
+            return GwyDataField.from_gwy(gwydf)
         else:
             raise GwyfileError(
                 "Channel with id:{:d} is not found".format(channel_id))
@@ -1102,7 +1164,7 @@ class GwyChannel:
         key = "/{:d}/mask".format(channel_id)
         if gwyfile.check_gwyobject(key):
             gwydf = gwyfile.get_gwyobject(key)
-            return GwyDataField(gwydf)
+            return GwyDataField.from_gwy(gwydf)
         else:
             return None
 
@@ -1111,7 +1173,7 @@ class GwyChannel:
         key = "/{:d}/show".format(channel_id)
         if gwyfile.check_gwyobject(key):
             gwydf = gwyfile.get_gwyobject(key)
-            return GwyDataField(gwydf)
+            return GwyDataField.from_gwy(gwydf)
         else:
             return None
 

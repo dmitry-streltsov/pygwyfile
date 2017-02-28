@@ -755,37 +755,90 @@ class GwyEllipseSelections_from_gwy(unittest.TestCase):
 
 
 class GwyDataField_init(unittest.TestCase):
-    """Test __init__ method of GwyDataField class
+    """Test constructor of GwyDataField class
     """
+    def setUp(self):
+        self.test_data = np.random.rand(256, 256)
+        self.test_meta = {'xres': 256,
+                          'yres': 256,
+                          'xreal': 1e-6,
+                          'yreal': 1e-6,
+                          'xoff': 0.,
+                          'yoff': 0.,
+                          'si_unit_xy': 'm',
+                          'si_unit_z': 'A'}
+
+    def test_init_with_test_data(self):
+        """Test __init__ with data and meta args
+        """
+        gwydf = GwyDataField(data=self.test_data, meta=self.test_meta)
+        np.testing.assert_almost_equal(gwydf.data, self.test_data)
+        self.assertDictEqual(self.test_meta, gwydf.meta)
+
+    def test_init_with_empty_meta(self):
+        """Test __init__ with empty meta arg
+        """
+        gwydf = GwyDataField(data=self.test_data)
+        np.testing.assert_almost_equal(gwydf.data, self.test_data)
+        self.assertDictEqual(gwydf.meta,
+                             {'xres': 256,
+                              'yres': 256,
+                              'xreal': 1.,
+                              'yreal': 1.,
+                              'xoff': 0.,
+                              'yoff': 0.,
+                              'si_unit_xy': '',
+                              'si_unit_z': ''})
+
+    def test_raise_ValueError_if_mismatched_data_shape_and_xres_yres(self):
+        """Raise ValueError if data.shape is not equal meta['xres'], meta['yres']
+        """
+        test_meta = {'xres': 128,
+                     'yres': 128}  # self.test_data.shape = 256, 256
+        self.assertRaises(ValueError,
+                          GwyDataField,
+                          data=self.test_data,
+                          meta=test_meta)
+
+
+class GwyDataField_from_gwy(unittest.TestCase):
+    """Test from_gwy method of GwyDataField class
+    """
+    @patch('gwydb.gwy.gwyfile.GwyDataField', autospec=True)
     @patch.object(GwyDataField, '_get_data')
     @patch.object(GwyDataField, '_get_meta')
-    def test_GwyDataField_init(self, mock_get_meta, mock_get_data):
+    def test_GwyDataField_from_gwy(self,
+                                   mock_get_meta,
+                                   mock_get_data,
+                                   mock_GwyDataField):
+        """ Get metadata and data from <GwyDatafield*> object, init GwyDatafield
+            and return the latter
+        """
         cgwydf = Mock()
         test_meta = {'xres': 256,
                      'yres': 256,
                      'xreal': 1e-6,
                      'yreal': 1e-6,
-                     'xoff': 0,
-                     'yoff': 0,
+                     'xoff': 0.,
+                     'yoff': 0.,
                      'si_unit_xy': 'm',
                      'si_unit_z': 'A'}
         test_data = np.random.rand(256, 256)
         mock_get_meta.return_value = test_meta
         mock_get_data.return_value = test_data
-        gwydf = GwyDataField(cgwydf)
-        self.assertDictEqual(test_meta, gwydf.meta)
-        np.testing.assert_almost_equal(test_data, gwydf.data)
+        gwydf = GwyDataField.from_gwy(cgwydf)
+        mock_get_meta.assert_has_calls(
+            [call(cgwydf)])
+        mock_get_data.assert_has_calls(
+            [call(cgwydf, test_meta['xres'], test_meta['yres'])])
+        mock_GwyDataField.assert_has_calls(
+            [call(data=test_data, meta=test_meta)])
+        self.assertEqual(gwydf, mock_GwyDataField(data=test_data,
+                                                  meta=test_meta))
 
 
 class GwyDataField_get_meta(unittest.TestCase):
-    """Test _get_meta method of GwyDataFieldself.test_metadata_dict = {'xres': 256,
-                                   'yres': 256,
-                                   'xreal': 1e-6,
-                                   'yreal': 1e-6,
-                                   'xoff': 0,
-                                   'yoff': 0,
-                                   'si_unit_xy': 'm',
-                                   'si_unit_z': 'A'}
+    """Test _get_meta method of GwyDataFieldself
     """
 
     def setUp(self):
@@ -2530,7 +2583,7 @@ class GwyChannel_get_data(unittest.TestCase):
 
         gwydatafield = self.gwyfile.get_gwyobject.return_value
         GwyChannel._get_data(self.gwyfile, self.channel_id)
-        self.mock_GwyDataField.assert_has_calls(
+        self.mock_GwyDataField.from_gwy.assert_has_calls(
             [call(gwydatafield)])
 
     def test_check_returned_value(self):
@@ -2538,7 +2591,7 @@ class GwyChannel_get_data(unittest.TestCase):
         Return object returned by GwyDataField constructor
         """
 
-        expected_return = self.mock_GwyDataField.return_value
+        expected_return = self.mock_GwyDataField.from_gwy.return_value
         actual_return = GwyChannel._get_data(self.gwyfile, self.channel_id)
         self.assertIs(expected_return, actual_return)
 
@@ -2586,7 +2639,7 @@ class GwyChannel_get_mask(unittest.TestCase):
 
         gwydatafield = self.gwyfile.get_gwyobject.return_value
         GwyChannel._get_mask(self.gwyfile, self.channel_id)
-        self.mock_GwyDataField.assert_has_calls(
+        self.mock_GwyDataField.from_gwy.assert_has_calls(
             [call(gwydatafield)])
 
     def test_check_returned_value(self):
@@ -2594,7 +2647,7 @@ class GwyChannel_get_mask(unittest.TestCase):
         Return object returned by GwyDataField constructor
         """
 
-        expected_return = self.mock_GwyDataField.return_value
+        expected_return = self.mock_GwyDataField.from_gwy.return_value
         actual_return = GwyChannel._get_mask(self.gwyfile, self.channel_id)
         self.assertIs(expected_return, actual_return)
 
@@ -2642,7 +2695,7 @@ class GwyChannel_get_show(unittest.TestCase):
 
         gwydatafield = self.gwyfile.get_gwyobject.return_value
         GwyChannel._get_show(self.gwyfile, self.channel_id)
-        self.mock_GwyDataField.assert_has_calls(
+        self.mock_GwyDataField.from_gwy.assert_has_calls(
             [call(gwydatafield)])
 
     def test_check_returned_value(self):
@@ -2650,7 +2703,7 @@ class GwyChannel_get_show(unittest.TestCase):
         Return object returned by GwyDataField constructor
         """
 
-        expected_return = self.mock_GwyDataField.return_value
+        expected_return = self.mock_GwyDataField.from_gwy.return_value
         actual_return = GwyChannel._get_show(self.gwyfile, self.channel_id)
         self.assertIs(expected_return, actual_return)
 
