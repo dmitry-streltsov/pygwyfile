@@ -644,18 +644,97 @@ class GwyGraphCurve:
     """Class for GwyGraphCurveModel representation
     """
 
-    def __init__(self, gwycurve):
-        self._meta = self._get_meta(gwycurve)
-        npoints = self._meta['ndata']
-        self._data = self._get_data(gwycurve, npoints)
+    def __init__(self, data, meta=None):
+        """
+        Args:
+            data (2D numpy array, float64):
+                abscissa and ordinate data of the same size
+            meta (python dictionary):
 
-    @property
-    def meta(self):
-        return self._meta
+                Possible items:
+                    'ndata' (int): number of points in the curve
+                    'description' (string): curve label
+                    'type' (int): GwyGraphCurveType
+                    'point_type' (int): GwyGraphPointType
+                    'line_style' (int): GdkLineStyle
+                    'point_size' (int): Point size
+                    'line_size' (int):  Line width
+                    'color.red' (float): Red component from the range [0, 1]
+                    'color.green' (float): Green component from the range
+                                                                    [0, 1]
+                    'color.blue' (float): Blue component from the range
+                                                                  [0, 1]
 
-    @property
-    def data(self):
-        return self._data
+        """
+        self.meta = {}
+
+        if not meta:
+            meta = {}
+
+        if 'ndata' in meta:
+            if data.shape == (2, meta['ndata']):
+                self.data = data
+                self.meta['ndata'] = meta['ndata']
+            else:
+                raise ValueError("data.shape is not equal (2, meta['ndata'])")
+        else:
+            if len(data.shape) == 2 and data.shape[0] == 2:
+                self.data = data
+                self.meta['ndata'] = data.shape[1]
+            else:
+                raise ValueError("data.shape is not equal (2, ndata)")
+
+        if 'description' in meta:
+            self.meta['description'] = meta['description']
+        else:
+            self.meta['description'] = ''
+
+        if 'type' in meta:
+            self.meta['type'] = meta['type']
+        else:
+            self.meta['type'] = 1  # points
+
+        if 'point_type' in meta:
+            self.meta['point_type'] = meta['point_type']
+        else:
+            self.meta['point_type'] = 2  # circle
+
+        if 'line_style' in meta:
+            self.meta['line_style'] = meta['line_style']
+        else:
+            self.meta['line_style'] = 0  # lines are drawn solid
+
+        if 'point_size' in meta:
+            self.meta['point_size'] = meta['point_size']
+        else:
+            self.meta['point_size'] = 1
+
+        if 'line_size' in meta:
+            self.meta['line_size'] = meta['line_size']
+        else:
+            self.meta['line_size'] = 1
+
+        if 'color.red' in meta:
+            self.meta['color.red'] = meta['color.red']
+        else:
+            self.meta['color.red'] = 0.
+
+        if 'color.green' in meta:
+            self.meta['color.green'] = meta['color.green']
+        else:
+            self.meta['color.green'] = 0.
+
+        if 'color.blue' in meta:
+            self.meta['color.blue'] = meta['color.blue']
+        else:
+            self.meta['color.blue'] = 0.
+
+    @classmethod
+    def from_gwy(cls, gwycurve):
+        meta = cls._get_meta(gwycurve)
+        npoints = meta['ndata']
+        data = cls._get_data(gwycurve, npoints)
+        return GwyGraphCurve(data=data, meta=meta)
 
     @staticmethod
     def _get_meta(gwycurve):
@@ -668,19 +747,8 @@ class GwyGraphCurve:
 
         Returns:
             metadata (dict):
-                Python dictionary with keys:
-                    'ndata' (int): number of points in the curve
-                    'description' (string): curve label
-                    'type' (int): GwyGraphCurveType
-                    'point_type' (int): GwyGraphPointType
-                    'line_style' (int): GdkLineStyle
-                    'point_size' (int): Point size
-                    'line_size' (int):  Line width
-                    'color.red' (float): Red component from the interval [0, 1]
-                    'color.green' (float): Green component from the interval
-                                                                      [0, 1]
-                    'color.blue' (float): Blue component from the interval
-                                                                      [0, 1]
+                GwyGraphCurveModel metadaat
+
         """
         error = ffi.new("GwyfileError*")
         errorp = ffi.new("GwyfileError**", error)
@@ -811,7 +879,7 @@ class GwyGraphModel:
         self._meta = self._get_meta(gwygraphmodel)
         ncurves = self._meta['ncurves']
         curves = self._get_curves(gwygraphmodel, ncurves)
-        self._curves = [GwyGraphCurve(curve) for curve in curves]
+        self._curves = [GwyGraphCurve.from_gwy(curve) for curve in curves]
 
     @property
     def meta(self):

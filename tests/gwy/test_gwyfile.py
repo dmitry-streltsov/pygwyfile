@@ -1016,21 +1016,93 @@ class GwyDataField_get_data(unittest.TestCase):
 
 
 class GwyGraphCurve_init(unittest.TestCase):
-    """Test __init__ method of GwyGraphCurve class
+    """Test constructor of GwyGraphCurve
     """
+    def setUp(self):
+        self.test_meta = {'ndata': 256,
+                          'description': "Curve label",
+                          'type': 1,
+                          'point_type': 1,
+                          'line_style': 0,
+                          'point_size': 5,
+                          'line_size': 1,
+                          'color.red': 0.,
+                          'color.green': 0.,
+                          'color.blue': 0.}
+        self.test_data = np.random.rand(2, 256)
+
+    def test_init_with_test_data(self):
+        """Test __init__ with data and meta args
+        """
+        gwycurve = GwyGraphCurve(data=self.test_data, meta=self.test_meta)
+        np.testing.assert_almost_equal(gwycurve.data, self.test_data)
+        self.assertDictEqual(gwycurve.meta, self.test_meta)
+
+    def test_init_with_empty_meta(self):
+        """Test __init__ with empty meta arg
+        """
+        gwycurve = GwyGraphCurve(data=self.test_data)
+        np.testing.assert_almost_equal(gwycurve.data, self.test_data)
+        self.assertDictEqual(gwycurve.meta,
+                             {'ndata': 256,
+                              'description': '',
+                              'type': 1,
+                              'point_type': 2,
+                              'line_style': 0,
+                              'point_size': 1,
+                              'line_size': 1,
+                              'color.red': 0.,
+                              'color.green': 0.,
+                              'color.blue': 0.})
+
+    def test_raise_ValueError_if_wrong_number_of_data_points(self):
+        """Raise ValueError if data.shape is not equal (2, meta['ndata'])
+        """
+        test_meta = {'ndata': 128}  # self.test_data.shape = 256, 256
+        self.assertRaises(ValueError,
+                          GwyGraphCurve,
+                          data=self.test_data,
+                          meta=test_meta)
+
+    def test_raise_ValueError_if_wrong_shape_of_data_array(self):
+        """Raise ValueError if data.shape is not equal (2, ndata)
+        """
+        test_data = np.random.rand(256)
+        self.assertRaises(ValueError,
+                          GwyGraphCurve,
+                          data=test_data)
+
+        test_data = np.random.rand(3, 256)
+        self.assertRaises(ValueError,
+                          GwyGraphCurve,
+                          data=test_data)
+
+
+class GwyGraphCurve_from_gwy(unittest.TestCase):
+    """Test from_gwy method of GwyGraphCurve class
+    """
+
+    @patch('gwydb.gwy.gwyfile.GwyGraphCurve', autospec=True)
     @patch.object(GwyGraphCurve, '_get_data')
     @patch.object(GwyGraphCurve, '_get_meta')
-    def test_GwyGraphCurve_init(self, mock_get_meta, mock_get_data):
+    def test_GwyGraphCurve_init(self,
+                                mock_get_meta,
+                                mock_get_data,
+                                mock_GwyGraphCurve):
         cgwycurve = Mock()
         test_meta = {'ndata': 256,
                      'description': "Curve label",
-                     'curve_type': 1}
+                     'type': 1}
         test_data = np.random.rand(2, 256)
         mock_get_meta.return_value = test_meta
         mock_get_data.return_value = test_data
-        gwycurve = GwyGraphCurve(cgwycurve)
-        self.assertDictEqual(test_meta, gwycurve.meta)
-        np.testing.assert_almost_equal(test_data, gwycurve.data)
+        gwycurve = GwyGraphCurve.from_gwy(cgwycurve)
+        mock_get_meta.assert_has_calls(
+            [call(cgwycurve)])
+        mock_get_data.assert_has_calls(
+            [call(cgwycurve, test_meta['ndata'])])
+        self.assertEqual(gwycurve, mock_GwyGraphCurve(data=test_data,
+                                                      meta=test_meta))
 
 
 class GwyGraphCurve_get_meta(unittest.TestCase):
@@ -2485,7 +2557,7 @@ class GwyGraphModel_init(unittest.TestCase):
     """Test __init__ method of GwyGraphModel class
     """
 
-    @patch.object(GwyGraphCurve, '__init__')
+    @patch.object(GwyGraphCurve, 'from_gwy')
     @patch.object(GwyGraphModel, '_get_curves')
     @patch.object(GwyGraphModel, '_get_meta')
     def test_GwyGraphModel_init(self,
