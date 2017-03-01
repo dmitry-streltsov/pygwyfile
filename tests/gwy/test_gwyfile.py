@@ -1502,6 +1502,141 @@ class GwyGraphCurve_get_data(unittest.TestCase):
         return truep[0]
 
 
+class GwyGraphModel_init(unittest.TestCase):
+    """Test constructor of GwyGraphModel class
+    """
+
+    def setUp(self):
+        self.test_meta = {'ncurves': 2,
+                          'title': 'Plot',
+                          'top_label': 'Top label',
+                          'left_label': 'Left label',
+                          'right_label': 'Right label',
+                          'bottom_label': 'Bottom label',
+                          'x_unit': 'm',
+                          'y_unit': 'm',
+                          'x_min': 0.,
+                          'x_min_set': True,
+                          'x_max': 1.,
+                          'x_max_set': True,
+                          'y_min': None,
+                          'y_min_set': False,
+                          'y_max': None,
+                          'y_max_set': False,
+                          'x_is_logarithmic': False,
+                          'y_is_logarithmic': False,
+                          'label.visible': True,
+                          'label.has_frame': True,
+                          'label.reverse': False,
+                          'label.frame_thickness': 1,
+                          'label.position': 0,
+                          'grid-type': 1}
+        self.test_curves = [Mock(spec=GwyGraphCurve),
+                            Mock(spec=GwyGraphCurve)]
+
+    def test_init_with_curves_and_meta(self):
+        """Test GwyGraphModel constructor if meta is defined
+        """
+        graph = GwyGraphModel(curves=self.test_curves,
+                              meta=self.test_meta)
+        self.assertEqual(graph.curves, self.test_curves)
+        self.assertDictEqual(graph.meta, self.test_meta)
+
+    def test_init_with_curves_without_meta(self):
+        """Test GwyGraphModel constructor with default meta
+        """
+        graph = GwyGraphModel(curves=self.test_curves)
+        self.assertEqual(graph.curves, self.test_curves)
+        self.assertDictEqual(graph.meta,
+                             {'ncurves': 2,
+                              'title': '',
+                              'top_label': '',
+                              'left_label': '',
+                              'right_label': '',
+                              'bottom_label': '',
+                              'x_unit': '',
+                              'y_unit': '',
+                              'x_min': None,
+                              'x_min_set': False,
+                              'x_max': None,
+                              'x_max_set': False,
+                              'y_min': None,
+                              'y_min_set': False,
+                              'y_max': None,
+                              'y_max_set': False,
+                              'x_is_logarithmic': False,
+                              'y_is_logarithmic': False,
+                              'label.visible': True,
+                              'label.has_frame': True,
+                              'label.reverse': False,
+                              'label.frame_thickness': 1,
+                              'label.position': 0,
+                              'grid-type': 1})
+
+    def test_raise_TypeError_if_curve_is_not_GwyGraphCurve(self):
+        """Raise TypeError exception if curve is not GwyGraphCurve
+        instance
+        """
+        self.assertRaises(TypeError,
+                          GwyGraphModel,
+                          curves=np.random.rand(10))
+
+    def test_raise_ValueError_if_number_of_curves_and_ncurves_different(self):
+        """Raise ValueError if len(curves) is not equal to meta['ncurves']
+        """
+        self.assertRaises(ValueError,
+                          GwyGraphModel,
+                          curves=[Mock(GwyGraphCurve)],  # just one curve
+                          meta=self.test_meta)           # meta['ncurves'] = 2
+
+
+class GwyGraphModel_from_gwy(unittest.TestCase):
+    """Test from_gwy method of GwyGraphModel class
+    """
+
+    @patch('gwydb.gwy.gwyfile.GwyGraphModel', autospec=True)
+    @patch('gwydb.gwy.gwyfile.GwyGraphCurve', autospec=True)
+    @patch.object(GwyGraphModel, '_get_curves')
+    @patch.object(GwyGraphModel, '_get_meta')
+    def test_arg_passing_to_other_methods(self,
+                                          mock_get_meta,
+                                          mock_get_curves,
+                                          mock_GwyGraphCurve,
+                                          mock_GwyGraphModel):
+        """
+        """
+        gwygraphmodel = Mock()
+        test_meta = {'ncurves': 2}
+        test_gwycurves = [Mock(), Mock()]
+        mock_get_meta.return_value = test_meta
+        mock_get_curves.return_value = test_gwycurves
+        graphmodel = Mock(spec=GwyGraphModel)
+        mock_GwyGraphModel.return_value = graphmodel
+
+        graph = GwyGraphModel.from_gwy(gwygraphmodel)
+
+        # get meta data from <GwyGraphModel*> object
+        mock_get_meta.assert_has_calls(
+            [call(gwygraphmodel)])
+
+        # get list of <GwyGraphModelCurve*> objects
+        mock_get_curves.assert_has_calls(
+            [call(gwygraphmodel, test_meta['ncurves'])])
+
+        # create list of GwyGraphCurves instances
+        mock_GwyGraphCurve.from_gwy.assert_has_calls(
+            [call(gwycurve) for gwycurve in test_gwycurves])
+
+        # create GwyGraphModel instance
+        mock_GwyGraphModel.assert_has_calls(
+            [call(curves=[mock_GwyGraphCurve.from_gwy.return_value
+                          for gwycurve in test_gwycurves],
+                  meta=test_meta)])
+
+        # return GwyGraphModel instance
+        self.assertEqual(graph, graphmodel)
+
+
 class GwyGraphModel_get_meta(unittest.TestCase):
     """Test _get_meta method of GwyGraphModel class
     """
