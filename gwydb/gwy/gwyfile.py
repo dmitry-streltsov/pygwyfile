@@ -36,6 +36,10 @@ class Gwyfile:
     Attributes:
         c_gwyfile (cdata  GwyfileObject*): gwyfile object from
                                            Libgwyfile C library
+
+    Methods:
+        check_gwyobject(key):  Check presence of object in the gwyfile
+        get_gwyobject(key):    Get object
     """
 
     def __init__(self, c_gwyfile):
@@ -65,7 +69,7 @@ class Gwyfile:
         self.c_gwyfile = c_gwyfile
 
     def check_gwyobject(self, key):
-        """Check the presence of the object
+        """Check presence of object in the gwyfile
 
         Args:
             key(str): object key
@@ -82,10 +86,10 @@ class Gwyfile:
             return True
 
     def get_gwyobject(self, key):
-        """Get the object value with a name "key"
+        """Get object
 
         Args:
-            key (str): Name of the key, e.g. "/0/data"
+            key (str): Name of the object, e.g. "/0/data"
 
         Returns:
             item_object (cdata GwyfileObject*): The value of the object
@@ -106,18 +110,17 @@ class GwySelection(ABC):
     """Base class for GwySelection objects
 
     Attributes:
-        _get_sel_func (C func):
-            Libgwyfile C function to get selection.
-            Must be redefined in subclass
-        _npoints (int):
-            number of points in one selection (e.g. 1 for point sel.)
-            Must be redefined in subclass
         data: list
-              list of selections
+              list of selection data
+
+    Metods:
+        from_gwy(gwyobject): Create GwySelection* object from <GwyfileObject*>
+                             Must be redefined in subclass
 
     """
-    _get_sel_func = None
-    _npoints = 1
+    _get_sel_func = None    # Libgwyfile C function to get selection
+    _npoints = 1  # number of points in one selection (e.g. for point sel.)
+
     data = []
 
     @abstractmethod
@@ -240,6 +243,10 @@ class GwyPointSelections(GwySelection):
 
     Attributes:
         data: non-empty list of points [(x1, y1), ...]
+
+    Methods:
+        from_gwy(gwyobject): Create GwyPointSelections instance from
+                             <GwySelectionPoint*> object
     """
 
     _npoints = 1  # number of points in one point selection
@@ -258,7 +265,7 @@ class GwyPointSelections(GwySelection):
     @classmethod
     def from_gwy(cls, gwysel):
         """
-        Get point selections from <GwySelectionPoint*> object
+        Create GwyPointSelections instane from <GwySelectionPoint*> object
 
         Args:
             gwysel:
@@ -280,6 +287,10 @@ class GwyPointerSelections(GwySelection):
 
     Attributes:
         data: list of points [(x1, y1), ...]
+
+    Methods:
+        from_gwy(gwyobject): Create GwyPointerSelections from
+                             <GwySelectionPointer*> object
     """
 
     _npoints = 1  # number of points in one pointer selection
@@ -301,8 +312,8 @@ class GwyPointerSelections(GwySelection):
                 <GwySelectionPointer*> object from Libgwyfile library
 
         Returns:
-            GwyPointerSelections instance initialized by the point selections
-            or None if number of points is zero
+            GwyPointerSelections instance initialized by the pointer selections
+            or None if number of pointers is zero
         """
         points = super().from_gwy(gwysel)
         if points is not None:
@@ -317,6 +328,10 @@ class GwyLineSelections(GwySelection):
     Attributes:
         data: list of point pairs [((x1, y1), (x2, y2))...]
               (two points for one line selection)
+
+    Methods:
+        from_gwy(gwyobject): Create GwyLineSelections instance from
+                             <GwySelectionLine*> object
     """
 
     _npoints = 2  # number of points in one line selection
@@ -331,14 +346,14 @@ class GwyLineSelections(GwySelection):
     @classmethod
     def from_gwy(self, gwysel):
         """
-        Get line selections from <GwySelectionLine*> object
+        Create GwyLineSelections instance from <GwySelectionLine*> object
 
         Args:
             gwysel:
                 <GwySelectionLine*> object from Libgwyfile library
 
         Returns:
-            GwyLineSelections instance initialized by the point selections
+            GwyLineSelections instance initialized by the line selections
             or None if number of points is zero
         """
         points = super().from_gwy(gwysel)
@@ -355,6 +370,10 @@ class GwyRectangleSelections(GwySelection):
     Attributes:
         data: list of point pairs [((x1, y1), (x2, y2))...]
               (two points for one rectangle selection)
+
+    Methods:
+        from_gwy(gwyobject): Create GwyRectangleSelections instance from
+                             <GwySelectionRectangle*> object
     """
 
     _npoints = 2  # number of points in one rectangle selection
@@ -369,7 +388,8 @@ class GwyRectangleSelections(GwySelection):
     @classmethod
     def from_gwy(self, gwysel):
         """
-        Get rectangle selections from <GwySelectionRectangle*> object
+        Create GwyRectangleSelections instance from
+        <GwySelectionRectangle*> object
 
         Args:
             gwysel:
@@ -393,6 +413,11 @@ class GwyEllipseSelections(GwySelection):
     Attributes:
         data: list of point pairs [((x1, y1), (x2, y2))...]
               (two points for one ellipse selection)
+
+    Methods:
+        from_gwy(gwyobject): Create GwyEllipseSelections from
+                             <GwySelectionEllipse*> object
+
     """
 
     _npoints = 2  # number of points in one ellipse selection
@@ -407,7 +432,7 @@ class GwyEllipseSelections(GwySelection):
     @classmethod
     def from_gwy(self, gwysel):
         """
-        Get ellipse selections from <GwySelectionEllipse*> object
+        Create GwyEllipseSelections instance from <GwySelectionEllipse*> object
 
         Args:
             gwysel:
@@ -435,6 +460,9 @@ class GwyDataField:
         meta (python dictionary):
             datafield metadata
 
+    Methods:
+        from_gwy(gwyobject): Create GwyDataField instance from
+        <GwyDataField*> object
     """
 
     def __init__(self, data, meta=None):
@@ -519,10 +547,15 @@ class GwyDataField:
 
     @classmethod
     def from_gwy(cls, gwydf):
-        """
+        """ Create GwyDataField instance from <GwyDataField*> object
+
         Args:
             gwydf (GwyDataField*):
                 GwyDataField object from Libgwyfile
+
+        Returns:
+            datafield (GwyDataField):
+                GwyDataField instance
         """
         meta = cls._get_meta(gwydf)
         xres = meta['xres']
@@ -532,7 +565,7 @@ class GwyDataField:
 
     @staticmethod
     def _get_meta(gwydf):
-        """Get metadata from  the datafield
+        """Get metadata from the datafield
 
         Args:
             gwydf (GwyDataField*):
@@ -603,7 +636,7 @@ class GwyDataField:
 
     @staticmethod
     def _get_data(gwydf, xres, yres):
-        """Get data array from the GwyDataField
+        """Get data array from <GwyDataField*> object
 
         Args:
             gwydf (GwyDataField*):
@@ -642,6 +675,17 @@ class GwyDataField:
 
 class GwyGraphCurve:
     """Class for GwyGraphCurveModel representation
+
+    Attributes:
+        data (2D numpy array, float64):
+           abscissa and ordinate data of the same length
+
+        meta (python dictionary): curve metadata
+
+    Methods:
+        from_gwy(gwyobject): Create GwyGraphCurve instance from
+                             <GwyGraphCurveModel*> object
+
     """
 
     def __init__(self, data, meta=None):
@@ -731,6 +775,9 @@ class GwyGraphCurve:
 
     @classmethod
     def from_gwy(cls, gwycurve):
+        """ Create GwyGraphCurve instance from
+            <GwyGraphCurveModel*> object
+        """
         meta = cls._get_meta(gwycurve)
         npoints = meta['ndata']
         data = cls._get_data(gwycurve, npoints)
@@ -739,7 +786,7 @@ class GwyGraphCurve:
     @staticmethod
     def _get_meta(gwycurve):
         """
-        Get metadata from GwyGraphCurveModel object
+        Get metadata from <GwyGraphCurveModel*> object
 
         Args:
             curve (GwyfileObject*):
@@ -821,11 +868,11 @@ class GwyGraphCurve:
     @staticmethod
     def _get_data(gwycurve, npoints):
         """
-        Get data from GwyGraphCurveModel object
+        Get data from <GwyGraphCurveModel*> object
 
         Args:
             curve (GwyfileObject*):
-                GwyGraphCurveModel object
+                <GwyGraphCurveModel*> object from Libgwyfile
             npoints (int):
                 number of points in the curve
 
@@ -873,6 +920,15 @@ class GwyGraphCurve:
 
 class GwyGraphModel:
     """Class for GwyGraphModel representation
+
+    Attributes:
+        curves (list): list of GwyGraphCurve instances
+        meta (dictionary): dictionary with graph metadata
+
+    Methods:
+        from_gwy(gwyobject): create GwyGraphModel instance
+                             from <GwyGraphModel*> object
+
     """
 
     def __init__(self, curves, meta=None):
@@ -1015,6 +1071,16 @@ class GwyGraphModel:
 
     @classmethod
     def from_gwy(cls, gwygraphmodel):
+        """Create GwyGraphModel instance from <GwyGraphModel*> object
+
+        Args:
+            gwygraphmodel (<GwyGraphModel*>):
+                <GwyGraphModel*> object from Libgwyfile
+
+        Returns:
+            graph (GwyGraphModel): instance of GwyGraphModel class
+
+        """
         meta = cls._get_meta(gwygraphmodel)
         ncurves = meta['ncurves']
         gwycurves = cls._get_curves(gwygraphmodel, ncurves)
@@ -1288,6 +1354,22 @@ class GwyGraphModel:
 
 class GwyChannel:
     """Class for GwyChannel representation
+
+    Attributes:
+        title (string): channel title
+        data (GwyDataField): datafield from the channel
+        mask (GwyDataField): mask datafield from the channel
+        show (GwyDataField): presentation datafield from the channel
+        point_selections (GwyPointSelections): point selections
+        pointer_selections (GwyPointerSelections): pointer selections
+        line_selections (GwyLineSelections): line selections
+        rectangle_selections (GwyRectangleSelections): rectange selections
+        ellipse_selections (GwyEllipseSelections): ellipse selections
+
+    Methods:
+        from_gwy(gwyfile, channel_id): Get channel with id=channel_id
+                                       from Gwyfile object
+
     """
 
     def __init__(self, title, data,
@@ -1350,6 +1432,15 @@ class GwyChannel:
 
     @classmethod
     def from_gwy(cls, gwyfile, channel_id):
+        """ Get channel with id=channel_id from Gwyfile object
+
+        Args:
+            gwyfile (Gwyfile): instance of Gwyfile class
+            channel_id (int): id of the channel
+
+        Returns:
+            GwyChannel instance.
+        """
 
         if not isinstance(gwyfile, Gwyfile):
             raise TypeError("gwyfile must be an instance of Gwyfile")
@@ -1375,6 +1466,16 @@ class GwyChannel:
 
     @staticmethod
     def _get_title(gwyfile, channel_id):
+        """Get title of channel with id=channel_id  from Gwyfile instance
+
+        Args:
+            gwyfile (Gwyfile): Gwyfile object
+            channel_id (int): id of the channel
+
+        Returns:
+            title (string): Title of the channel
+
+        """
         key = "/{:d}/data/title".format(channel_id)
         if gwyfile.check_gwyobject(key):
             gwyobject = gwyfile.get_gwyobject(key)
@@ -1387,6 +1488,17 @@ class GwyChannel:
 
     @staticmethod
     def _get_data(gwyfile, channel_id):
+        """ Get datafield from the channel with id=channel_id from Gwyfile
+
+        Args:
+            gwyfile (Gwyfile): Gwyfile object
+            channel_id (int): id of the channel
+
+        Returns:
+            datafield (GwyDataField): channel datafield
+
+        """
+
         key = "/{:d}/data".format(channel_id)
         if gwyfile.check_gwyobject(key):
             gwydf = gwyfile.get_gwyobject(key)
@@ -1397,6 +1509,16 @@ class GwyChannel:
 
     @staticmethod
     def _get_mask(gwyfile, channel_id):
+        """ Get mask datafield from the channel with id=channel_id from Gwyfile
+
+        Args:
+            gwyfile (Gwyfile): Gwyfile object
+            channel_id (int): id of the channel
+
+        Returns:
+           mask (GwyDataField): mask datafield
+
+        """
         key = "/{:d}/mask".format(channel_id)
         if gwyfile.check_gwyobject(key):
             gwydf = gwyfile.get_gwyobject(key)
@@ -1406,6 +1528,17 @@ class GwyChannel:
 
     @staticmethod
     def _get_show(gwyfile, channel_id):
+        """ Get presentation datafield from the channel with id=channel_id
+            from Gwyfile
+
+        Args:
+            gwyfile (Gwyfile): Gwyfile object
+            channel_id (int): id of the channel
+
+        Returns:
+            show (GwyDataField): presentation datafield
+
+        """
         key = "/{:d}/show".format(channel_id)
         if gwyfile.check_gwyobject(key):
             gwydf = gwyfile.get_gwyobject(key)
@@ -1415,6 +1548,16 @@ class GwyChannel:
 
     @staticmethod
     def _get_point_sel(gwyfile, channel_id):
+        """Get point selections from the channel with id=channel_id
+
+        Args:
+            gwyfile (Gwyfile): Gwyfile object
+            channel_id (int): id of the channel
+
+        Returns:
+            point_sel (GwyPointSelections): point selections
+
+        """
         key = "/{:d}/select/point".format(channel_id)
         if gwyfile.check_gwyobject(key):
             gwysel = gwyfile.get_gwyobject(key)
@@ -1424,6 +1567,16 @@ class GwyChannel:
 
     @staticmethod
     def _get_pointer_sel(gwyfile, channel_id):
+        """Get pointer selections from the channel with id=channel_id
+
+        Args:
+            gwyfile (Gwyfile): Gwyfile object
+            channel_id (int): id of the channel
+
+        Returns:
+            pointer_sel (GwyPointerSelections): point selections
+
+        """
         key = "/{:d}/select/pointer".format(channel_id)
         if gwyfile.check_gwyobject(key):
             gwysel = gwyfile.get_gwyobject(key)
@@ -1433,6 +1586,16 @@ class GwyChannel:
 
     @staticmethod
     def _get_line_sel(gwyfile, channel_id):
+        """Get line selections from the channel with id=channel_id
+
+        Args:
+            gwyfile (Gwyfile): Gwyfile object
+            channel_id (int): id of the channel
+
+        Returns:
+            line_sel (GwyLineSelections): line selections
+
+        """
         key = "/{:d}/select/line".format(channel_id)
         if gwyfile.check_gwyobject(key):
             gwysel = gwyfile.get_gwyobject(key)
@@ -1442,6 +1605,16 @@ class GwyChannel:
 
     @staticmethod
     def _get_rectangle_sel(gwyfile, channel_id):
+        """Get rectangle selections from the channel with id=channel_id
+
+        Args:
+            gwyfile (Gwyfile): Gwyfile object
+            channel_id (int): id of the channel
+
+        Returns:
+            rectangle_sel (GwyRectangleSelections): rectangle selections
+
+        """
         key = "/{:d}/select/rectangle".format(channel_id)
         if gwyfile.check_gwyobject(key):
             gwysel = gwyfile.get_gwyobject(key)
@@ -1451,6 +1624,16 @@ class GwyChannel:
 
     @staticmethod
     def _get_ellipse_sel(gwyfile, channel_id):
+        """Get ellipse selections from the channel with id=channel_id
+
+        Args:
+            gwyfile (Gwyfile): Gwyfile object
+            channel_id (int): id of the channel
+
+        Returns:
+            ellipse_sel (GwyPointerSelections): ellipse selections
+
+        """
         key = "/{:d}/select/ellipse".format(channel_id)
         if gwyfile.check_gwyobject(key):
             gwysel = gwyfile.get_gwyobject(key)
@@ -1470,14 +1653,22 @@ class GwyContainer:
 
     Attributes:
         channels: list of GwyChannel instances
-            All channels in Gwyfile instance
+                  All channels in Gwyfile instance
 
         graphs: list of GwyGraphModel instances
-            All graphs in Gwyfile instance
+                All graphs in Gwyfile instance
 
+    Methods:
+        from_gwy(gwyfile): create GwyContainer instance
+                           from Gwyfile object
     """
-    def __init__(self, channels=None, graphs=None):
 
+    def __init__(self, channels=None, graphs=None):
+        """
+        Args:
+            channels: list of GwyChannel instances
+            graphs:   list of GwyGraphModel instances
+        """
         self.channels = []
         self.graphs = []
 
@@ -1499,9 +1690,13 @@ class GwyContainer:
 
     @classmethod
     def from_gwy(cls, gwyfile):
-        """
+        """ Create GwyContainer instance from Gwyfile object
+
         Args:
             gwyfile: instance of Gwyfile object
+
+        Retruns:
+            container: instance of GwyContainer class
 
         """
         if not isinstance(gwyfile, Gwyfile):
@@ -1607,7 +1802,7 @@ def read_gwyfile(filename):
     """Read gwy file
 
     Args:
-        filename (str): Name of the gwyddion file
+        filename (str): Name of gwyddion file
 
     Returns:
         Instance of GwyContainer class with data from file
