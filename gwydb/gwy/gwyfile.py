@@ -25,9 +25,9 @@ class GwyfileErrorCMsg(GwyfileError):
     def __init__(self, c_error_msg):
         if c_error_msg:
             error_msg = ffi.string(c_error_msg).decode('utf-8')
-            super(GwyfileErrorCMsg, self).__init__(error_msg)
+            super().__init__(error_msg)
         else:
-            super(GwyfileErrorCMsg, self).__init__()
+            super().__init__()
 
 
 class Gwyfile:
@@ -1290,52 +1290,88 @@ class GwyChannel:
     """Class for GwyChannel representation
     """
 
-    def __init__(self, gwyfile, channel_id):
-        self._title = self._get_title(gwyfile, channel_id)
-        self._data = self._get_data(gwyfile, channel_id)
-        self._mask = self._get_mask(gwyfile, channel_id)
-        self._show = self._get_show(gwyfile, channel_id)
-        self._point_sel = self._get_point_sel(gwyfile, channel_id)
-        self._pointer_sel = self._get_pointer_sel(gwyfile, channel_id)
-        self._line_sel = self._get_line_sel(gwyfile, channel_id)
-        self._rectangle_sel = self._get_rectangle_sel(gwyfile, channel_id)
-        self._ellipse_sel = self._get_ellipse_sel(gwyfile, channel_id)
+    def __init__(self, title, data,
+                 mask=None, show=None,
+                 point_sel=None, pointer_sel=None,
+                 line_sel=None, rectangle_sel=None,
+                 ellipse_sel=None):
 
-    @property
-    def title(self):
-        return self._title
+        self.title = title
 
-    @property
-    def data(self):
-        return self._data
+        if not isinstance(data, GwyDataField):
+            raise TypeError("data must be an instance of GwyDataField")
+        else:
+            self.data = data
 
-    @property
-    def mask(self):
-        return self._mask
+        if mask is None or isinstance(mask, GwyDataField):
+            self.mask = mask
+        else:
+            raise TypeError("mask must be an instance of GwyDataField "
+                            "or None")
 
-    @property
-    def show(self):
-        return self._show
+        if show is None or isinstance(show, GwyDataField):
+            self.show = show
+        else:
+            raise TypeError("show must be an instance of GwyDataField "
+                            "or None")
 
-    @property
-    def point_selections(self):
-        return self._point_sel
+        if point_sel is None or isinstance(point_sel, GwyPointSelections):
+            self.point_selections = point_sel
+        else:
+            raise TypeError("point_sel must be an instance of "
+                            "GwyPointSelections or None")
 
-    @property
-    def pointer_selections(self):
-        return self._pointer_sel
+        if pointer_sel is None or isinstance(pointer_sel,
+                                             GwyPointerSelections):
+            self.pointer_selections = pointer_sel
+        else:
+            raise TypeError("pointer_sel must be an instance of "
+                            "GwyPointerSelections or None")
 
-    @property
-    def line_selections(self):
-        return self._line_sel
+        if line_sel is None or isinstance(line_sel, GwyLineSelections):
+            self.line_selections = line_sel
+        else:
+            raise TypeError("line_sel must be an instance of "
+                            "GwyLineSelections or None")
 
-    @property
-    def rectangle_selections(self):
-        return self._rectangle_sel
+        if rectangle_sel is None or isinstance(rectangle_sel,
+                                               GwyRectangleSelections):
+            self.rectangle_selections = rectangle_sel
+        else:
+            raise TypeError("rectangle_sel must be an instance of "
+                            "GwyRectangleSelections or None")
 
-    @property
-    def ellipse_selections(self):
-        return self._ellipse_sel
+        if ellipse_sel is None or isinstance(ellipse_sel,
+                                             GwyEllipseSelections):
+            self.ellipse_selections = ellipse_sel
+        else:
+            raise TypeError("ellipse_sel must be na instance of "
+                            "GwyEllipseSelections or None")
+
+    @classmethod
+    def from_gwy(cls, gwyfile, channel_id):
+
+        if not isinstance(gwyfile, Gwyfile):
+            raise TypeError("gwyfile must be an instance of Gwyfile")
+
+        title = cls._get_title(gwyfile, channel_id)
+        data = cls._get_data(gwyfile, channel_id)
+        mask = cls._get_mask(gwyfile, channel_id)
+        show = cls._get_show(gwyfile, channel_id)
+        point_sel = cls._get_point_sel(gwyfile, channel_id)
+        pointer_sel = cls._get_pointer_sel(gwyfile, channel_id)
+        line_sel = cls._get_line_sel(gwyfile, channel_id)
+        rectangle_sel = cls._get_rectangle_sel(gwyfile, channel_id)
+        ellipse_sel = cls._get_ellipse_sel(gwyfile, channel_id)
+        return GwyChannel(title=title,
+                          data=data,
+                          mask=mask,
+                          show=show,
+                          point_sel=point_sel,
+                          pointer_sel=pointer_sel,
+                          line_sel=line_sel,
+                          rectangle_sel=rectangle_sel,
+                          ellipse_sel=ellipse_sel)
 
     @staticmethod
     def _get_title(gwyfile, channel_id):
@@ -1440,16 +1476,42 @@ class GwyContainer:
             All graphs in Gwyfile instance
 
     """
+    def __init__(self, channels=None, graphs=None):
 
-    def __init__(self, gwyfile):
+        self.channels = []
+        self.graphs = []
+
+        if channels:
+            for channel in channels:
+                if isinstance(channel, GwyChannel):
+                    self.channels.append(channel)
+                else:
+                    raise TypeError("channels must be a list of "
+                                    "GwyChannel instances")
+
+        if graphs:
+            for graph in graphs:
+                if isinstance(graph, GwyGraphModel):
+                    self.graphs.append(graph)
+                else:
+                    raise TypeError("graphs must be a list of "
+                                    "GwyGraphModel instances")
+
+    @classmethod
+    def from_gwy(cls, gwyfile):
         """
         Args:
             gwyfile: instance of Gwyfile object
 
         """
-
-        self.channels = self._dump_channels(gwyfile)
-        self.graphs = self._dump_graphs(gwyfile)
+        if not isinstance(gwyfile, Gwyfile):
+            raise TypeError("gwyfile must be an instance of "
+                            "Gwyfile class")
+        else:
+            channels = cls._dump_channels(gwyfile)
+            graphs = cls._dump_graphs(gwyfile)
+            return GwyContainer(channels=channels,
+                                graphs=graphs)
 
     @staticmethod
     def _get_channel_ids(gwyfile):
@@ -1484,7 +1546,7 @@ class GwyContainer:
 
         """
         channel_ids = cls._get_channel_ids(gwyfile)
-        channels = [GwyChannel(gwyfile, channel_id)
+        channels = [GwyChannel.from_gwy(gwyfile, channel_id)
                     for channel_id in channel_ids]
         return channels
 
@@ -1548,7 +1610,7 @@ def read_gwyfile(filename):
         filename (str): Name of the gwyddion file
 
     Returns:
-        Object of the Gwyfile class
+        Instance of GwyContainer class with data from file
 
     """
 
@@ -1563,4 +1625,7 @@ def read_gwyfile(filename):
     if not c_gwyfile:
         raise GwyfileErrorCMsg(errorp[0].message)
 
-    return Gwyfile(c_gwyfile)
+    gwyfile = Gwyfile(c_gwyfile)
+    container = GwyContainer.from_gwy(gwyfile)
+
+    return container

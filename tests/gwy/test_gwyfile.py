@@ -17,6 +17,29 @@ from gwydb.gwy.gwyfile import ffi
 from gwydb.gwy.gwyfile import read_gwyfile
 
 
+class GwyfileErrorCMsg_exception(unittest.TestCase):
+    """Test GwyfileErrorCMsg exception
+    """
+
+    @patch.object(GwyfileError, '__init__')
+    def test_c_error_msg_is_NULL(self, mock_GwyfileError):
+        """Test GwyfileError args if error message is empty
+        """
+        c_error_msg = ffi.NULL
+        GwyfileErrorCMsg(c_error_msg)
+        mock_GwyfileError.assert_has_calls(
+            [call()])
+
+    @patch.object(GwyfileError, '__init__')
+    def test_c_error_msg_is_non_NULL(self, mock_GwyfileError):
+        """Test GwyfileError args if error message is not empty
+        """
+        c_error_msg = ffi.new("char[]", b'Test error message')
+        GwyfileErrorCMsg(c_error_msg)
+        mock_GwyfileError.assert_has_calls(
+            [call('Test error message')])
+
+
 class Func_read_gwyfile_TestCase(unittest.TestCase):
     """
     Test read_gwyfile function
@@ -40,13 +63,17 @@ class Func_read_gwyfile_TestCase(unittest.TestCase):
         self.addCleanup(patcher_Gwyfile.stop)
         self.mock_Gwyfile = patcher_Gwyfile.start()
 
+        patcher_GwyContainer = patch('gwydb.gwy.gwyfile.GwyContainer',
+                                     autospec=True)
+        self.addCleanup(patcher_GwyContainer.stop)
+        self.mock_GwyContainer = patcher_GwyContainer.start()
+
         self.error_msg = "Test error message"
 
     def test_raise_exception_if_file_doesnt_exist(self):
         """
         Raise OSError exception if file does not exist
         """
-
         self.mock_isfile.return_value = False
         self.assertRaises(OSError, read_gwyfile, self.filename)
 
@@ -63,51 +90,40 @@ class Func_read_gwyfile_TestCase(unittest.TestCase):
         self.mock_lib.gwyfile_read_file.assert_has_calls(
             [call(self.filename.encode('utf-8'), ANY)])
 
-    def test_gwyfile_read_file_fails_without_message(self):
-        """Raise GwyfileError exception without message
-
-        Raise GwyfileError exception without message if
-        gwyfile_read_file returns NULL and if GwyfileError** is NULL
+    def test_raise_GwyfileErrorCMsg_if_gwyfile_read_file_fails(self):
+        """Raise GwyfileErrorCMsg if gwyfile_read_file C func fails
         """
 
         self.mock_isfile.return_value = True
         self.mock_lib.gwyfile_read_file.return_value = ffi.NULL
-        self.assertRaises(GwyfileError, read_gwyfile, self.filename)
+        self.assertRaises(GwyfileErrorCMsg, read_gwyfile, self.filename)
 
-    def test_gwyfile_read_file_fails_with_message(self):
-        """Raise GwyError exception with message
-
-        Raise GwyError exception with message if gwyfile_read_file
-        returns NULL and is GwyfileError.message is not NULL
+    def test_args_of_Gwyfile_init(self):
+        """Create Gwyfile instance. Check args passed to Gwyfile.__init__
         """
-
         self.mock_isfile.return_value = True
-        gwyfile_read_file = self.mock_lib.gwyfile_read_file
-        gwyfile_read_file.side_effect = self._side_effect_with_msg
-        self.assertRaisesRegex(GwyfileErrorCMsg,
-                               self.error_msg,
-                               read_gwyfile,
-                               self.filename)
+        c_gwyfile = Mock()
+        self.mock_lib.gwyfile_read_file.return_value = c_gwyfile
+        read_gwyfile(self.filename)
+        self.mock_Gwyfile.assert_has_calls(
+            [call(c_gwyfile)])
 
-    def _side_effect_with_msg(self, *args):
+    def test_args_of_GwyContainer_from_gwy(self):
+        """Create GwyContainer instance. Check args passed to GwyContainer.__init__
         """
-        gwyfile_read_file returns NULL with error_msg
-        """
-
-        errorp = args[1]
-        c_error_msg = ffi.new("char[]", self.error_msg.encode('utf-8'))
-        errorp[0].message = c_error_msg
-        return ffi.NULL
-
-    def test_check_returned_value(self):
-        """
-        Return the object returned by gwyfile_read_file
-        """
-
         self.mock_isfile.return_value = True
-        expected_return = self.mock_Gwyfile.return_value
+        gwyfile = self.mock_Gwyfile.return_value
+        read_gwyfile(self.filename)
+        self.mock_GwyContainer.from_gwy.assert_has_calls(
+            [call(gwyfile)])
+
+    def test_returned_value(self):
+        """Return GwyContainer object
+        """
+        self.mock_isfile.return_value = True
+        expected_return = self.mock_GwyContainer.from_gwy.return_value
         actual_return = read_gwyfile(self.filename)
-        self.assertIs(expected_return, actual_return)
+        self.assertEqual(expected_return, actual_return)
 
 
 class Gwyfile_init_TestCase(unittest.TestCase):
@@ -2688,35 +2704,6 @@ class GwyGraphModel_get_curves(unittest.TestCase):
         return truep[0]
 
 
-# class GwyGraphModel_init(unittest.TestCase):
-#     """Test __init__ method of GwyGraphModel class
-#     """
-#     @patch.object(GwyGraphModel, '__init__')
-#     @patch.object(GwyGraphCurve, 'from_gwy')
-#     @patch.object(GwyGraphModel, '_get_curves')
-#     @patch.object(GwyGraphModel, '_get_meta')
-#     def test_GwyGraphModel_init(self,
-#                                 mock_get_meta,
-#                                 mock_get_curves,
-#                                 mock_from_gwy,
-#                                 mock_GwyGraphModel):
-#         cgwygraphmodel = Mock()
-#         test_meta = {'ncurves': 3,
-#                      'title': 'Profiles',
-#                      'x_unit': 'm',
-#                      'y_unit': 'm'}
-#         cgwycurves_array = ffi.new("GwyfileObject*[]", test_meta['ncurves'])
-#         mock_get_meta.return_value = test_meta
-#         mock_get_curves.return_value = cgwycurves_array
-#         mock_GwyGraphModel.return_value = None
-
-#         graphmodel = GwyGraphModel.from_gwy(cgwygraphmodel)
-#         self.assertDictEqual(test_meta, graphmodel.meta)
-#         mock_gwygraphcurve.assert_has_calls(
-#             [call(curve) for curve in cgwycurves_array])
-#         self.assertEqual(graphmodel.curves, graphmodel._curves)
-
-
 class GwyChannel_get_title(unittest.TestCase):
     """Test _get_title method of GwyChannel class
     """
@@ -3203,9 +3190,162 @@ class GwyChannel_get_ellipse_sel(unittest.TestCase):
 
 
 class GwyChannel_init(unittest.TestCase):
-    """Test __init__ method of GwyChannel class
+    """Test init method of GwyChannel class
     """
 
+    def test_raise_TypeError_if_data_is_not_GwyDataField(self):
+        """Raise TypeError exception if data is not GwyDataField instance
+        """
+        data = np.zeros(10)
+        self.assertRaises(TypeError,
+                          GwyChannel,
+                          title='Title',
+                          data=data)
+
+    def test_raise_TypeError_if_mask_is_not_GwyDataField_or_None(self):
+        """Raise TypeError exception if mask is not GwyDataField instance or None
+        """
+        data = Mock(spec=GwyDataField)
+        mask = np.zeros(10)
+        self.assertRaises(TypeError,
+                          GwyChannel,
+                          title='Title',
+                          data=data,
+                          mask=mask)
+
+    def test_raise_TypeError_if_show_is_not_GwyDataField_or_None(self):
+        """Raise TypeError exception if show is not GwyDataField instance or None
+        """
+        data = Mock(spec=GwyDataField)
+        show = np.zeros(10)
+        self.assertRaises(TypeError,
+                          GwyChannel,
+                          title='Title',
+                          data=data,
+                          show=show)
+
+    def test_raise_TypeError_if_point_sel_is_not_GwyPointSelections(self):
+        """Raise TypeError exception if point_sel is not GwyPointSelections
+        instance or None
+        """
+        data = Mock(spec=GwyDataField)
+        point_sel = (0., 0.)
+        self.assertRaises(TypeError,
+                          GwyChannel,
+                          title='Title',
+                          data=data,
+                          point_sel=point_sel)
+
+    def test_raise_TypeError_if_pointer_sel_is_not_GwyPointerSelections(self):
+        """Raise TypeError exception if pointer_sel is not GwyPointerSelections
+        instance or None
+        """
+        data = Mock(spec=GwyDataField)
+        pointer_sel = (0., 0.)
+        self.assertRaises(TypeError,
+                          GwyChannel,
+                          title='Title',
+                          data=data,
+                          pointer_sel=pointer_sel)
+
+    def test_raise_TypeError_if_line_sel_is_not_GwyLineSelections(self):
+        """Raise TypeError exception if line_sel is not GwyLineSelections
+        instance or None
+        """
+        data = Mock(spec=GwyDataField)
+        line_sel = ((0., 0.), (1., 1.))
+        self.assertRaises(TypeError,
+                          GwyChannel,
+                          title='Title',
+                          data=data,
+                          line_sel=line_sel)
+
+    def test_raise_TypeError_if_rectangle_sel_is_of_wrong_type(self):
+        """Raise TypeError exception if rectangle_sel is not GwyRectangleSelections
+        instance or None
+        """
+        data = Mock(spec=GwyDataField)
+        rectangle_sel = ((0., 0.), (1., 1.))
+        self.assertRaises(TypeError,
+                          GwyChannel,
+                          title='Title',
+                          data=data,
+                          rectangle_sel=rectangle_sel)
+
+    def test_raise_TypeError_if_ellipse_sel_is_not_GwyEllipseSelections(self):
+        """Raise TypeError exception if ellipse_sel is not GwyEllipseSelections
+        instance or None
+        """
+        data = Mock(spec=GwyDataField)
+        ellipse_sel = ((0., 0.), (1., 1.))
+        self.assertRaises(TypeError,
+                          GwyChannel,
+                          title='Title',
+                          data=data,
+                          ellipse_sel=ellipse_sel)
+
+    def test_title_data_attributes(self):
+        """Check title and data attributes of GwyChannel
+        """
+        data = Mock(spec=GwyDataField)
+        title = 'Title'
+        channel = GwyChannel(title=title, data=data)
+        self.assertEqual(channel.title, title)
+        self.assertEqual(channel.data, data)
+
+    def test_mask_show_attribute(self):
+        """Check mask and show attributes of GwyChannel
+        """
+        data = Mock(spec=GwyDataField)
+        title = 'Title'
+        mask = Mock(spec=GwyDataField)
+        show = Mock(spec=GwyDataField)
+        channel = GwyChannel(title=title, data=data,
+                             mask=mask, show=show)
+        self.assertEqual(channel.mask, mask)
+        self.assertEqual(channel.show, show)
+
+    def test_selections_attributes(self):
+        """Check *_selections attributes
+        """
+        data = Mock(spec=GwyDataField)
+        title = 'Title'
+        point_sel = Mock(spec=GwyPointSelections)
+        pointer_sel = Mock(spec=GwyPointerSelections)
+        line_sel = Mock(spec=GwyLineSelections)
+        rectangle_sel = Mock(spec=GwyRectangleSelections)
+        ellipse_sel = Mock(spec=GwyEllipseSelections)
+
+        channel = GwyChannel(title=title, data=data,
+                             point_sel=point_sel,
+                             pointer_sel=pointer_sel,
+                             line_sel=line_sel,
+                             rectangle_sel=rectangle_sel,
+                             ellipse_sel=ellipse_sel)
+        self.assertEqual(channel.point_selections,
+                         point_sel)
+        self.assertEqual(channel.pointer_selections,
+                         pointer_sel)
+        self.assertEqual(channel.line_selections,
+                         line_sel)
+        self.assertEqual(channel.rectangle_selections,
+                         rectangle_sel)
+        self.assertEqual(channel.ellipse_selections,
+                         ellipse_sel)
+
+
+class GwyChannel_from_gwy(unittest.TestCase):
+    """Test from_gwy method of GwyChannel class
+    """
+    def test_raise_TypeError_if_gwyfile_is_of_wrong_type(self):
+        """Raise TypeError exception if gwyfile is not Gwyfile instance
+        """
+        self.assertRaises(TypeError,
+                          GwyChannel.from_gwy,
+                          'test_string',
+                          0)
+
+    @patch('gwydb.gwy.gwyfile.GwyChannel', autospec=True)
     @patch.object(GwyChannel, '_get_title')
     @patch.object(GwyChannel, '_get_data')
     @patch.object(GwyChannel, '_get_mask')
@@ -3215,33 +3355,85 @@ class GwyChannel_init(unittest.TestCase):
     @patch.object(GwyChannel, '_get_line_sel')
     @patch.object(GwyChannel, '_get_rectangle_sel')
     @patch.object(GwyChannel, '_get_ellipse_sel')
-    def test_GwyGraphModel_init(self,
-                                mock_get_ellipse_sel,
-                                mock_get_rectangle_sel,
-                                mock_get_line_sel,
-                                mock_get_pointer_sel,
-                                mock_get_point_sel,
-                                mock_get_show,
-                                mock_get_mask,
-                                mock_get_data,
-                                mock_get_title):
+    def test_args_of_other_calls(self,
+                                 mock_get_ellipse_sel,
+                                 mock_get_rectangle_sel,
+                                 mock_get_line_sel,
+                                 mock_get_pointer_sel,
+                                 mock_get_point_sel,
+                                 mock_get_show,
+                                 mock_get_mask,
+                                 mock_get_data,
+                                 mock_get_title,
+                                 mock_GwyChannel):
         gwyfile = Mock(spec=Gwyfile)
         channel_id = 0
-        channel = GwyChannel(gwyfile, channel_id)
-        self.assertEqual(channel.title, mock_get_title.return_value)
-        self.assertEqual(channel.data, mock_get_data.return_value)
-        self.assertEqual(channel.mask, mock_get_mask.return_value)
-        self.assertEqual(channel.show, mock_get_show.return_value)
-        self.assertEqual(channel.point_selections,
-                         mock_get_point_sel.return_value)
-        self.assertEqual(channel.pointer_selections,
-                         mock_get_pointer_sel.return_value)
-        self.assertEqual(channel.line_selections,
-                         mock_get_line_sel.return_value)
-        self.assertEqual(channel.rectangle_selections,
-                         mock_get_rectangle_sel.return_value)
-        self.assertEqual(channel.ellipse_selections,
-                         mock_get_ellipse_sel.return_value)
+
+        title = 'Title'
+        mock_get_title.return_value = title
+
+        data = Mock(spec=GwyDataField)
+        mock_get_data.return_value = data
+
+        mask = Mock(spec=GwyDataField)
+        mock_get_mask.return_value = mask
+
+        show = Mock(spec=GwyDataField)
+        mock_get_show.return_value = show
+
+        point_sel = Mock(spec=GwyPointSelections)
+        mock_get_point_sel.return_value = point_sel
+
+        pointer_sel = Mock(spec=GwyPointerSelections)
+        mock_get_pointer_sel.return_value = pointer_sel
+
+        line_sel = Mock(spec=GwyLineSelections)
+        mock_get_line_sel.return_value = line_sel
+
+        rectangle_sel = Mock(spec=GwyRectangleSelections)
+        mock_get_rectangle_sel.return_value = rectangle_sel
+
+        ellipse_sel = Mock(spec=GwyEllipseSelections)
+        mock_get_ellipse_sel.return_value = ellipse_sel
+
+        channel = GwyChannel.from_gwy(gwyfile, channel_id)
+
+        mock_get_title.assert_has_calls(
+            [call(gwyfile, channel_id)])
+
+        mock_get_data.assert_has_calls(
+            [call(gwyfile, channel_id)])
+
+        mock_get_mask.assert_has_calls(
+            [call(gwyfile, channel_id)])
+
+        mock_get_point_sel.assert_has_calls(
+            [call(gwyfile, channel_id)])
+
+        mock_get_pointer_sel.assert_has_calls(
+            [call(gwyfile, channel_id)])
+
+        mock_get_line_sel.assert_has_calls(
+            [call(gwyfile, channel_id)])
+
+        mock_get_rectangle_sel.assert_has_calls(
+            [call(gwyfile, channel_id)])
+
+        mock_get_ellipse_sel.assert_has_calls(
+            [call(gwyfile, channel_id)])
+
+        self.assertEqual(channel, mock_GwyChannel.return_value)
+
+        mock_GwyChannel.assert_has_calls(
+            [call(title=title,
+                  data=data,
+                  mask=mask,
+                  show=show,
+                  point_sel=point_sel,
+                  pointer_sel=pointer_sel,
+                  line_sel=line_sel,
+                  rectangle_sel=rectangle_sel,
+                  ellipse_sel=ellipse_sel)])
 
 
 class GwyContainer_get_channel_ids_TestCase(unittest.TestCase):
@@ -3357,7 +3549,7 @@ class GwyContainer_dump_channels(unittest.TestCase):
         channels = GwyContainer._dump_channels(gwyfile)
 
         self.assertListEqual(channels,
-                             [mock_GwyChannel(gwyfile, channel_id)
+                             [mock_GwyChannel.from_gwy(gwyfile, channel_id)
                               for channel_id in channel_ids])
 
 
@@ -3415,21 +3607,88 @@ class GwyContainer_dump_graphs(unittest.TestCase):
                               for gwygraphmodel in gwygraphmodels])
 
 
-class GwyContainer_init(unittest.TestCase):
-    """Test __init__ method of GwyContainer
+class GwyContainer_from_gwy(unittest.TestCase):
+    """Test from_gwy method of GwyContainer
     """
 
+    def test_raise_TypeError_if_gwyfile_is_not_Gwyfile(self):
+        """Raise TypeError exception if gwyfile is not a Gwyfile
+        instance
+        """
+        self.assertRaises(TypeError,
+                          GwyContainer.from_gwy,
+                          gwyfile='test_string')
+
+    @patch('gwydb.gwy.gwyfile.GwyContainer', autospec=True)
     @patch.object(GwyContainer, '_dump_graphs')
     @patch.object(GwyContainer, '_dump_channels')
-    def test_init_method_of_GwyContainer(self,
-                                         mock_dump_channels,
-                                         mock_dump_graphs):
+    def test_from_gwy_method_of_GwyContainer(self,
+                                             mock_dump_channels,
+                                             mock_dump_graphs,
+                                             mock_GwyContainer):
         gwyfile = Mock(spec=Gwyfile)
-        channels = Mock(spec=list)
-        graphs = Mock(spec=list)
+        channels = [Mock(spec=GwyChannel), Mock(spec=GwyChannel)]
+        graphs = [Mock(spec=GwyGraphModel)]
         mock_dump_channels.return_value = channels
         mock_dump_graphs.return_value = graphs
-        container = GwyContainer(gwyfile)
+        mock_GwyContainer.return_value = Mock(spec=GwyContainer)
+        container = GwyContainer.from_gwy(gwyfile)
+        mock_dump_channels.assert_has_calls(
+            [call(gwyfile)])
+        mock_dump_graphs.assert_has_calls(
+            [call(gwyfile)])
+        mock_GwyContainer.assert_has_calls(
+            [call(channels=channels, graphs=graphs)])
+        self.assertEqual(container, mock_GwyContainer.return_value)
+
+
+class GwyContainer_init(unittest.TestCase):
+    """Test constructor of GwyContainer
+    """
+
+    def test_raise_TypeError_if_channels_is_not_list_of_GwyChannel(self):
+        """Raise TypeError if channels is not list of GwyChannel instances
+        """
+        self.assertRaises(TypeError,
+                          GwyContainer,
+                          channels=[Mock(GwyDataField)])
+
+    def test_raise_TypeError_if_graphs_is_not_list_of_GwyGraphModel(self):
+        """Raise TypeError if channels is not list of GwyGraphModel instances
+        """
+        self.assertRaises(TypeError,
+                          GwyContainer,
+                          graphs=[Mock(GwyChannel)])
+
+    def test_if_channels_exist(self):
+        """channels is a list of GwyChannel, graphs is None
+        """
+        channels = [Mock(GwyChannel), Mock(GwyChannel)]
+        container = GwyContainer(channels=channels)
+        self.assertEqual(container.channels, channels)
+        self.assertEqual(container.graphs, [])
+
+    def test_if_graphs_exist(self):
+        """graphs is a list of GwyGraphModel, channels is None
+        """
+        graphs = [Mock(GwyGraphModel), Mock(GwyGraphModel)]
+        container = GwyContainer(graphs=graphs)
+        self.assertEqual(container.graphs, graphs)
+        self.assertEqual(container.channels, [])
+
+    def test_channels_and_graphs_are_None(self):
+        """both channels and graphs are None
+        """
+        container = GwyContainer()
+        self.assertEqual(container.channels, [])
+        self.assertEqual(container.graphs, [])
+
+    def test_channels_and_graphs_are_not_None(self):
+        """channels is a list of GwyChannel, graphs is a list of GwyGraphModel
+        """
+        channels = [Mock(GwyChannel), Mock(GwyChannel)]
+        graphs = [Mock(GwyGraphModel), Mock(GwyGraphModel)]
+        container = GwyContainer(channels=channels, graphs=graphs)
         self.assertEqual(container.channels, channels)
         self.assertEqual(container.graphs, graphs)
 
