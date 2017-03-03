@@ -313,6 +313,44 @@ class GwyChannel_get_title(unittest.TestCase):
         self.assertEqual(actual_return, 'Title')
 
 
+class GwyChannel_get_palette(unittest.TestCase):
+    """Test _get_palette method of GwyChannel class
+    """
+
+    def setUp(self):
+        self.gwyfile = Mock(spec=Gwyfile)
+        self.channel_id = 0
+
+    def test_return_None_if_item_not_found(self):
+        """Return None if palette item is not found
+        """
+        self.gwyfile.get_gwyitem.return_value = None
+        palette = GwyChannel._get_palette(self.gwyfile,
+                                          self.channel_id)
+        self.assertIsNone(palette)
+
+    @patch('gwydb.gwy.gwychannel.lib', autospec=True)
+    def test_check_args_passing_to_get_gwyitem(self, mock_lib):
+        """Get GwyfileItem object if palette item is found
+        """
+        palette = ffi.new("char[]", b'Gold')
+        mock_lib.gwyfile_item_get_string.return_value = palette
+        GwyChannel._get_palette(self.gwyfile, self.channel_id)
+        self.gwyfile.get_gwyitem.assert_has_calls(
+            [call("/{:d}/base/palette".format(self.channel_id))])
+
+    @patch('gwydb.gwy.gwychannel.lib', autospec=True)
+    def test_returned_value(self, mock_lib):
+        """
+        Check returned value of _get_palette method
+        """
+        palette = ffi.new("char[]", b'Gold')
+        mock_lib.gwyfile_item_get_string.return_value = palette
+        actual_return = GwyChannel._get_palette(self.gwyfile,
+                                                self.channel_id)
+        self.assertEqual(actual_return, 'Gold')
+
+
 class GwyChannel_get_visibility(unittest.TestCase):
     """Test _get_visibility method of GwyChannel class
     """
@@ -975,7 +1013,9 @@ class GwyChannel_from_gwy(unittest.TestCase):
     @patch.object(GwyChannel, '_get_rectangle_sel')
     @patch.object(GwyChannel, '_get_ellipse_sel')
     @patch.object(GwyChannel, '_get_visibility')
+    @patch.object(GwyChannel, '_get_palette')
     def test_args_of_other_calls(self,
+                                 mock_get_palette,
                                  mock_get_visibility,
                                  mock_get_ellipse_sel,
                                  mock_get_rectangle_sel,
@@ -999,6 +1039,9 @@ class GwyChannel_from_gwy(unittest.TestCase):
         visible = True
         visiblep = ffi.new("bool*", visible)
         mock_get_visibility.return_value = visiblep[0]
+
+        palette = 'Gold'
+        mock_get_palette.return_value = palette
 
         mask = Mock(spec=GwyDataField)
         mock_get_mask.return_value = mask
@@ -1035,6 +1078,9 @@ class GwyChannel_from_gwy(unittest.TestCase):
         mock_get_visibility.assert_has_calls(
             [call(gwyfile, channel_id)])
 
+        mock_get_palette.assert_has_calls(
+            [call(gwyfile, channel_id)])
+
         mock_get_point_sel.assert_has_calls(
             [call(gwyfile, channel_id)])
 
@@ -1056,6 +1102,7 @@ class GwyChannel_from_gwy(unittest.TestCase):
             [call(title=title,
                   data=data,
                   visible=visible,
+                  palette=palette,
                   mask=mask,
                   show=show,
                   point_sel=point_sel,

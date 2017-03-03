@@ -249,6 +249,8 @@ class GwyChannel:
         data (GwyDataField): channel data
         visible (boolean): whether the channel should be displayed in
                            a window when the file is loaded
+        palette (string): name of the false color gradient used to
+                          display the channel
         mask (GwyDataField): mask data
         show (GwyDataField): presentation data
         point_selections (GwyPointSelection): point selections
@@ -264,13 +266,14 @@ class GwyChannel:
     """
 
     def __init__(self, title, data, visible=False,
-                 mask=None, show=None,
+                 palette=None, mask=None, show=None,
                  point_sel=None, pointer_sel=None,
                  line_sel=None, rectangle_sel=None,
                  ellipse_sel=None):
 
         self.title = title
         self.visible = visible
+        self.palette = palette
 
         if not isinstance(data, GwyDataField):
             raise TypeError("data must be an instance of GwyDataField")
@@ -340,6 +343,7 @@ class GwyChannel:
         title = cls._get_title(gwyfile, channel_id)
         data = cls._get_data(gwyfile, channel_id)
         visible = cls._get_visibility(gwyfile, channel_id)
+        palette = cls._get_palette(gwyfile, channel_id)
         mask = cls._get_mask(gwyfile, channel_id)
         show = cls._get_show(gwyfile, channel_id)
         point_sel = cls._get_point_sel(gwyfile, channel_id)
@@ -350,6 +354,7 @@ class GwyChannel:
         return GwyChannel(title=title,
                           data=data,
                           visible=visible,
+                          palette=palette,
                           mask=mask,
                           show=show,
                           point_sel=point_sel,
@@ -380,6 +385,28 @@ class GwyChannel:
             raise GwyfileError(
                 "Title for channel with id:{:d} is not found".format(
                     channel_id))
+
+    @staticmethod
+    def _get_palette(gwyfile, channel_id):
+        """Get name of the false color gradient used to display the channel
+
+        Args:
+            gwyfile (Gwyfile): Gwyfile object
+            channel_id (int): id of the channel
+
+        Returns:
+            palette (string): Name of the false color gradient
+                              or None if it is not defined
+
+        """
+        key = "/{:d}/base/palette".format(channel_id)
+        item = gwyfile.get_gwyitem(key)
+        if item:
+            c_palette = lib.gwyfile_item_get_string(item)
+            palette = ffi.string(c_palette).decode('utf-8')
+            return palette
+        else:
+            return None
 
     @staticmethod
     def _get_visibility(gwyfile, channel_id):
