@@ -92,13 +92,13 @@ class Gwyfile:
             return True
 
     def get_gwyobject(self, key):
-        """Get object
+        """Get GwyfileObject*
 
         Args:
             key (str): Name of the object, e.g. "/0/data"
 
         Returns:
-            item_object (cdata GwyfileObject*): The value of the object
+            item_object (<cdata GwyfileObject*>): data item in a Gwy file
 
         """
 
@@ -110,6 +110,24 @@ class Gwyfile:
             raise GwyfileError(
                 "Cannot find the object value of the item \"{}\"".format(key))
         return item_object
+
+    def get_gwyitem(self, key):
+        """Get GwyfileItem*
+
+        Args:
+            key (string): Name of the data item
+
+        Returns
+            item (cdata <GwyfileItem*>): data item in a Gwy file object
+                                         or None if item is not found
+
+        """
+        item = lib.gwyfile_object_get(self.c_gwyfile, key.encode('utf-8'))
+
+        if not item:
+            return None
+        else:
+            return item
 
     @staticmethod
     def from_gwy(filename):

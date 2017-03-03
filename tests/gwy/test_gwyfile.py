@@ -157,6 +157,42 @@ class Gwyfile_from_gwy(unittest.TestCase):
         self.assertEqual(expected_return, actual_return)
 
 
+class Gwyfile_get_gwyitem(unittest.TestCase):
+    """Test get_gwyitem method in Gwyfile class
+    """
+    def setUp(self):
+        self.gwyfile = Mock(spec=Gwyfile)
+        self.gwyfile.c_gwyfile = Mock()
+        self.gwyfile.get_gwyitem = Gwyfile.get_gwyitem
+
+        patcher_lib = patch('gwydb.gwy.gwyfile.lib', autospec=True)
+        self.addCleanup(patcher_lib.stop)
+        self.mock_lib = patcher_lib.start()
+
+        self.test_key = '/0/data/title/'
+
+    def test_return_None_if_item_is_not_found(self):
+        """Return None if item is not found """
+        self.mock_lib.gwyfile_object_get.return_value = ffi.NULL
+        actual_return = self.gwyfile.get_gwyitem(self.gwyfile,
+                                                 self.test_key)
+        self.assertIsNone(actual_return)
+
+    def test_return_item_if_item_is_found(self):
+        """ Return <GwyfileItem*> object if item is found """
+        item = Mock()
+        self.mock_lib.gwyfile_object_get.return_value = item
+        actual_return = self.gwyfile.get_gwyitem(self.gwyfile,
+                                                 self.test_key)
+        self.assertEqual(actual_return, item)
+
+    def test_args_of_lib_function(self):
+        """ Test arguments passing to gwyfile_object_get C function """
+        self.gwyfile.get_gwyitem(self.gwyfile, self.test_key)
+        self.mock_lib.gwyfile_object_get.assert_has_calls(
+            [call(self.gwyfile.c_gwyfile, self.test_key.encode('utf-8'))])
+
+
 class Gwyfile_get_gwyobject_TestCase(unittest.TestCase):
     """
     Test get_gwyobject method in Gwyfile class

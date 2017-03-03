@@ -371,9 +371,10 @@ class GwyChannel:
 
         """
         key = "/{:d}/data/title".format(channel_id)
-        if gwyfile.check_gwyobject(key):
-            gwyobject = gwyfile.get_gwyobject(key)
-            title = ffi.string(ffi.cast("char*", gwyobject)).decode('utf-8')
+        item = gwyfile.get_gwyitem(key)
+        if item:
+            c_title = lib.gwyfile_item_get_string(item)
+            title = ffi.string(c_title).decode('utf-8')
             return title
         else:
             raise GwyfileError(
@@ -393,10 +394,10 @@ class GwyChannel:
 
         """
         key = "/{:d}/data/visible".format(channel_id)
-        if gwyfile.check_gwyobject(key):
-            gwyobject_visible = gwyfile.get_gwyobject(key)
-            visible = ffi.cast("bool", gwyobject_visible)
-            if visible:
+        item = gwyfile.get_gwyitem(key)
+        if item:
+            c_visible = lib.gwyfile_item_get_bool(item)
+            if c_visible:
                 return True
             else:
                 return False
