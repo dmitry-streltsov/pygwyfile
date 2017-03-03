@@ -55,7 +55,7 @@ ffibuilder.cdef("""
     bool gwyfile_item_get_bool(const GwyfileItem* item);
     double gwyfile_item_get_double(const GwyfileItem* item);
     const char* gwyfile_item_get_string(const GwyfileItem* item);
-    int32_t gwyfile_item_get_int32(const GwyfileItem* item;c)
+    int32_t gwyfile_item_get_int32(const GwyfileItem* item);
 """)
 
 
