@@ -245,10 +245,12 @@ class GwyChannel:
     """Class for GwyChannel representation
 
     Attributes:
-        title (string): channel title
-        data (GwyDataField): datafield from the channel
-        mask (GwyDataField): mask datafield from the channel
-        show (GwyDataField): presentation datafield from the channel
+        title (string): channel title, as shown in the data browser
+        data (GwyDataField): channel data
+        visible (boolean): whether the channel should be displayed in
+                           a window when the file is loaded
+        mask (GwyDataField): mask data
+        show (GwyDataField): presentation data
         point_selections (GwyPointSelection): point selections
         pointer_selections (GwyPointerSelection): pointer selections
         line_selections (GwyLineSelection): line selections
@@ -261,13 +263,14 @@ class GwyChannel:
 
     """
 
-    def __init__(self, title, data,
+    def __init__(self, title, data, visible=False,
                  mask=None, show=None,
                  point_sel=None, pointer_sel=None,
                  line_sel=None, rectangle_sel=None,
                  ellipse_sel=None):
 
         self.title = title
+        self.visible = visible
 
         if not isinstance(data, GwyDataField):
             raise TypeError("data must be an instance of GwyDataField")
@@ -336,6 +339,7 @@ class GwyChannel:
 
         title = cls._get_title(gwyfile, channel_id)
         data = cls._get_data(gwyfile, channel_id)
+        visible = cls._get_visibility(gwyfile, channel_id)
         mask = cls._get_mask(gwyfile, channel_id)
         show = cls._get_show(gwyfile, channel_id)
         point_sel = cls._get_point_sel(gwyfile, channel_id)
@@ -345,6 +349,7 @@ class GwyChannel:
         ellipse_sel = cls._get_ellipse_sel(gwyfile, channel_id)
         return GwyChannel(title=title,
                           data=data,
+                          visible=visible,
                           mask=mask,
                           show=show,
                           point_sel=point_sel,
@@ -374,6 +379,29 @@ class GwyChannel:
             raise GwyfileError(
                 "Title for channel with id:{:d} is not found".format(
                     channel_id))
+
+    @staticmethod
+    def _get_visibility(gwyfile, channel_id):
+        """ Get visibility flag for channel with id=channel_id from Gwyfile
+
+        Args:
+            gwyfile (Gwyfile): Gwyfile object
+            channel_id (int): id of the channel
+
+        Returns:
+            visible (boolean): Visibility of the channel
+
+        """
+        key = "/{:d}/data/visible".format(channel_id)
+        if gwyfile.check_gwyobject(key):
+            gwyobject_visible = gwyfile.get_gwyobject(key)
+            visible = ffi.cast("bool", gwyobject_visible)
+            if visible:
+                return True
+            else:
+                return False
+        else:
+            return False
 
     @staticmethod
     def _get_data(gwyfile, channel_id):

@@ -312,6 +312,60 @@ class GwyChannel_get_title(unittest.TestCase):
         self.assertEqual(title, 'Title')
 
 
+class GwyChannel_get_visibility(unittest.TestCase):
+    """Test _get_visibility method of GwyChannel class
+    """
+
+    def setUp(self):
+        self.gwyfile = Mock(spec=Gwyfile)
+        self.channel_id = 0
+
+    def test_check_if_visibility_flag_exists(self):
+        """ Check existence of visibility flag
+        """
+        key = "/{:d}/data/visible".format(self.channel_id)
+        self.gwyfile.check_gwyobject.return_value = False
+        GwyChannel._get_visibility(self.gwyfile, self.channel_id)
+        self.gwyfile.check_gwyobject.assert_has_calls(
+            [call(key)])
+
+    def test_return_False_if_gwyobject_does_not_exist(self):
+        """ Return False if gwyfile.check_gwyobject returned False
+        """
+        self.gwyfile.check_gwyobject.return_value = False
+        visible = GwyChannel._get_visibility(self.gwyfile, self.channel_id)
+        self.assertIs(visible, False)
+
+    def test_get_gwyobject_if_it_exists(self):
+        """ If gwyobject exists get it
+        """
+        key = "/{:d}/data/visible".format(self.channel_id)
+        self.gwyfile.check_gwyobject.return_value = True
+        truep = ffi.new("bool*", True)
+        self.gwyfile.get_gwyobject.return_value = truep[0]
+        GwyChannel._get_visibility(self.gwyfile, self.channel_id)
+        self.gwyfile.get_gwyobject.assert_has_calls(
+            [call(key)])
+
+    def test_return_True_if_visibility_flag_is_True(self):
+        """Return True if visibility flag exists and it is True
+        """
+        self.gwyfile.check_gwyobject.return_value = True
+        truep = ffi.new("bool*", True)
+        self.gwyfile.get_gwyobject.return_value = truep[0]
+        visible = GwyChannel._get_visibility(self.gwyfile, self.channel_id)
+        self.assertIs(visible, True)
+
+    def test_return_False_if_visibility_flag_is_False(self):
+        """Return False if visibility flag exists and it is False
+        """
+        self.gwyfile.check_gwyobject.return_value = True
+        falsep = ffi.new("bool*", False)
+        self.gwyfile.get_gwyobject.return_value = falsep[0]
+        visible = GwyChannel._get_visibility(self.gwyfile, self.channel_id)
+        self.assertIs(visible, False)
+
+
 class GwyChannel_get_data(unittest.TestCase):
     """Test _get_data method of GwyChannel class
     """
@@ -920,7 +974,9 @@ class GwyChannel_from_gwy(unittest.TestCase):
     @patch.object(GwyChannel, '_get_line_sel')
     @patch.object(GwyChannel, '_get_rectangle_sel')
     @patch.object(GwyChannel, '_get_ellipse_sel')
+    @patch.object(GwyChannel, '_get_visibility')
     def test_args_of_other_calls(self,
+                                 mock_get_visibility,
                                  mock_get_ellipse_sel,
                                  mock_get_rectangle_sel,
                                  mock_get_line_sel,
@@ -939,6 +995,10 @@ class GwyChannel_from_gwy(unittest.TestCase):
 
         data = Mock(spec=GwyDataField)
         mock_get_data.return_value = data
+
+        visible = True
+        visiblep = ffi.new("bool*", visible)
+        mock_get_visibility.return_value = visiblep[0]
 
         mask = Mock(spec=GwyDataField)
         mock_get_mask.return_value = mask
@@ -972,6 +1032,9 @@ class GwyChannel_from_gwy(unittest.TestCase):
         mock_get_mask.assert_has_calls(
             [call(gwyfile, channel_id)])
 
+        mock_get_visibility.assert_has_calls(
+            [call(gwyfile, channel_id)])
+
         mock_get_point_sel.assert_has_calls(
             [call(gwyfile, channel_id)])
 
@@ -992,6 +1055,7 @@ class GwyChannel_from_gwy(unittest.TestCase):
         mock_GwyChannel.assert_has_calls(
             [call(title=title,
                   data=data,
+                  visible=visible,
                   mask=mask,
                   show=show,
                   point_sel=point_sel,
