@@ -199,6 +199,7 @@ class GwyContainer_from_gwy(unittest.TestCase):
                                              mock_dump_graphs,
                                              mock_GwyContainer):
         gwyfile = Mock(spec=Gwyfile)
+        gwyfile.filename = 'test.gwy'
         channels = [Mock(spec=GwyChannel), Mock(spec=GwyChannel)]
         graphs = [Mock(spec=GwyGraphModel)]
         mock_dump_channels.return_value = channels
@@ -210,7 +211,9 @@ class GwyContainer_from_gwy(unittest.TestCase):
         mock_dump_graphs.assert_has_calls(
             [call(gwyfile)])
         mock_GwyContainer.assert_has_calls(
-            [call(channels=channels, graphs=graphs)])
+            [call(filename=gwyfile.filename,
+                  channels=channels,
+                  graphs=graphs)])
         self.assertEqual(container, mock_GwyContainer.return_value)
 
 
@@ -223,6 +226,7 @@ class GwyContainer_init(unittest.TestCase):
         """
         self.assertRaises(TypeError,
                           GwyContainer,
+                          filename='test.gwy',
                           channels=[Mock(GwyDataField)])
 
     def test_raise_TypeError_if_graphs_is_not_list_of_GwyGraphModel(self):
@@ -230,39 +234,47 @@ class GwyContainer_init(unittest.TestCase):
         """
         self.assertRaises(TypeError,
                           GwyContainer,
+                          filename='test.gwy',
                           graphs=[Mock(GwyChannel)])
 
     def test_if_channels_exist(self):
         """channels is a list of GwyChannel, graphs is None
         """
+        filename = 'test.gwy'
         channels = [Mock(GwyChannel), Mock(GwyChannel)]
-        container = GwyContainer(channels=channels)
+        container = GwyContainer(filename=filename, channels=channels)
         self.assertEqual(container.channels, channels)
         self.assertEqual(container.graphs, [])
 
     def test_if_graphs_exist(self):
         """graphs is a list of GwyGraphModel, channels is None
         """
+        filename = 'test.gwy'
         graphs = [Mock(GwyGraphModel), Mock(GwyGraphModel)]
-        container = GwyContainer(graphs=graphs)
+        container = GwyContainer(filename=filename, graphs=graphs)
         self.assertEqual(container.graphs, graphs)
         self.assertEqual(container.channels, [])
 
     def test_channels_and_graphs_are_None(self):
         """both channels and graphs are None
         """
-        container = GwyContainer()
+        filename = 'test.gwy'
+        container = GwyContainer(filename=filename)
         self.assertEqual(container.channels, [])
         self.assertEqual(container.graphs, [])
 
     def test_channels_and_graphs_are_not_None(self):
         """channels is a list of GwyChannel, graphs is a list of GwyGraphModel
         """
+        filename = 'test.gwy'
         channels = [Mock(GwyChannel), Mock(GwyChannel)]
         graphs = [Mock(GwyGraphModel), Mock(GwyGraphModel)]
-        container = GwyContainer(channels=channels, graphs=graphs)
+        container = GwyContainer(filename=filename,
+                                 channels=channels,
+                                 graphs=graphs)
         self.assertEqual(container.channels, channels)
         self.assertEqual(container.graphs, graphs)
+        self.assertEqual(container.filename, filename)
 
 
 class Func_read_gwyfile_TestCase(unittest.TestCase):

@@ -17,6 +17,8 @@ class GwyContainer:
     """Class for GwyContainer representation
 
     Attributes:
+        filename (string): name of file
+
         channels: list of GwyChannel instances
                   All channels in Gwyfile instance
 
@@ -28,14 +30,16 @@ class GwyContainer:
                            from Gwyfile object
     """
 
-    def __init__(self, channels=None, graphs=None):
+    def __init__(self, filename, channels=None, graphs=None):
         """
         Args:
+            filename ('string'): name of file without path
             channels: list of GwyChannel instances
             graphs:   list of GwyGraphModel instances
         """
         self.channels = []
         self.graphs = []
+        self.filename = filename
 
         if channels:
             for channel in channels:
@@ -68,9 +72,11 @@ class GwyContainer:
             raise TypeError("gwyfile must be an instance of "
                             "Gwyfile class")
         else:
+            filename = gwyfile.filename
             channels = cls._dump_channels(gwyfile)
             graphs = cls._dump_graphs(gwyfile)
-            return GwyContainer(channels=channels,
+            return GwyContainer(filename=filename,
+                                channels=channels,
                                 graphs=graphs)
 
     @staticmethod
