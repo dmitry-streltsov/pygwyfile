@@ -373,18 +373,12 @@ class GwyChannel:
 
         Returns:
             title (string): Title of the channel
+                            or None if title is not found
 
         """
         key = "/{:d}/data/title".format(channel_id)
-        item = gwyfile.get_gwyitem(key)
-        if item:
-            c_title = lib.gwyfile_item_get_string(item)
-            title = ffi.string(c_title).decode('utf-8')
-            return title
-        else:
-            raise GwyfileError(
-                "Title for channel with id:{:d} is not found".format(
-                    channel_id))
+        title = gwyfile.get_gwyitem_string(key)
+        return title
 
     @staticmethod
     def _get_palette(gwyfile, channel_id):
@@ -400,13 +394,8 @@ class GwyChannel:
 
         """
         key = "/{:d}/base/palette".format(channel_id)
-        item = gwyfile.get_gwyitem(key)
-        if item:
-            c_palette = lib.gwyfile_item_get_string(item)
-            palette = ffi.string(c_palette).decode('utf-8')
-            return palette
-        else:
-            return None
+        palette = gwyfile.get_gwyitem_string(key)
+        return palette
 
     @staticmethod
     def _get_visibility(gwyfile, channel_id):
@@ -421,15 +410,8 @@ class GwyChannel:
 
         """
         key = "/{:d}/data/visible".format(channel_id)
-        item = gwyfile.get_gwyitem(key)
-        if item:
-            c_visible = lib.gwyfile_item_get_bool(item)
-            if c_visible:
-                return True
-            else:
-                return False
-        else:
-            return False
+        visible = gwyfile.get_gwyitem_bool(key)
+        return visible
 
     @staticmethod
     def _get_data(gwyfile, channel_id):

@@ -276,132 +276,66 @@ class GwyDataField_get_data(unittest.TestCase):
 
 
 class GwyChannel_get_title(unittest.TestCase):
-    """Test _get_title method of GwyChannel class
-    """
+    """Test _get_title method of GwyChannel class"""
 
     def setUp(self):
         self.gwyfile = Mock(spec=Gwyfile)
         self.channel_id = 0
 
-    def test_raise_exception_if_item_not_found(self):
-        """Raise GwyFileError is title item is not found
-        """
-        self.gwyfile.get_gwyitem.return_value = None
-        self.assertRaises(GwyfileError,
-                          GwyChannel._get_title,
-                          self.gwyfile,
-                          self.channel_id)
-
-    @patch('gwydb.gwy.gwychannel.lib', autospec=True)
-    def test_check_args_passing_to_get_gwyitem(self, mock_lib):
-        """Get GwyfileItem object if title item is found
-        """
-        title = ffi.new("char[]", b'Title')
-        mock_lib.gwyfile_item_get_string.return_value = title
+    def test_arg_passing_to_get_gwyitem_string(self):
+        """Get string value of "/0/data/title" item"""
         GwyChannel._get_title(self.gwyfile, self.channel_id)
-        self.gwyfile.get_gwyitem.assert_has_calls(
+        self.gwyfile.get_gwyitem_string.assert_has_calls(
             [call("/{:d}/data/title".format(self.channel_id))])
 
-    @patch('gwydb.gwy.gwychannel.lib', autospec=True)
-    def test_returned_value(self, mock_lib):
-        """
-        Check returned value of get_title method
-        """
-        title = ffi.new("char[]", b'Title')
-        mock_lib.gwyfile_item_get_string.return_value = title
-        actual_return = GwyChannel._get_title(self.gwyfile, self.channel_id)
-        self.assertEqual(actual_return, 'Title')
+    def test_returned_value(self):
+        """ Return this string"""
+        actual_return = GwyChannel._get_title(self.gwyfile,
+                                              self.channel_id)
+        self.assertEqual(actual_return,
+                         self.gwyfile.get_gwyitem_string.return_value)
 
 
 class GwyChannel_get_palette(unittest.TestCase):
-    """Test _get_palette method of GwyChannel class
-    """
+    """Test _get_palette method of GwyChannel class"""
 
     def setUp(self):
         self.gwyfile = Mock(spec=Gwyfile)
         self.channel_id = 0
 
-    def test_return_None_if_item_not_found(self):
-        """Return None if palette item is not found
-        """
-        self.gwyfile.get_gwyitem.return_value = None
-        palette = GwyChannel._get_palette(self.gwyfile,
-                                          self.channel_id)
-        self.assertIsNone(palette)
-
-    @patch('gwydb.gwy.gwychannel.lib', autospec=True)
-    def test_check_args_passing_to_get_gwyitem(self, mock_lib):
-        """Get GwyfileItem object if palette item is found
-        """
-        palette = ffi.new("char[]", b'Gold')
-        mock_lib.gwyfile_item_get_string.return_value = palette
+    def test_arg_passing_to_get_gwyitem_string(self):
+        """Get string value of "/0/base/palette" item"""
         GwyChannel._get_palette(self.gwyfile, self.channel_id)
-        self.gwyfile.get_gwyitem.assert_has_calls(
+        self.gwyfile.get_gwyitem_string.assert_has_calls(
             [call("/{:d}/base/palette".format(self.channel_id))])
 
-    @patch('gwydb.gwy.gwychannel.lib', autospec=True)
-    def test_returned_value(self, mock_lib):
-        """
-        Check returned value of _get_palette method
-        """
-        palette = ffi.new("char[]", b'Gold')
-        mock_lib.gwyfile_item_get_string.return_value = palette
+    def test_returned_value(self):
+        """Return this string"""
         actual_return = GwyChannel._get_palette(self.gwyfile,
                                                 self.channel_id)
-        self.assertEqual(actual_return, 'Gold')
+        self.assertEqual(actual_return,
+                         self.gwyfile.get_gwyitem_string.return_value)
 
 
 class GwyChannel_get_visibility(unittest.TestCase):
-    """Test _get_visibility method of GwyChannel class
-    """
+    """Test _get_visibility method of GwyChannel class"""
 
     def setUp(self):
         self.gwyfile = Mock(spec=Gwyfile)
         self.channel_id = 0
-        patcher_lib = patch('gwydb.gwy.gwychannel.lib',
-                            autospec=True)
-        self.addCleanup(patcher_lib.stop)
-        self.mock_lib = patcher_lib.start()
 
-    def test_args_of_gwyfile_get_gwyitem_call(self):
-        """ Get item
-        """
-        self.gwyfile.get_gwyitem.return_value = None
+    def test_arg_passing_to_get_gwyitem_bool(self):
+        """Get booleane value of "/0/data/visible" item"""
         GwyChannel._get_visibility(self.gwyfile, self.channel_id)
-        self.gwyfile.get_gwyitem.assert_has_calls(
+        self.gwyfile.get_gwyitem_bool.assert_has_calls(
             [call("/{:d}/data/visible".format(self.channel_id))])
 
-    def test_args_of_lib_function(self):
-        """ Get value of the item
-        """
-        item = Mock()
-        self.gwyfile.get_gwyitem.return_value = item
-        GwyChannel._get_visibility(self.gwyfile, self.channel_id)
-        self.mock_lib.gwyfile_item_get_bool.assert_has_calls(
-            [call(item)])
-
-    def test_return_False_if_item_does_not_exist(self):
-        """ Return False if gwyfile.get_gwyitem returns None
-        """
-        self.gwyfile.get_gwyitem.return_value = None
-        visible = GwyChannel._get_visibility(self.gwyfile, self.channel_id)
-        self.assertIs(visible, False)
-
-    def test_return_True_if_visibility_flag_is_True(self):
-        """Return True if visibility flag exists and it is True
-        """
-        truep = ffi.new("bool*", True)
-        self.mock_lib.gwyfile_item_get_bool.return_value = truep[0]
-        visible = GwyChannel._get_visibility(self.gwyfile, self.channel_id)
-        self.assertIs(visible, True)
-
-    def test_return_False_if_visibility_flag_is_False(self):
-        """Return False if visibility flag exists and it is False
-        """
-        falsep = ffi.new("bool*", False)
-        self.mock_lib.gwyfile_item_get_bool.return_value = falsep[0]
-        visible = GwyChannel._get_visibility(self.gwyfile, self.channel_id)
-        self.assertIs(visible, False)
+    def test_returned_value(self):
+        """Return this string"""
+        actual_return = GwyChannel._get_visibility(self.gwyfile,
+                                                   self.channel_id)
+        self.assertEqual(actual_return,
+                         self.gwyfile.get_gwyitem_bool.return_value)
 
 
 class GwyChannel_get_data(unittest.TestCase):

@@ -3,7 +3,7 @@ from unittest.mock import patch, call, ANY, Mock
 
 from gwydb.gwy.gwyfile import Gwyfile
 from gwydb.gwy.gwyfile import GwyfileError, GwyfileErrorCMsg
-from gwydb.gwy.gwyfile import ffi
+from gwydb.gwy.gwyfile import ffi, lib
 
 
 class GwyfileErrorCMsg_exception(unittest.TestCase):
@@ -157,42 +157,6 @@ class Gwyfile_from_gwy(unittest.TestCase):
         self.assertEqual(expected_return, actual_return)
 
 
-class Gwyfile_get_gwyitem(unittest.TestCase):
-    """Test get_gwyitem method in Gwyfile class
-    """
-    def setUp(self):
-        self.gwyfile = Mock(spec=Gwyfile)
-        self.gwyfile.c_gwyfile = Mock()
-        self.gwyfile.get_gwyitem = Gwyfile.get_gwyitem
-
-        patcher_lib = patch('gwydb.gwy.gwyfile.lib', autospec=True)
-        self.addCleanup(patcher_lib.stop)
-        self.mock_lib = patcher_lib.start()
-
-        self.test_key = '/0/data/title/'
-
-    def test_return_None_if_item_is_not_found(self):
-        """Return None if item is not found """
-        self.mock_lib.gwyfile_object_get.return_value = ffi.NULL
-        actual_return = self.gwyfile.get_gwyitem(self.gwyfile,
-                                                 self.test_key)
-        self.assertIsNone(actual_return)
-
-    def test_return_item_if_item_is_found(self):
-        """ Return <GwyfileItem*> object if item is found """
-        item = Mock()
-        self.mock_lib.gwyfile_object_get.return_value = item
-        actual_return = self.gwyfile.get_gwyitem(self.gwyfile,
-                                                 self.test_key)
-        self.assertEqual(actual_return, item)
-
-    def test_args_of_lib_function(self):
-        """ Test arguments passing to gwyfile_object_get C function """
-        self.gwyfile.get_gwyitem(self.gwyfile, self.test_key)
-        self.mock_lib.gwyfile_object_get.assert_has_calls(
-            [call(self.gwyfile.c_gwyfile, self.test_key.encode('utf-8'))])
-
-
 class Gwyfile_get_gwyobject_TestCase(unittest.TestCase):
     """
     Test get_gwyobject method in Gwyfile class
@@ -295,6 +259,117 @@ class Gwyfile__getobject_check(unittest.TestCase):
 
         value = self.gwyfile.check_gwyobject(self.gwyfile, self.key)
         self.assertIs(value, True)
+
+
+class Gwyfile__get_gwyitem_value(unittest.TestCase):
+    """ Tests for Gwyfile._get_gwyitem_value method """
+    def setUp(self):
+        self.gwyfile = Mock(spec=Gwyfile)
+        self.gwyfile.c_gwyfile = Mock()
+        self.gwyfile._get_gwyitem_value = Gwyfile._get_gwyitem_value
+        self.cfunc = Mock()
+        self.item_key = '/0/data/title'
+
+        patcher_lib = patch('gwydb.gwy.gwyfile.lib',
+                            autospec=True)
+        self.addCleanup(patcher_lib.stop)
+        self.mock_lib = patcher_lib.start()
+
+    def test_args_of_gwyfile_object_get(self):
+        """Get data item from Gwy file object"""
+        self.mock_lib.gwyfile_object_get.return_value = ffi.NULL
+        self.gwyfile._get_gwyitem_value(self.gwyfile,
+                                        self.item_key,
+                                        self.cfunc)
+        self.mock_lib.gwyfile_object_get.assert_has_calls(
+            [call(self.gwyfile.c_gwyfile, self.item_key.encode('utf-8'))])
+
+    def test_return_None_if_data_item_is_not_found(self):
+        """Return None if data item is not found"""
+        self.mock_lib.gwyfile_object_get.return_value = ffi.NULL
+        actual_return = self.gwyfile._get_gwyitem_value(self.gwyfile,
+                                                        self.item_key,
+                                                        self.cfunc)
+        self.assertIsNone(actual_return)
+
+    def test_return_data_item_value_if_data_item_is_found(self):
+        """Return data item value if data item is found"""
+        item = self.mock_lib.gwyfile_object_get.return_value
+        actual_return = self.gwyfile._get_gwyitem_value(self.gwyfile,
+                                                        self.item_key,
+                                                        self.cfunc)
+        self.cfunc.assert_has_calls([call(item)])
+        self.assertEqual(actual_return, self.cfunc.return_value)
+
+
+class Gwyfile_get_gwyitem_bool(unittest.TestCase):
+    """ Tests for Gwyfile.get_gwyitem_bool method """
+    def setUp(self):
+        self.gwyfile = Mock(spec=Gwyfile)
+        self.gwyfile.get_gwyitem_bool = Gwyfile.get_gwyitem_bool
+        self.gwyfile._get_gwyitem_value = Mock(autospec=True)
+        self.item_key = '/0/data/visible'
+
+    def test_return_False_if_data_item_is_not_found(self):
+        """ Return False if data item is not found """
+        self.gwyfile._get_gwyitem_value.return_value = None
+        actual_return = self.gwyfile.get_gwyitem_bool(self.gwyfile,
+                                                      self.item_key)
+        self.assertIs(actual_return, False)
+
+    def test_return_False_if_data_item_value_is_False(self):
+        """ Return Flase if data item value is False """
+        falsep = ffi.new("bool*", False)
+        self.gwyfile._get_gwyitem_value.return_value = falsep[0]
+        actual_return = self.gwyfile.get_gwyitem_bool(self.gwyfile,
+                                                      self.item_key)
+        self.assertIs(actual_return, False)
+
+    def test_return_True_if_data_item_value_is_True(self):
+        """ Return True if data item value is True """
+        truep = ffi.new("bool*", True)
+        self.gwyfile._get_gwyitem_value.return_value = truep[0]
+        actual_return = self.gwyfile.get_gwyitem_bool(self.gwyfile,
+                                                      self.item_key)
+        self.assertIs(actual_return, True)
+
+    def test_args_of_get_gwyitem_value_call(self):
+        """ Test args of Gwyfile._get_gwyitem_value call"""
+        self.gwyfile._get_gwyitem_value.return_value = None
+        self.gwyfile.get_gwyitem_bool(self.gwyfile, self.item_key)
+        self.gwyfile._get_gwyitem_value.assert_has_calls(
+            [call(self.item_key, lib.gwyfile_item_get_bool)])
+
+
+class Gwyfile_get_gwyitem_string(unittest.TestCase):
+    """ Tests for Gwyfile.get_gwyitem_string method """
+    def setUp(self):
+        self.gwyfile = Mock(spec=Gwyfile)
+        self.gwyfile.get_gwyitem_string = Gwyfile.get_gwyitem_string
+        self.gwyfile._get_gwyitem_value = Mock(autospec=True)
+        self.item_key = '/0/data/title'
+
+    def test_return_None_if_data_item_is_not_found(self):
+        """ Return None if data item is not found """
+        self.gwyfile._get_gwyitem_value.return_value = None
+        actual_return = self.gwyfile.get_gwyitem_string(self.gwyfile,
+                                                        self.item_key)
+        self.assertIs(actual_return, None)
+
+    def test_return_string_value_if_data_item_is_found(self):
+        """ Return data item string value if data item is found """
+        cvalue = ffi.new("char[]", b'Title')
+        self.gwyfile._get_gwyitem_value.return_value = cvalue
+        actual_return = self.gwyfile.get_gwyitem_string(self.gwyfile,
+                                                        self.item_key)
+        self.assertEqual(actual_return, 'Title')
+
+    def test_args_of_get_gwyitem_value_call(self):
+        """ Test args of Gwyfile._get_gwyitem_value call"""
+        self.gwyfile._get_gwyitem_value.return_value = None
+        self.gwyfile.get_gwyitem_string(self.gwyfile, self.item_key)
+        self.gwyfile._get_gwyitem_value.assert_has_calls(
+            [call(self.item_key, lib.gwyfile_item_get_string)])
 
 
 if __name__ == '__main__':
