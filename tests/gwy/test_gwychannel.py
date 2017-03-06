@@ -325,7 +325,7 @@ class GwyChannel_get_visibility(unittest.TestCase):
         self.channel_id = 0
 
     def test_arg_passing_to_get_gwyitem_bool(self):
-        """Get booleane value of "/0/data/visible" item"""
+        """Get boolean value of "/0/data/visible" item"""
         GwyChannel._get_visibility(self.gwyfile, self.channel_id)
         self.gwyfile.get_gwyitem_bool.assert_has_calls(
             [call("/{:d}/data/visible".format(self.channel_id))])
@@ -336,6 +336,27 @@ class GwyChannel_get_visibility(unittest.TestCase):
                                                    self.channel_id)
         self.assertEqual(actual_return,
                          self.gwyfile.get_gwyitem_bool.return_value)
+
+
+class GwyChannel_get_range_type(unittest.TestCase):
+    """Tests for _get_range_type method of GwyChannel class"""
+
+    def setUp(self):
+        self.gwyfile = Mock(spec=Gwyfile)
+        self.channel_id = 0
+
+    def test_arg_passing_to_get_gwyitem_int32(self):
+        """Get int32 value of "/0/base/range-type" """
+        GwyChannel._get_range_type(self.gwyfile, self.channel_id)
+        self.gwyfile.get_gwyitem_int32.assert_has_calls(
+            [call("/{:d}/base/range-type".format(self.channel_id))])
+
+    def test_returned_value(self):
+        """ Return this value"""
+        actual_return = GwyChannel._get_range_type(self.gwyfile,
+                                                   self.channel_id)
+        self.assertEqual(actual_return,
+                         self.gwyfile.get_gwyitem_int32.return_value)
 
 
 class GwyChannel_get_data(unittest.TestCase):
@@ -896,7 +917,9 @@ class GwyChannel_from_gwy(unittest.TestCase):
     @patch.object(GwyChannel, '_get_ellipse_sel')
     @patch.object(GwyChannel, '_get_visibility')
     @patch.object(GwyChannel, '_get_palette')
+    @patch.object(GwyChannel, '_get_range_type')
     def test_args_of_other_calls(self,
+                                 mock_get_range_type,
                                  mock_get_palette,
                                  mock_get_visibility,
                                  mock_get_ellipse_sel,
@@ -924,6 +947,9 @@ class GwyChannel_from_gwy(unittest.TestCase):
 
         palette = 'Gold'
         mock_get_palette.return_value = palette
+
+        range_type = 1
+        mock_get_range_type.return_value = range_type
 
         mask = Mock(spec=GwyDataField)
         mock_get_mask.return_value = mask
@@ -963,6 +989,9 @@ class GwyChannel_from_gwy(unittest.TestCase):
         mock_get_palette.assert_has_calls(
             [call(gwyfile, channel_id)])
 
+        mock_get_range_type.assert_has_calls(
+            [call(gwyfile, channel_id)])
+
         mock_get_point_sel.assert_has_calls(
             [call(gwyfile, channel_id)])
 
@@ -985,6 +1014,7 @@ class GwyChannel_from_gwy(unittest.TestCase):
                   data=data,
                   visible=visible,
                   palette=palette,
+                  range_type=range_type,
                   mask=mask,
                   show=show,
                   point_sel=point_sel,

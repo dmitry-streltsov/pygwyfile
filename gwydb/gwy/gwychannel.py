@@ -251,6 +251,7 @@ class GwyChannel:
                            a window when the file is loaded
         palette (string): name of the false color gradient used to
                           display the channel
+        range_type (int): flase color mapping type
         mask (GwyDataField): mask data
         show (GwyDataField): presentation data
         point_selections (GwyPointSelection): point selections
@@ -266,7 +267,7 @@ class GwyChannel:
     """
 
     def __init__(self, title, data, visible=False,
-                 palette=None, mask=None, show=None,
+                 palette=None, range_type=None, mask=None, show=None,
                  point_sel=None, pointer_sel=None,
                  line_sel=None, rectangle_sel=None,
                  ellipse_sel=None):
@@ -274,6 +275,7 @@ class GwyChannel:
         self.title = title
         self.visible = visible
         self.palette = palette
+        self.range_type = range_type
 
         if not isinstance(data, GwyDataField):
             raise TypeError("data must be an instance of GwyDataField")
@@ -344,6 +346,7 @@ class GwyChannel:
         data = cls._get_data(gwyfile, channel_id)
         visible = cls._get_visibility(gwyfile, channel_id)
         palette = cls._get_palette(gwyfile, channel_id)
+        range_type = cls._get_range_type(gwyfile, channel_id)
         mask = cls._get_mask(gwyfile, channel_id)
         show = cls._get_show(gwyfile, channel_id)
         point_sel = cls._get_point_sel(gwyfile, channel_id)
@@ -355,6 +358,7 @@ class GwyChannel:
                           data=data,
                           visible=visible,
                           palette=palette,
+                          range_type=range_type,
                           mask=mask,
                           show=show,
                           point_sel=point_sel,
@@ -412,6 +416,22 @@ class GwyChannel:
         key = "/{:d}/data/visible".format(channel_id)
         visible = gwyfile.get_gwyitem_bool(key)
         return visible
+
+    @staticmethod
+    def _get_range_type(gwyfile, channel_id):
+        """ Get false color mapping type (as set by the Color range tool),
+            the value is from GwyLayerBasicRangeType enum
+
+        Args:
+            gwyfile (Gwyfile): Gwyfile object
+            channel_id (int): id of the channel
+
+        Returns:
+            range_type (int): false color mapping type
+        """
+        key = "/{:d}/base/range-type".format(channel_id)
+        range_type = gwyfile.get_gwyitem_int32(key)
+        return range_type
 
     @staticmethod
     def _get_data(gwyfile, channel_id):

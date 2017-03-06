@@ -154,6 +154,34 @@ class Gwyfile:
         else:
             return None
 
+    def get_gwyitem_int32(self, item_key):
+        """Get the 32bit integer value contained in a Gwy file data item
+
+        Args:
+            item_key (string): Name of the Gwy data item
+
+        Returns:
+            value (int): The integer contained in Gwy data item
+                         or None if the item is not found
+        """
+        cfunc = lib.gwyfile_item_get_int32
+        value = self._get_gwyitem_value(item_key, cfunc)
+        return value
+
+    def get_gwyitem_double(self, item_key):
+        """Get the double value contained in a Gwy file data item
+
+        Args:
+            item_key (string): Name of the Gwy data item
+
+        Returns:
+            value (double): The double value contained in Gwy data item
+                            or None if the item is not found
+        """
+        cfunc = lib.gwyfile_item_get_double
+        value = self._get_gwyitem_value(item_key, cfunc)
+        return value
+
     @staticmethod
     def from_gwy(filename):
         """Create Gwyfile instance from file

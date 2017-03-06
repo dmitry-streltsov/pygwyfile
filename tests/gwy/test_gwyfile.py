@@ -299,5 +299,65 @@ class Gwyfile_get_gwyitem_object(unittest.TestCase):
             [call(self.item_key, lib.gwyfile_item_get_object)])
 
 
+class Gwyfile_get_gwyitem_int32(unittest.TestCase):
+    """ Tests for Gwyfile.get_gwyitem_int32 method"""
+    def setUp(self):
+        self.gwyfile = Mock(spec=Gwyfile)
+        self.gwyfile.get_gwyitem_int32 = Gwyfile.get_gwyitem_int32
+        self.item_key = '/0/base/range_type'
+
+    def test_return_None_if_data_item_is_not_found(self):
+        """ Return None if data item is not found """
+        self.gwyfile._get_gwyitem_value.return_value = None
+        actual_return = self.gwyfile.get_gwyitem_int32(self.gwyfile,
+                                                       self.item_key)
+        self.assertIs(actual_return, None)
+
+    def test_return_int32_value_if_data_item_is_found(self):
+        """ Return int32 value if data item is found """
+        valuep = ffi.new("int32_t*", 1)
+        self.gwyfile._get_gwyitem_value.return_value = valuep[0]
+        actual_return = self.gwyfile.get_gwyitem_int32(self.gwyfile,
+                                                       self.item_key)
+        self.assertEqual(actual_return, 1)
+
+    def test_args_of_get_gwyitem_value_call(self):
+        """ Test args of Gwyfile._get_gwyitem_value call"""
+        self.gwyfile._get_gwyitem_value.return_value = None
+        self.gwyfile.get_gwyitem_int32(self.gwyfile, self.item_key)
+        self.gwyfile._get_gwyitem_value.assert_has_calls(
+            [call(self.item_key, lib.gwyfile_item_get_int32)])
+
+
+class Gwyfile_get_gwyitem_double(unittest.TestCase):
+    """ Tests for Gwyfile.get_gwyitem_double method"""
+    def setUp(self):
+        self.gwyfile = Mock(spec=Gwyfile)
+        self.gwyfile.get_gwyitem_double = Gwyfile.get_gwyitem_double
+        self.item_key = '/0/base/min'
+
+    def test_return_None_if_data_item_is_not_found(self):
+        """ Return None if data item is not found """
+        self.gwyfile._get_gwyitem_value.return_value = None
+        actual_return = self.gwyfile.get_gwyitem_double(self.gwyfile,
+                                                        self.item_key)
+        self.assertIs(actual_return, None)
+
+    def test_return_double_value_if_data_item_is_found(self):
+        """ Return double value if data item is found """
+        valuep = ffi.new("double*", 1.)
+        self.gwyfile._get_gwyitem_value.return_value = valuep[0]
+        actual_return = self.gwyfile.get_gwyitem_double(self.gwyfile,
+                                                        self.item_key)
+        self.assertEqual(actual_return, 1.)
+
+    def test_args_of_get_gwyitem_value_call(self):
+        """ Test args of Gwyfile._get_gwyitem_value call"""
+        self.gwyfile._get_gwyitem_value.return_value = None
+        self.gwyfile.get_gwyitem_double(self.gwyfile, self.item_key)
+        self.gwyfile._get_gwyitem_value.assert_has_calls(
+            [call(self.item_key, lib.gwyfile_item_get_double)])
+
+
 if __name__ == '__main__':
     unittest.main()
