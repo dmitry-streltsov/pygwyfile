@@ -79,43 +79,6 @@ class Gwyfile:
         self.c_gwyfile = c_gwyfile
         self.filename = basename
 
-    def check_gwyobject(self, key):
-        """Check presence of object in the gwyfile
-
-        Args:
-            key(str): object key
-
-        Returns:
-            True if object exists, otherwise False
-
-        """
-
-        item = lib.gwyfile_object_get(self.c_gwyfile, key.encode('utf-8'))
-        if not item:
-            return False
-        else:
-            return True
-
-    def get_gwyobject(self, key):
-        """Get GwyfileObject*
-
-        Args:
-            key (str): Name of the object, e.g. "/0/data"
-
-        Returns:
-            item_object (<cdata GwyfileObject*>): data item in a Gwy file
-
-        """
-
-        item = lib.gwyfile_object_get(self.c_gwyfile, key.encode('utf-8'))
-        if not item:
-            raise GwyfileError("Cannot find the item \"{}\"".format(key))
-        item_object = lib.gwyfile_item_get_object(item)
-        if not item_object:
-            raise GwyfileError(
-                "Cannot find the object value of the item \"{}\"".format(key))
-        return item_object
-
     def _get_gwyitem_value(self, item_key, cfunc):
         """Get value (in C representation) contained in Gwy data item
 
@@ -157,11 +120,37 @@ class Gwyfile:
 
     def get_gwyitem_string(self, item_key):
         """Get string value contained in Gwy data item
+
+        Args:
+            item_key (string): Name of the Gwy data item
+
+        Returns:
+            string: The string contained in Gwy data item
+                    or None if item is not found
+
         """
         cfunc = lib.gwyfile_item_get_string
         cvalue = self._get_gwyitem_value(item_key, cfunc)
         if cvalue:
             return ffi.string(cvalue).decode('utf-8')
+        else:
+            return None
+
+    def get_gwyitem_object(self, item_key):
+        """Get the object value contained in a Gwy data item
+
+        Args:
+            item_key (string): Name of the Gwy data item
+
+        Returns:
+            item (cdata GwyfileObject*): The object value of item.
+                                         Or None if item is not found
+
+        """
+        cfunc = lib.gwyfile_item_get_object
+        gwyobject = self._get_gwyitem_value(item_key, cfunc)
+        if gwyobject:
+            return gwyobject
         else:
             return None
 

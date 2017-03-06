@@ -153,7 +153,7 @@ class GwyContainer:
         graph_ids = cls._get_graph_ids(gwyfile)
         graph_keys = ["/0/graph/graph/{:d}".format(graph_id)
                       for graph_id in graph_ids]
-        gwygraphmodels = [Gwyfile.get_gwyobject(gwyfile, key)
+        gwygraphmodels = [gwyfile.get_gwyitem_object(key)
                           for key in graph_keys]
         graphs = [GwyGraphModel.from_gwy(gwygraphmodel)
                   for gwygraphmodel in gwygraphmodels]

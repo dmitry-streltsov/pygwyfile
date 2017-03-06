@@ -138,13 +138,11 @@ class GwyContainer_dump_graphs(unittest.TestCase):
         graphs = GwyContainer._dump_graphs(gwyfile)
         self.assertEqual(graphs, [])
 
-    @patch.object(Gwyfile, 'get_gwyobject')
     @patch('gwydb.gwy.gwycontainer.GwyGraphModel', autospec=True)
     @patch.object(GwyContainer, '_get_graph_ids')
     def test_getting_gwygraphmodel_objects(self,
                                            mock_get_graph_ids,
-                                           mock_GwyGraphModel,
-                                           mock_get_gwyobject):
+                                           mock_GwyGraphModel):
         """Get <GwyGraphModel*> objects from gwyfile
         """
         graph_ids = [1, 2, 3]
@@ -153,18 +151,15 @@ class GwyContainer_dump_graphs(unittest.TestCase):
                       "/0/graph/graph/3"]
         mock_get_graph_ids.return_value = graph_ids
         gwyfile = Mock(spec=Gwyfile)
-        mock_get_gwyobject.return_value = Mock()
         GwyContainer._dump_graphs(gwyfile)
-        mock_get_gwyobject.assert_has_calls(
-            [call(gwyfile, graph_key) for graph_key in graph_keys])
+        gwyfile.get_gwyitem_object.assert_has_calls(
+            [call(graph_key) for graph_key in graph_keys])
 
-    @patch.object(Gwyfile, 'get_gwyobject')
     @patch.object(GwyGraphModel, 'from_gwy')
     @patch.object(GwyContainer, '_get_graph_ids')
     def test_returned_value(self,
                             mock_get_graph_ids,
-                            mock_GwyGraphModel,
-                            mock_get_gwyobject):
+                            mock_GwyGraphModel):
         """Convert <GwyGraphModel*> object to GwyGraphModel objects
         and return the latter
         """
@@ -172,7 +167,7 @@ class GwyContainer_dump_graphs(unittest.TestCase):
         mock_get_graph_ids.return_value = graph_ids
         gwygraphmodels = [Mock() for graph_id in graph_ids]
         gwyfile = Mock(spec=Gwyfile)
-        mock_get_gwyobject.return_value = gwygraphmodels
+        gwyfile.get_gwyitem_object.return_value = gwygraphmodels
         graphs = GwyContainer._dump_graphs(gwyfile)
         self.assertListEqual(graphs,
                              [mock_GwyGraphModel(gwygraphmodel)

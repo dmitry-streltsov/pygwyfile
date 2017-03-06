@@ -1660,7 +1660,7 @@ class GwyGraphModel_get_curves(unittest.TestCase):
         and write self.curves_array in 'curves' field
         """
 
-        # first arg is GwyDatafield returned by get_gwyobject
+        # first arg is GwyDatafield returned by get_gwyitem_object
         self.assertEqual(args[0], self.gwygraphmodel)
 
         # second arg is GwyfileError**

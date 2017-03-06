@@ -427,8 +427,8 @@ class GwyChannel:
         """
 
         key = "/{:d}/data".format(channel_id)
-        if gwyfile.check_gwyobject(key):
-            gwydf = gwyfile.get_gwyobject(key)
+        gwydf = gwyfile.get_gwyitem_object(key)
+        if gwydf:
             return GwyDataField.from_gwy(gwydf)
         else:
             raise GwyfileError(
@@ -443,13 +443,14 @@ class GwyChannel:
             channel_id (int): id of the channel
 
         Returns:
-           mask (GwyDataField): mask datafield
+           mask (GwyDataField): mask datafield or
+                                None if data item is not found
 
         """
         key = "/{:d}/mask".format(channel_id)
-        if gwyfile.check_gwyobject(key):
-            gwydf = gwyfile.get_gwyobject(key)
-            return GwyDataField.from_gwy(gwydf)
+        gwymask = gwyfile.get_gwyitem_object(key)
+        if gwymask:
+            return GwyDataField.from_gwy(gwymask)
         else:
             return None
 
@@ -463,13 +464,14 @@ class GwyChannel:
             channel_id (int): id of the channel
 
         Returns:
-            show (GwyDataField): presentation datafield
+            show (GwyDataField): presentation datafield or
+                                 None if data item is not found
 
         """
         key = "/{:d}/show".format(channel_id)
-        if gwyfile.check_gwyobject(key):
-            gwydf = gwyfile.get_gwyobject(key)
-            return GwyDataField.from_gwy(gwydf)
+        gwyshow = gwyfile.get_gwyitem_object(key)
+        if gwyshow:
+            return GwyDataField.from_gwy(gwyshow)
         else:
             return None
 
@@ -482,12 +484,13 @@ class GwyChannel:
             channel_id (int): id of the channel
 
         Returns:
-            point_sel (GwyPointSelection): point selections
+            point_sel (GwyPointSelection): point selections or
+                                           None if point selection is not found
 
         """
         key = "/{:d}/select/point".format(channel_id)
-        if gwyfile.check_gwyobject(key):
-            gwysel = gwyfile.get_gwyobject(key)
+        gwysel = gwyfile.get_gwyitem_object(key)
+        if gwysel:
             return GwyPointSelection.from_gwy(gwysel)
         else:
             return None
@@ -501,12 +504,13 @@ class GwyChannel:
             channel_id (int): id of the channel
 
         Returns:
-            pointer_sel (GwyPointerSelection): point selections
+            pointer_sel (GwyPointerSelection): pointer selections or None if
+                                               pointer selection is not found
 
         """
         key = "/{:d}/select/pointer".format(channel_id)
-        if gwyfile.check_gwyobject(key):
-            gwysel = gwyfile.get_gwyobject(key)
+        gwysel = gwyfile.get_gwyitem_object(key)
+        if gwysel:
             return GwyPointerSelection.from_gwy(gwysel)
         else:
             return None
@@ -520,12 +524,13 @@ class GwyChannel:
             channel_id (int): id of the channel
 
         Returns:
-            line_sel (GwyLineSelection): line selections
+            line_sel (GwyLineSelection): line selections or None if
+                                         line selection is not found
 
         """
         key = "/{:d}/select/line".format(channel_id)
-        if gwyfile.check_gwyobject(key):
-            gwysel = gwyfile.get_gwyobject(key)
+        gwysel = gwyfile.get_gwyitem_object(key)
+        if gwysel:
             return GwyLineSelection.from_gwy(gwysel)
         else:
             return None
@@ -539,12 +544,13 @@ class GwyChannel:
             channel_id (int): id of the channel
 
         Returns:
-            rectangle_sel (GwyRectangleSelection): rectangle selections
+            rectangle_sel (GwyRectangleSelection): rectangle selection or None
+                                                   if selection is not found
 
         """
         key = "/{:d}/select/rectangle".format(channel_id)
-        if gwyfile.check_gwyobject(key):
-            gwysel = gwyfile.get_gwyobject(key)
+        gwysel = gwyfile.get_gwyitem_object(key)
+        if gwysel:
             return GwyRectangleSelection.from_gwy(gwysel)
         else:
             return None
@@ -558,12 +564,13 @@ class GwyChannel:
             channel_id (int): id of the channel
 
         Returns:
-            ellipse_sel (GwyPointerSelection): ellipse selections
+            ellipse_sel (GwyPointerSelection): ellipse selections or None
+                                               if this selection is not found
 
         """
         key = "/{:d}/select/ellipse".format(channel_id)
-        if gwyfile.check_gwyobject(key):
-            gwysel = gwyfile.get_gwyobject(key)
+        gwysel = gwyfile.get_gwyitem_object(key)
+        if gwysel:
             return GwyEllipseSelection.from_gwy(gwysel)
         else:
             return None
