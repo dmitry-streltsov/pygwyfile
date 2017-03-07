@@ -6,6 +6,7 @@
     Functions:
         read_gwyfile: create GwyContainer instance from gwy file
 """
+import os.path
 
 from gwydb.gwy._libgwyfile import ffi, lib
 from gwydb.gwy.gwyfile import Gwyfile
@@ -28,12 +29,15 @@ class GwyContainer:
                            from Gwyfile object
     """
 
-    def __init__(self, channels=None, graphs=None):
+    def __init__(self, filename=None, channels=None, graphs=None):
         """
         Args:
+            filename (string): basename of the file the GwyContainer
+                               is currently associated with.
             channels: list of GwyChannel instances
             graphs:   list of GwyGraphModel instances
         """
+        self.filename = filename
         self.channels = []
         self.graphs = []
 
@@ -68,9 +72,11 @@ class GwyContainer:
             raise TypeError("gwyfile must be an instance of "
                             "Gwyfile class")
         else:
+            filename = cls._get_filename(gwyfile)
             channels = cls._dump_channels(gwyfile)
             graphs = cls._dump_graphs(gwyfile)
-            return GwyContainer(channels=channels,
+            return GwyContainer(filename=filename,
+                                channels=channels,
                                 graphs=graphs)
 
     @staticmethod
@@ -152,6 +158,24 @@ class GwyContainer:
         graphs = [GwyGraphModel.from_gwy(gwygraphmodel)
                   for gwygraphmodel in gwygraphmodels]
         return graphs
+
+    @staticmethod
+    def _get_filename(gwyfile):
+        """Get the name of file The GwyContainer is currently associated with.
+
+        Args:
+            gwyfile (Gwyfile): Gwyfile object
+
+        Returns:
+            basename (string): basename of the file
+
+        """
+        pathname = gwyfile.get_gwyitem_string("/filename")
+        if pathname is None:
+            return None
+        else:
+            basename = os.path.basename(pathname)
+            return basename
 
     def __repr__(self):
         return "<{} instance at {}. " \

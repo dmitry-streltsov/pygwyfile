@@ -187,25 +187,31 @@ class GwyContainer_from_gwy(unittest.TestCase):
                           gwyfile='test_string')
 
     @patch('gwydb.gwy.gwycontainer.GwyContainer', autospec=True)
+    @patch.object(GwyContainer, '_get_filename')
     @patch.object(GwyContainer, '_dump_graphs')
     @patch.object(GwyContainer, '_dump_channels')
     def test_from_gwy_method_of_GwyContainer(self,
                                              mock_dump_channels,
                                              mock_dump_graphs,
+                                             mock_get_filename,
                                              mock_GwyContainer):
         gwyfile = Mock(spec=Gwyfile)
         channels = [Mock(spec=GwyChannel), Mock(spec=GwyChannel)]
         graphs = [Mock(spec=GwyGraphModel)]
+        filename = 'sample.gwy'
+        mock_get_filename.return_value = filename
         mock_dump_channels.return_value = channels
         mock_dump_graphs.return_value = graphs
         mock_GwyContainer.return_value = Mock(spec=GwyContainer)
         container = GwyContainer.from_gwy(gwyfile)
+        mock_get_filename.assert_has_calls(
+            [call(gwyfile)])
         mock_dump_channels.assert_has_calls(
             [call(gwyfile)])
         mock_dump_graphs.assert_has_calls(
             [call(gwyfile)])
         mock_GwyContainer.assert_has_calls(
-            [call(channels=channels, graphs=graphs)])
+            [call(filename=filename, channels=channels, graphs=graphs)])
         self.assertEqual(container, mock_GwyContainer.return_value)
 
 
@@ -260,16 +266,35 @@ class GwyContainer_init(unittest.TestCase):
         self.assertEqual(container.graphs, graphs)
 
 
+class GwyContainer_get_filename(unittest.TestCase):
+    """ Tests for GwyContainer._get_filename method"""
+
+    def test_return_None_if_filename_is_unset(self):
+        """Return None if "/filename" field is unset in GwyContainer"""
+        gwyfile = Mock(spec=Gwyfile)
+        gwyfile.get_gwyitem_string.return_value = None
+        actual_return = GwyContainer._get_filename(gwyfile)
+        gwyfile.get_gwyitem_string.assert_has_calls(
+            [call("/filename")])
+        self.assertIsNone(actual_return)
+
+    def test_return_basename_of_the_file_if_filename_is_set(self):
+        """Return basename "/filename" field is set in GwyContainer"""
+        gwyfile = Mock(spec=Gwyfile)
+        pathname = "/home/user/data/sample.gwy"
+        basename = "sample.gwy"
+        gwyfile.get_gwyitem_string.return_value = pathname
+        actual_return = GwyContainer._get_filename(gwyfile)
+        self.assertEqual(actual_return, basename)
+
+
 class Func_read_gwyfile_TestCase(unittest.TestCase):
-    """
-    Test read_gwyfile function
-    """
+    """ Test read_gwyfile function"""
 
     @patch.object(GwyContainer, 'from_gwy')
     @patch.object(Gwyfile, 'from_gwy')
     def test_create_Gwyfile_instance(self, mock_gwyfile, mock_gwycontainer):
-        """Create Gwyfile instance from file data
-        """
+        """Create Gwyfile instance from file data"""
         filename = 'testfile.gwy'
         read_gwyfile(filename)
         mock_gwyfile.assert_has_calls(
@@ -280,9 +305,7 @@ class Func_read_gwyfile_TestCase(unittest.TestCase):
     def test_create_GwyContainer_instance(self,
                                           mock_gwyfile,
                                           mock_gwycontainer):
-        """Create GwyContainer instance from Gwyfile instance
-        """
-
+        """Create GwyContainer instance from Gwyfile instance"""
         filename = 'testfile.gwy'
         gwyfile = Mock(spec=Gwyfile)
         mock_gwyfile.return_value = gwyfile
@@ -297,8 +320,7 @@ class Func_read_gwyfile_TestCase(unittest.TestCase):
     def test_returned_value(self,
                             mock_gwyfile,
                             mock_gwycontainer):
-        """Return created GwyContainer instance
-        """
+        """Return created GwyContainer instance"""
         filename = 'testfile.gwy'
         container = Mock(spec=GwyContainer)
         mock_gwycontainer.return_value = container
