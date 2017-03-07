@@ -267,7 +267,9 @@ class GwyChannel:
     """
 
     def __init__(self, title, data, visible=False,
-                 palette=None, range_type=None, mask=None, show=None,
+                 palette=None, range_type=None,
+                 range_min=None, range_max=None,
+                 mask=None, show=None,
                  point_sel=None, pointer_sel=None,
                  line_sel=None, rectangle_sel=None,
                  ellipse_sel=None):
@@ -276,6 +278,8 @@ class GwyChannel:
         self.visible = visible
         self.palette = palette
         self.range_type = range_type
+        self.range_min = range_min
+        self.range_max = range_max
 
         if not isinstance(data, GwyDataField):
             raise TypeError("data must be an instance of GwyDataField")
@@ -347,6 +351,8 @@ class GwyChannel:
         visible = cls._get_visibility(gwyfile, channel_id)
         palette = cls._get_palette(gwyfile, channel_id)
         range_type = cls._get_range_type(gwyfile, channel_id)
+        range_min = cls._get_range_min(gwyfile, channel_id)
+        range_max = cls._get_range_max(gwyfile, channel_id)
         mask = cls._get_mask(gwyfile, channel_id)
         show = cls._get_show(gwyfile, channel_id)
         point_sel = cls._get_point_sel(gwyfile, channel_id)
@@ -359,6 +365,8 @@ class GwyChannel:
                           visible=visible,
                           palette=palette,
                           range_type=range_type,
+                          range_min=range_min,
+                          range_max=range_max,
                           mask=mask,
                           show=show,
                           point_sel=point_sel,
@@ -432,6 +440,36 @@ class GwyChannel:
         key = "/{:d}/base/range-type".format(channel_id)
         range_type = gwyfile.get_gwyitem_int32(key)
         return range_type
+
+    @staticmethod
+    def _get_range_min(gwyfile, channel_id):
+        """ Get minimum value for user-set display range
+
+        Args:
+            gwyfile (Gwyfile): Gwyfile object
+            channel_id (int): id of the channel
+
+        Returns:
+            range_min (double): minimum value for user-set display range
+        """
+        key = "/{:d}/base/min".format(channel_id)
+        range_min = gwyfile.get_gwyitem_double(key)
+        return range_min
+
+    @staticmethod
+    def _get_range_max(gwyfile, channel_id):
+        """ Get maximum value for user-set display range
+
+        Args:
+            gwyfile (Gwyfile): Gwyfile object
+            channel_id (int): id of the channel
+
+        Returns:
+            range_max (double): maximum value for user-set display range
+        """
+        key = "/{:d}/base/max".format(channel_id)
+        range_max = gwyfile.get_gwyitem_double(key)
+        return range_max
 
     @staticmethod
     def _get_data(gwyfile, channel_id):

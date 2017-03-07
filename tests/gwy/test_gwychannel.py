@@ -359,6 +359,48 @@ class GwyChannel_get_range_type(unittest.TestCase):
                          self.gwyfile.get_gwyitem_int32.return_value)
 
 
+class GwyChannel_get_range_min(unittest.TestCase):
+    """Tests for _get_range_min method of GwyChannel class"""
+
+    def setUp(self):
+        self.gwyfile = Mock(spec=Gwyfile)
+        self.channel_id = 0
+
+    def test_arg_passing_to_get_gwyitem_double(self):
+        """Get double value of "/0/base/min" """
+        GwyChannel._get_range_min(self.gwyfile, self.channel_id)
+        self.gwyfile.get_gwyitem_double.assert_has_calls(
+            [call("/{:d}/base/min".format(self.channel_id))])
+
+    def test_returned_value(self):
+        """ Return this value"""
+        actual_return = GwyChannel._get_range_min(self.gwyfile,
+                                                  self.channel_id)
+        self.assertEqual(actual_return,
+                         self.gwyfile.get_gwyitem_double.return_value)
+
+
+class GwyChannel_get_range_max(unittest.TestCase):
+    """Tests for _get_range_max method of GwyChannel class"""
+
+    def setUp(self):
+        self.gwyfile = Mock(spec=Gwyfile)
+        self.channel_id = 0
+
+    def test_arg_passing_to_get_gwyitem_double(self):
+        """Get double value of "/0/base/max" """
+        GwyChannel._get_range_max(self.gwyfile, self.channel_id)
+        self.gwyfile.get_gwyitem_double.assert_has_calls(
+            [call("/{:d}/base/max".format(self.channel_id))])
+
+    def test_returned_value(self):
+        """ Return this value"""
+        actual_return = GwyChannel._get_range_max(self.gwyfile,
+                                                  self.channel_id)
+        self.assertEqual(actual_return,
+                         self.gwyfile.get_gwyitem_double.return_value)
+
+
 class GwyChannel_get_data(unittest.TestCase):
     """Test _get_data method of GwyChannel class
     """
@@ -918,7 +960,11 @@ class GwyChannel_from_gwy(unittest.TestCase):
     @patch.object(GwyChannel, '_get_visibility')
     @patch.object(GwyChannel, '_get_palette')
     @patch.object(GwyChannel, '_get_range_type')
+    @patch.object(GwyChannel, '_get_range_min')
+    @patch.object(GwyChannel, '_get_range_max')
     def test_args_of_other_calls(self,
+                                 mock_get_range_max,
+                                 mock_get_range_min,
                                  mock_get_range_type,
                                  mock_get_palette,
                                  mock_get_visibility,
@@ -950,6 +996,12 @@ class GwyChannel_from_gwy(unittest.TestCase):
 
         range_type = 1
         mock_get_range_type.return_value = range_type
+
+        range_min = 0.
+        mock_get_range_min.return_value = range_min
+
+        range_max = 1e-8
+        mock_get_range_max.return_value = range_max
 
         mask = Mock(spec=GwyDataField)
         mock_get_mask.return_value = mask
@@ -992,6 +1044,12 @@ class GwyChannel_from_gwy(unittest.TestCase):
         mock_get_range_type.assert_has_calls(
             [call(gwyfile, channel_id)])
 
+        mock_get_range_min.assert_has_calls(
+            [call(gwyfile, channel_id)])
+
+        mock_get_range_max.assert_has_calls(
+            [call(gwyfile, channel_id)])
+
         mock_get_point_sel.assert_has_calls(
             [call(gwyfile, channel_id)])
 
@@ -1015,6 +1073,8 @@ class GwyChannel_from_gwy(unittest.TestCase):
                   visible=visible,
                   palette=palette,
                   range_type=range_type,
+                  range_min=range_min,
+                  range_max=range_max,
                   mask=mask,
                   show=show,
                   point_sel=point_sel,
