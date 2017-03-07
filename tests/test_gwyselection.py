@@ -1,9 +1,9 @@
 import unittest
 from unittest.mock import patch, call, Mock
 
-from gwydb.gwy._libgwyfile import ffi
-from gwydb.gwy.gwyfile import GwyfileErrorCMsg
-from gwydb.gwy.gwyselection import (GwySelection,
+from pygwyfile._libgwyfile import ffi
+from pygwyfile.gwyfile import GwyfileErrorCMsg
+from pygwyfile.gwyselection import (GwySelection,
                                     GwyPointSelection,
                                     GwyPointerSelection,
                                     GwyLineSelection,
@@ -496,3 +496,7 @@ class GwyEllipseSelection_from_gwy(unittest.TestCase):
         self.from_gwy_parent.return_value = None
         ellipse_sel = GwyEllipseSelection.from_gwy(self.gwysel)
         self.assertIsNone(ellipse_sel)
+
+
+if __name__ == '__main__':
+    unittest.main()

@@ -1,9 +1,9 @@
 import unittest
 from unittest.mock import patch, call, ANY, Mock
 
-from gwydb.gwy.gwyfile import Gwyfile
-from gwydb.gwy.gwyfile import GwyfileError, GwyfileErrorCMsg
-from gwydb.gwy.gwyfile import ffi, lib
+from pygwyfile.gwyfile import Gwyfile
+from pygwyfile.gwyfile import GwyfileError, GwyfileErrorCMsg
+from pygwyfile.gwyfile import ffi, lib
 
 
 class GwyfileErrorCMsg_exception(unittest.TestCase):
@@ -44,7 +44,7 @@ class Gwyfile_init_TestCase(unittest.TestCase):
         c_gwyfile = ffi.NULL
         self.assertRaises(GwyfileError, Gwyfile, c_gwyfile)
 
-    @patch('gwydb.gwy.gwyfile.lib', autospec=True)
+    @patch('pygwyfile.gwyfile.lib', autospec=True)
     def test_raise_exception_if_top_level_object_is_empty(self, mock_lib):
         """
         Raise GwyfileError exception if top-level object is empty
@@ -58,7 +58,7 @@ class Gwyfile_init_TestCase(unittest.TestCase):
                                Gwyfile,
                                c_gwyfile)
 
-    @patch('gwydb.gwy.gwyfile.lib', autospec=True)
+    @patch('pygwyfile.gwyfile.lib', autospec=True)
     def test_check_top_level_object_of_c_gwyfile(self, mock_lib):
         """Raise GwyfileError exception if top-level object is not
         'GwyContainer' C string
@@ -69,7 +69,7 @@ class Gwyfile_init_TestCase(unittest.TestCase):
         mock_lib.gwyfile_object_name.return_value = test_name
         self.assertRaises(GwyfileError, Gwyfile, c_gwyfile)
 
-    @patch('gwydb.gwy.gwyfile.lib', autospec=True)
+    @patch('pygwyfile.gwyfile.lib', autospec=True)
     def test_attribute_of_GwyFile_instance(self, mock_lib):
         """
         Create self.c_gwyfile attribute
@@ -89,17 +89,17 @@ class Gwyfile_from_gwy(unittest.TestCase):
     def setUp(self):
         self.filename = 'test.gwy'
 
-        patcher_isfile = patch('gwydb.gwy.gwyfile.os.path.isfile',
+        patcher_isfile = patch('pygwyfile.gwyfile.os.path.isfile',
                                autospec=True)
         self.addCleanup(patcher_isfile.stop)
         self.mock_isfile = patcher_isfile.start()
 
-        patcher_lib = patch('gwydb.gwy.gwyfile.lib',
+        patcher_lib = patch('pygwyfile.gwyfile.lib',
                             autospec=True)
         self.addCleanup(patcher_lib.stop)
         self.mock_lib = patcher_lib.start()
 
-        patcher_Gwyfile = patch('gwydb.gwy.gwyfile.Gwyfile',
+        patcher_Gwyfile = patch('pygwyfile.gwyfile.Gwyfile',
                                 autospec=True)
         self.addCleanup(patcher_Gwyfile.stop)
         self.mock_Gwyfile = patcher_Gwyfile.start()
@@ -160,7 +160,7 @@ class Gwyfile__get_gwyitem_value(unittest.TestCase):
         self.cfunc = Mock()
         self.item_key = '/0/data/title'
 
-        patcher_lib = patch('gwydb.gwy.gwyfile.lib',
+        patcher_lib = patch('pygwyfile.gwyfile.lib',
                             autospec=True)
         self.addCleanup(patcher_lib.stop)
         self.mock_lib = patcher_lib.start()

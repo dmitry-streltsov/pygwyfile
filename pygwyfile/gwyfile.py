@@ -8,7 +8,7 @@
 """
 import os.path
 
-from gwydb.gwy._libgwyfile import ffi, lib
+from pygwyfile._libgwyfile import ffi, lib
 
 
 class GwyfileError(Exception):

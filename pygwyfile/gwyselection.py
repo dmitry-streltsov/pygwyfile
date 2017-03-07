@@ -12,8 +12,8 @@
 
 from abc import ABC, abstractmethod
 
-from gwydb.gwy._libgwyfile import ffi, lib
-from gwydb.gwy.gwyfile import GwyfileErrorCMsg
+from pygwyfile._libgwyfile import ffi, lib
+from pygwyfile.gwyfile import GwyfileErrorCMsg
 
 
 class GwySelection(ABC):

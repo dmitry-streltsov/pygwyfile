@@ -6,12 +6,12 @@ from cffi import FFI
 
 ffibuilder = FFI()
 
-ffibuilder.set_source("gwydb.gwy._libgwyfile",
+ffibuilder.set_source("pygwyfile._libgwyfile",
                       r"""
                       #include "gwyfile.h"
                       """,
-                      include_dirs=["gwydb/libgwyfile"],
-                      sources=["gwydb/libgwyfile/gwyfile.c"])
+                      include_dirs=["pygwyfile/libgwyfile"],
+                      sources=["pygwyfile/libgwyfile/gwyfile.c"])
 
 ffibuilder.cdef("""
     typedef ... GwyfileObject;

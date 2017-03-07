@@ -9,8 +9,8 @@
 
 import numpy as np
 
-from gwydb.gwy._libgwyfile import ffi, lib
-from gwydb.gwy.gwyfile import GwyfileErrorCMsg
+from pygwyfile._libgwyfile import ffi, lib
+from pygwyfile.gwyfile import GwyfileErrorCMsg
 
 
 class GwyGraphCurve:

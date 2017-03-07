@@ -3,9 +3,9 @@ from unittest.mock import patch, call, Mock
 
 import numpy as np
 
-from gwydb.gwy._libgwyfile import ffi
-from gwydb.gwy.gwyfile import GwyfileErrorCMsg
-from gwydb.gwy.gwygraph import GwyGraphCurve, GwyGraphModel
+from pygwyfile._libgwyfile import ffi
+from pygwyfile.gwyfile import GwyfileErrorCMsg
+from pygwyfile.gwygraph import GwyGraphCurve, GwyGraphModel
 
 
 class GwyGraphCurve_init(unittest.TestCase):
@@ -75,7 +75,7 @@ class GwyGraphCurve_from_gwy(unittest.TestCase):
     """Test from_gwy method of GwyGraphCurve class
     """
 
-    @patch('gwydb.gwy.gwygraph.GwyGraphCurve', autospec=True)
+    @patch('pygwyfile.gwygraph.GwyGraphCurve', autospec=True)
     @patch.object(GwyGraphCurve, '_get_data')
     @patch.object(GwyGraphCurve, '_get_meta')
     def test_GwyGraphCurve_init(self,
@@ -105,7 +105,7 @@ class GwyGraphCurve_get_meta(unittest.TestCase):
 
     def setUp(self):
         self.gwycurve = Mock()
-        patcher_lib = patch('gwydb.gwy.gwygraph.lib',
+        patcher_lib = patch('pygwyfile.gwygraph.lib',
                             autospec=True)
         self.addCleanup(patcher_lib.stop)
         self.mock_lib = patcher_lib.start()
@@ -412,7 +412,7 @@ class GwyGraphCurve_get_data(unittest.TestCase):
 
     def setUp(self):
         self.gwycurve = Mock()
-        patcher_lib = patch('gwydb.gwy.gwygraph.lib',
+        patcher_lib = patch('pygwyfile.gwygraph.lib',
                             autospec=True)
         self.addCleanup(patcher_lib.stop)
         self.mock_lib = patcher_lib.start()
@@ -587,8 +587,8 @@ class GwyGraphModel_from_gwy(unittest.TestCase):
     """Test from_gwy method of GwyGraphModel class
     """
 
-    @patch('gwydb.gwy.gwygraph.GwyGraphModel', autospec=True)
-    @patch('gwydb.gwy.gwygraph.GwyGraphCurve', autospec=True)
+    @patch('pygwyfile.gwygraph.GwyGraphModel', autospec=True)
+    @patch('pygwyfile.gwygraph.GwyGraphCurve', autospec=True)
     @patch.object(GwyGraphModel, '_get_curves')
     @patch.object(GwyGraphModel, '_get_meta')
     def test_arg_passing_to_other_methods(self,
@@ -619,7 +619,7 @@ class GwyGraphModel_from_gwy(unittest.TestCase):
         # create list of GwyGraphCurves instances
         mock_GwyGraphCurve.from_gwy.assert_has_calls(
             [call(gwycurve) for gwycurve in test_gwycurves])
-        
+
         # create GwyGraphModel instance
         mock_GwyGraphModel.assert_has_calls(
             [call(curves=[mock_GwyGraphCurve.from_gwy.return_value
@@ -637,7 +637,7 @@ class GwyGraphModel_get_meta(unittest.TestCase):
     def setUp(self):
         self.gwygraphmodel = Mock()
 
-        patcher_lib = patch('gwydb.gwy.gwygraph.lib',
+        patcher_lib = patch('pygwyfile.gwygraph.lib',
                             autospec=True)
         self.addCleanup(patcher_lib.stop)
         self.mock_lib = patcher_lib.start()
@@ -1626,7 +1626,7 @@ class GwyGraphModel_get_curves(unittest.TestCase):
         self.curves_array = ffi.new("GwyfileObject*[]", self.ncurves)
         self.gwygraphmodel = Mock()
 
-        patcher_lib = patch('gwydb.gwy.gwygraph.lib',
+        patcher_lib = patch('pygwyfile.gwygraph.lib',
                             autospec=True)
         self.addCleanup(patcher_lib.stop)
         self.mock_lib = patcher_lib.start()
@@ -1679,3 +1679,7 @@ class GwyGraphModel_get_curves(unittest.TestCase):
         # C func returns true if the graphmodel object loock acceptable
         truep = ffi.new("bool*", True)
         return truep[0]
+
+
+if __name__ == '__main__':
+    unittest.main()

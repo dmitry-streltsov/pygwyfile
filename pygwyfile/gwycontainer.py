@@ -8,10 +8,10 @@
 """
 import os.path
 
-from gwydb.gwy._libgwyfile import ffi, lib
-from gwydb.gwy.gwyfile import Gwyfile
-from gwydb.gwy.gwychannel import GwyChannel
-from gwydb.gwy.gwygraph import GwyGraphModel
+from pygwyfile._libgwyfile import ffi, lib
+from pygwyfile.gwyfile import Gwyfile
+from pygwyfile.gwychannel import GwyChannel
+from pygwyfile.gwygraph import GwyGraphModel
 
 
 class GwyContainer:

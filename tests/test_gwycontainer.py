@@ -1,11 +1,11 @@
 import unittest
 from unittest.mock import patch, call, Mock
 
-from gwydb.gwy._libgwyfile import ffi
-from gwydb.gwy.gwyfile import Gwyfile
-from gwydb.gwy.gwycontainer import GwyContainer, read_gwyfile
-from gwydb.gwy.gwychannel import GwyChannel, GwyDataField
-from gwydb.gwy.gwygraph import GwyGraphModel
+from pygwyfile._libgwyfile import ffi
+from pygwyfile.gwyfile import Gwyfile
+from pygwyfile.gwycontainer import GwyContainer, read_gwyfile
+from pygwyfile.gwychannel import GwyChannel, GwyDataField
+from pygwyfile.gwygraph import GwyGraphModel
 
 
 class GwyContainer_get_channel_ids_TestCase(unittest.TestCase):
@@ -17,7 +17,7 @@ class GwyContainer_get_channel_ids_TestCase(unittest.TestCase):
         self.gwyfile = Mock(spec=Gwyfile)
         self.gwyfile.c_gwyfile = Mock()
 
-        patcher_lib = patch('gwydb.gwy.gwycontainer.lib', autospec=True)
+        patcher_lib = patch('pygwyfile.gwycontainer.lib', autospec=True)
         self.addCleanup(patcher_lib.stop)
         self.mock_lib = patcher_lib.start()
 
@@ -60,7 +60,7 @@ class GwyContainer_get_graph_ids_TestCase(unittest.TestCase):
         self.gwyfile = Mock(spec=Gwyfile)
         self.gwyfile.c_gwyfile = Mock()
 
-        patcher_lib = patch('gwydb.gwy.gwycontainer.lib', autospec=True)
+        patcher_lib = patch('pygwyfile.gwycontainer.lib', autospec=True)
         self.addCleanup(patcher_lib.stop)
         self.mock_lib = patcher_lib.start()
 
@@ -107,7 +107,7 @@ class GwyContainer_dump_channels(unittest.TestCase):
         channels = GwyContainer._dump_channels(gwyfile)
         self.assertEqual(channels, [])
 
-    @patch('gwydb.gwy.gwycontainer.GwyChannel', autospec=True)
+    @patch('pygwyfile.gwycontainer.GwyChannel', autospec=True)
     @patch.object(GwyContainer, '_get_channel_ids')
     def test_convert_channel_ids_to_GwyChannel_list(self,
                                                     mock_get_channel_ids,
@@ -138,7 +138,7 @@ class GwyContainer_dump_graphs(unittest.TestCase):
         graphs = GwyContainer._dump_graphs(gwyfile)
         self.assertEqual(graphs, [])
 
-    @patch('gwydb.gwy.gwycontainer.GwyGraphModel', autospec=True)
+    @patch('pygwyfile.gwycontainer.GwyGraphModel', autospec=True)
     @patch.object(GwyContainer, '_get_graph_ids')
     def test_getting_gwygraphmodel_objects(self,
                                            mock_get_graph_ids,
@@ -186,7 +186,7 @@ class GwyContainer_from_gwy(unittest.TestCase):
                           GwyContainer.from_gwy,
                           gwyfile='test_string')
 
-    @patch('gwydb.gwy.gwycontainer.GwyContainer', autospec=True)
+    @patch('pygwyfile.gwycontainer.GwyContainer', autospec=True)
     @patch.object(GwyContainer, '_get_filename')
     @patch.object(GwyContainer, '_dump_graphs')
     @patch.object(GwyContainer, '_dump_channels')
@@ -329,3 +329,7 @@ class Func_read_gwyfile_TestCase(unittest.TestCase):
         expected_return = container
 
         self.assertEqual(actual_return, expected_return)
+
+
+if __name__ == '__main__':
+    unittest.main()

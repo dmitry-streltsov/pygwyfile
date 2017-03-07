@@ -8,10 +8,10 @@
 
 import numpy as np
 
-from gwydb.gwy._libgwyfile import ffi, lib
-from gwydb.gwy.gwyfile import GwyfileError, GwyfileErrorCMsg
-from gwydb.gwy.gwyfile import Gwyfile
-from gwydb.gwy.gwyselection import (GwyPointSelection,
+from pygwyfile._libgwyfile import ffi, lib
+from pygwyfile.gwyfile import GwyfileError, GwyfileErrorCMsg
+from pygwyfile.gwyfile import Gwyfile
+from pygwyfile.gwyselection import (GwyPointSelection,
                                     GwyPointerSelection,
                                     GwyLineSelection,
                                     GwyRectangleSelection,

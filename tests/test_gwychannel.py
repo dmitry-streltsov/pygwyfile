@@ -3,15 +3,15 @@ from unittest.mock import patch, call, Mock
 
 import numpy as np
 
-from gwydb.gwy._libgwyfile import ffi
-from gwydb.gwy.gwyfile import GwyfileError, GwyfileErrorCMsg
-from gwydb.gwy.gwyfile import Gwyfile
-from gwydb.gwy.gwyselection import (GwyPointSelection,
+from pygwyfile._libgwyfile import ffi
+from pygwyfile.gwyfile import GwyfileError, GwyfileErrorCMsg
+from pygwyfile.gwyfile import Gwyfile
+from pygwyfile.gwyselection import (GwyPointSelection,
                                     GwyPointerSelection,
                                     GwyLineSelection,
                                     GwyRectangleSelection,
                                     GwyEllipseSelection)
-from gwydb.gwy.gwychannel import GwyDataField, GwyChannel
+from pygwyfile.gwychannel import GwyDataField, GwyChannel
 
 
 class GwyDataField_init(unittest.TestCase):
@@ -64,7 +64,7 @@ class GwyDataField_init(unittest.TestCase):
 class GwyDataField_from_gwy(unittest.TestCase):
     """Test from_gwy method of GwyDataField class
     """
-    @patch('gwydb.gwy.gwychannel.GwyDataField', autospec=True)
+    @patch('pygwyfile.gwychannel.GwyDataField', autospec=True)
     @patch.object(GwyDataField, '_get_data')
     @patch.object(GwyDataField, '_get_meta')
     def test_GwyDataField_from_gwy(self,
@@ -106,7 +106,7 @@ class GwyDataField_get_meta(unittest.TestCase):
         self.mock_gwydf = Mock(spec=GwyDataField)
         self.mock_gwydf._get_meta = GwyDataField._get_meta
 
-        patcher_lib = patch('gwydb.gwy.gwychannel.lib',
+        patcher_lib = patch('pygwyfile.gwychannel.lib',
                             autospec=True)
         self.addCleanup(patcher_lib.stop)
         self.mock_lib = patcher_lib.start()
@@ -210,7 +210,7 @@ class GwyDataField_get_data(unittest.TestCase):
         self.mock_gwydf = Mock(spec=GwyDataField)
         self.mock_gwydf._get_data = GwyDataField._get_data
 
-        patcher_lib = patch('gwydb.gwy.gwychannel.lib',
+        patcher_lib = patch('pygwyfile.gwychannel.lib',
                             autospec=True)
         self.addCleanup(patcher_lib.stop)
         self.mock_lib = patcher_lib.start()
@@ -492,7 +492,7 @@ class GwyChannel_get_data(unittest.TestCase):
     def setUp(self):
         self.gwyfile = Mock(spec=Gwyfile)
         self.channel_id = 0
-        patcher = patch('gwydb.gwy.gwychannel.GwyDataField',
+        patcher = patch('pygwyfile.gwychannel.GwyDataField',
                         autospec=True)
         self.addCleanup(patcher.stop)
         self.mock_GwyDataField = patcher.start()
@@ -539,7 +539,7 @@ class GwyChannel_get_mask(unittest.TestCase):
     def setUp(self):
         self.gwyfile = Mock(spec=Gwyfile)
         self.channel_id = 0
-        patcher = patch('gwydb.gwy.gwychannel.GwyDataField',
+        patcher = patch('pygwyfile.gwychannel.GwyDataField',
                         autospec=True)
         self.addCleanup(patcher.stop)
         self.mock_GwyDataField = patcher.start()
@@ -588,7 +588,7 @@ class GwyChannel_get_show(unittest.TestCase):
     def setUp(self):
         self.gwyfile = Mock(spec=Gwyfile)
         self.channel_id = 0
-        patcher = patch('gwydb.gwy.gwychannel.GwyDataField',
+        patcher = patch('pygwyfile.gwychannel.GwyDataField',
                         autospec=True)
         self.addCleanup(patcher.stop)
         self.mock_GwyDataField = patcher.start()
@@ -637,7 +637,7 @@ class GwyChannel_get_point_sel(unittest.TestCase):
     def setUp(self):
         self.gwyfile = Mock(spec=Gwyfile)
         self.channel_id = 0
-        patcher = patch('gwydb.gwy.gwychannel.GwyPointSelection',
+        patcher = patch('pygwyfile.gwychannel.GwyPointSelection',
                         autospec=True)
         self.addCleanup(patcher.stop)
         self.mock_GwyPointSelection = patcher.start()
@@ -687,7 +687,7 @@ class GwyChannel_get_pointer_sel(unittest.TestCase):
     def setUp(self):
         self.gwyfile = Mock(spec=Gwyfile)
         self.channel_id = 0
-        patcher = patch('gwydb.gwy.gwychannel.GwyPointerSelection',
+        patcher = patch('pygwyfile.gwychannel.GwyPointerSelection',
                         autospec=True)
         self.addCleanup(patcher.stop)
         self.mock_GwyPointerSelection = patcher.start()
@@ -737,7 +737,7 @@ class GwyChannel_get_line_sel(unittest.TestCase):
     def setUp(self):
         self.gwyfile = Mock(spec=Gwyfile)
         self.channel_id = 0
-        patcher = patch('gwydb.gwy.gwychannel.GwyLineSelection',
+        patcher = patch('pygwyfile.gwychannel.GwyLineSelection',
                         autospec=True)
         self.addCleanup(patcher.stop)
         self.mock_GwyLineSelection = patcher.start()
@@ -787,7 +787,7 @@ class GwyChannel_get_rectangle_sel(unittest.TestCase):
     def setUp(self):
         self.gwyfile = Mock(spec=Gwyfile)
         self.channel_id = 0
-        patcher = patch('gwydb.gwy.gwychannel.GwyRectangleSelection',
+        patcher = patch('pygwyfile.gwychannel.GwyRectangleSelection',
                         autospec=True)
         self.addCleanup(patcher.stop)
         self.mock_GwyRectangleSelection = patcher.start()
@@ -838,7 +838,7 @@ class GwyChannel_get_ellipse_sel(unittest.TestCase):
     def setUp(self):
         self.gwyfile = Mock(spec=Gwyfile)
         self.channel_id = 0
-        patcher = patch('gwydb.gwy.gwychannel.GwyEllipseSelection',
+        patcher = patch('pygwyfile.gwychannel.GwyEllipseSelection',
                         autospec=True)
         self.addCleanup(patcher.stop)
         self.mock_GwyEllipseSelection = patcher.start()
@@ -1031,7 +1031,7 @@ class GwyChannel_from_gwy(unittest.TestCase):
         self.assertRaises(TypeError, GwyChannel.from_gwy, 'test_string',
                           0)
 
-    @patch('gwydb.gwy.gwychannel.GwyChannel', autospec=True)
+    @patch('pygwyfile.gwychannel.GwyChannel', autospec=True)
     @patch.object(GwyChannel, '_get_title')
     @patch.object(GwyChannel, '_get_data')
     @patch.object(GwyChannel, '_get_mask')
@@ -1190,3 +1190,7 @@ class GwyChannel_from_gwy(unittest.TestCase):
                   line_sel=line_sel,
                   rectangle_sel=rectangle_sel,
                   ellipse_sel=ellipse_sel)])
+
+
+if __name__ == '__main__':
+    unittest.main()
