@@ -401,6 +401,90 @@ class GwyChannel_get_range_max(unittest.TestCase):
                          self.gwyfile.get_gwyitem_double.return_value)
 
 
+class GwyChannel_get_mask_red(unittest.TestCase):
+    """Tests for _get_mask_red method of GwyChannel class"""
+
+    def setUp(self):
+        self.gwyfile = Mock(spec=Gwyfile)
+        self.channel_id = 0
+
+    def test_arg_passing_to_get_gwyitem_double(self):
+        """Get double value of "/0/mask/red" """
+        GwyChannel._get_mask_red(self.gwyfile, self.channel_id)
+        self.gwyfile.get_gwyitem_double.assert_has_calls(
+            [call("/{:d}/mask/red".format(self.channel_id))])
+
+    def test_returned_value(self):
+        """ Return this value"""
+        actual_return = GwyChannel._get_mask_red(self.gwyfile,
+                                                 self.channel_id)
+        self.assertEqual(actual_return,
+                         self.gwyfile.get_gwyitem_double.return_value)
+
+
+class GwyChannel_get_mask_green(unittest.TestCase):
+    """Tests for _get_mask_green method of GwyChannel class"""
+
+    def setUp(self):
+        self.gwyfile = Mock(spec=Gwyfile)
+        self.channel_id = 0
+
+    def test_arg_passing_to_get_gwyitem_green(self):
+        """Get double value of "/0/mask/green" """
+        GwyChannel._get_mask_green(self.gwyfile, self.channel_id)
+        self.gwyfile.get_gwyitem_double.assert_has_calls(
+            [call("/{:d}/mask/green".format(self.channel_id))])
+
+    def test_returned_value(self):
+        """ Return this value"""
+        actual_return = GwyChannel._get_mask_green(self.gwyfile,
+                                                   self.channel_id)
+        self.assertEqual(actual_return,
+                         self.gwyfile.get_gwyitem_double.return_value)
+
+
+class GwyChannel_get_mask_blue(unittest.TestCase):
+    """Tests for _get_mask_blue method of GwyChannel class"""
+
+    def setUp(self):
+        self.gwyfile = Mock(spec=Gwyfile)
+        self.channel_id = 0
+
+    def test_arg_passing_to_get_gwyitem_double(self):
+        """Get double value of "/0/mask/blue" """
+        GwyChannel._get_mask_blue(self.gwyfile, self.channel_id)
+        self.gwyfile.get_gwyitem_double.assert_has_calls(
+            [call("/{:d}/mask/blue".format(self.channel_id))])
+
+    def test_returned_value(self):
+        """ Return this value"""
+        actual_return = GwyChannel._get_mask_blue(self.gwyfile,
+                                                  self.channel_id)
+        self.assertEqual(actual_return,
+                         self.gwyfile.get_gwyitem_double.return_value)
+
+
+class GwyChannel_get_mask_alpha(unittest.TestCase):
+    """Tests for _get_mask_alpha method of GwyChannel class"""
+
+    def setUp(self):
+        self.gwyfile = Mock(spec=Gwyfile)
+        self.channel_id = 0
+
+    def test_arg_passing_to_get_gwyitem_double(self):
+        """Get double value of "/0/mask/alpha" """
+        GwyChannel._get_mask_alpha(self.gwyfile, self.channel_id)
+        self.gwyfile.get_gwyitem_double.assert_has_calls(
+            [call("/{:d}/mask/alpha".format(self.channel_id))])
+
+    def test_returned_value(self):
+        """ Return this value"""
+        actual_return = GwyChannel._get_mask_alpha(self.gwyfile,
+                                                   self.channel_id)
+        self.assertEqual(actual_return,
+                         self.gwyfile.get_gwyitem_double.return_value)
+
+
 class GwyChannel_get_data(unittest.TestCase):
     """Test _get_data method of GwyChannel class
     """
@@ -962,7 +1046,15 @@ class GwyChannel_from_gwy(unittest.TestCase):
     @patch.object(GwyChannel, '_get_range_type')
     @patch.object(GwyChannel, '_get_range_min')
     @patch.object(GwyChannel, '_get_range_max')
+    @patch.object(GwyChannel, '_get_mask_red')
+    @patch.object(GwyChannel, '_get_mask_green')
+    @patch.object(GwyChannel, '_get_mask_blue')
+    @patch.object(GwyChannel, '_get_mask_alpha')
     def test_args_of_other_calls(self,
+                                 mock_get_mask_alpha,
+                                 mock_get_mask_blue,
+                                 mock_get_mask_green,
+                                 mock_get_mask_red,
                                  mock_get_range_max,
                                  mock_get_range_min,
                                  mock_get_range_type,
@@ -1005,6 +1097,18 @@ class GwyChannel_from_gwy(unittest.TestCase):
 
         mask = Mock(spec=GwyDataField)
         mock_get_mask.return_value = mask
+
+        mask_red = 1.0
+        mock_get_mask_red.return_value = mask_red
+
+        mask_green = 0.
+        mock_get_mask_green.return_value = mask_green
+
+        mask_blue = 0.
+        mock_get_mask_blue.return_value = mask_blue
+
+        mask_alpha = 0.5
+        mock_get_mask_alpha.return_value = mask_alpha
 
         show = Mock(spec=GwyDataField)
         mock_get_show.return_value = show
@@ -1076,6 +1180,10 @@ class GwyChannel_from_gwy(unittest.TestCase):
                   range_min=range_min,
                   range_max=range_max,
                   mask=mask,
+                  mask_red=mask_red,
+                  mask_green=mask_green,
+                  mask_blue=mask_blue,
+                  mask_alpha=mask_alpha,
                   show=show,
                   point_sel=point_sel,
                   pointer_sel=pointer_sel,

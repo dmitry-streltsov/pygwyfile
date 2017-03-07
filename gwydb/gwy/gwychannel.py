@@ -269,7 +269,10 @@ class GwyChannel:
     def __init__(self, title, data, visible=False,
                  palette=None, range_type=None,
                  range_min=None, range_max=None,
-                 mask=None, show=None,
+                 mask=None,
+                 mask_red=None, mask_green=None,
+                 mask_blue=None, mask_alpha=None,
+                 show=None,
                  point_sel=None, pointer_sel=None,
                  line_sel=None, rectangle_sel=None,
                  ellipse_sel=None):
@@ -280,6 +283,10 @@ class GwyChannel:
         self.range_type = range_type
         self.range_min = range_min
         self.range_max = range_max
+        self.mask_red = mask_red
+        self.mask_green = mask_green
+        self.mask_blue = mask_blue
+        self.mask_alpha = mask_alpha
 
         if not isinstance(data, GwyDataField):
             raise TypeError("data must be an instance of GwyDataField")
@@ -354,6 +361,10 @@ class GwyChannel:
         range_min = cls._get_range_min(gwyfile, channel_id)
         range_max = cls._get_range_max(gwyfile, channel_id)
         mask = cls._get_mask(gwyfile, channel_id)
+        mask_red = cls._get_mask_red(gwyfile, channel_id)
+        mask_green = cls._get_mask_green(gwyfile, channel_id)
+        mask_blue = cls._get_mask_blue(gwyfile, channel_id)
+        mask_alpha = cls._get_mask_alpha(gwyfile, channel_id)
         show = cls._get_show(gwyfile, channel_id)
         point_sel = cls._get_point_sel(gwyfile, channel_id)
         pointer_sel = cls._get_pointer_sel(gwyfile, channel_id)
@@ -368,6 +379,10 @@ class GwyChannel:
                           range_min=range_min,
                           range_max=range_max,
                           mask=mask,
+                          mask_red=mask_red,
+                          mask_green=mask_green,
+                          mask_blue=mask_blue,
+                          mask_alpha=mask_alpha,
                           show=show,
                           point_sel=point_sel,
                           pointer_sel=pointer_sel,
@@ -470,6 +485,66 @@ class GwyChannel:
         key = "/{:d}/base/max".format(channel_id)
         range_max = gwyfile.get_gwyitem_double(key)
         return range_max
+
+    @staticmethod
+    def _get_mask_red(gwyfile, channel_id):
+        """ Get red component of the mask color
+
+        Args:
+            gwyfile (Gwyfile): Gwyfile object
+            channel_id (int): id of the channel
+
+        Returns:
+            mask_red (double): red component of the mask color
+        """
+        key = "/{:d}/mask/red".format(channel_id)
+        mask_red = gwyfile.get_gwyitem_double(key)
+        return mask_red
+
+    @staticmethod
+    def _get_mask_green(gwyfile, channel_id):
+        """ Get green component of the mask color
+
+        Args:
+            gwyfile (Gwyfile): Gwyfile object
+            channel_id (int): id of the channel
+
+        Returns:
+            mask_green (double): green component of the mask color
+        """
+        key = "/{:d}/mask/green".format(channel_id)
+        mask_green = gwyfile.get_gwyitem_double(key)
+        return mask_green
+
+    @staticmethod
+    def _get_mask_blue(gwyfile, channel_id):
+        """ Get blue component of the mask color
+
+        Args:
+            gwyfile (Gwyfile): Gwyfile object
+            channel_id (int): id of the channel
+
+        Returns:
+            mask_blue (double): blue component of the mask color
+        """
+        key = "/{:d}/mask/blue".format(channel_id)
+        mask_blue = gwyfile.get_gwyitem_double(key)
+        return mask_blue
+
+    @staticmethod
+    def _get_mask_alpha(gwyfile, channel_id):
+        """ Get alpha (opacity) component of the mask color
+
+        Args:
+            gwyfile (Gwyfile): Gwyfile object
+            channel_id (int): id of the channel
+
+        Returns:
+            mask_alpha (double): alpha component of the mask color
+        """
+        key = "/{:d}/mask/alpha".format(channel_id)
+        mask_alpha = gwyfile.get_gwyitem_double(key)
+        return mask_alpha
 
     @staticmethod
     def _get_data(gwyfile, channel_id):
