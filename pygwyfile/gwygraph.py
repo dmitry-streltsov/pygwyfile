@@ -22,9 +22,10 @@ class GwyGraphModel:
 
     """
 
-    def __init__(self, curves, meta=None):
+    def __init__(self, curves, meta=None, visible=False):
 
         self.meta = {}
+        self.visible = visible
 
         if meta is None:
             meta = {}

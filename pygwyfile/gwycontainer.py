@@ -151,12 +151,28 @@ class GwyContainer:
         """
 
         graph_ids = cls._get_graph_ids(gwyfile)
-        graph_keys = ["/0/graph/graph/{:d}".format(graph_id)
+
+        # Create list of tuples
+        # First element of each tuple is a key for GwyGraphModel data item
+        # Second element of each tuple is a key for boolean item
+        #     (wheter the graph should be displayed in a window when the file
+        #      is loaded)
+        graph_keys = [("/0/graph/graph/{:d}".format(graph_id),
+                       "/0/graph/graph/{:d}/visible".format(graph_id))
                       for graph_id in graph_ids]
-        gwygraphmodels = [gwyfile.get_gwyitem_object(key)
+
+        # Create list of tuples (<cdata GwyGraphModel*>, visibility_flag)
+        # First element is <cdata GwyGraphModel*> object
+        # Second element is its visibility flag (boolean)
+        gwygraphmodels = [(gwyfile.get_gwyitem_object(key[0]),
+                           gwyfile.get_gwyitem_bool(key[1]))
                           for key in graph_keys]
-        graphs = [GwyGraphModel.from_gwy(gwygraphmodel)
-                  for gwygraphmodel in gwygraphmodels]
+        graphs = []
+
+        for gwygraphmodel in gwygraphmodels:
+            graph = GwyGraphModel.from_gwy(gwygraphmodel[0])
+            graph.visible = gwygraphmodel[1]
+            graphs.append(graph)
         return graphs
 
     @staticmethod

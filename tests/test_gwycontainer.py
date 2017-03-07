@@ -143,17 +143,21 @@ class GwyContainer_dump_graphs(unittest.TestCase):
     def test_getting_gwygraphmodel_objects(self,
                                            mock_get_graph_ids,
                                            mock_GwyGraphModel):
-        """Get <GwyGraphModel*> objects from gwyfile
+        """Get <GwyGraphModel*> objects and their visibility flags
+           from Gwyfile object
         """
         graph_ids = [1, 2, 3]
-        graph_keys = ["/0/graph/graph/1",
-                      "/0/graph/graph/2",
-                      "/0/graph/graph/3"]
+        graph_keys = ["/0/graph/graph/{:d}".format(graph_id)
+                      for graph_id in graph_ids]
+        graph_vis_keys = ["/0/graph/graph/{:d}/visible".format(graph_id)
+                          for graph_id in graph_ids]
         mock_get_graph_ids.return_value = graph_ids
         gwyfile = Mock(spec=Gwyfile)
         GwyContainer._dump_graphs(gwyfile)
         gwyfile.get_gwyitem_object.assert_has_calls(
             [call(graph_key) for graph_key in graph_keys])
+        gwyfile.get_gwyitem_bool.assert_has_calls(
+            [call(graph_vis_key) for graph_vis_key in graph_vis_keys])
 
     @patch.object(GwyGraphModel, 'from_gwy')
     @patch.object(GwyContainer, '_get_graph_ids')
@@ -167,7 +171,6 @@ class GwyContainer_dump_graphs(unittest.TestCase):
         mock_get_graph_ids.return_value = graph_ids
         gwygraphmodels = [Mock() for graph_id in graph_ids]
         gwyfile = Mock(spec=Gwyfile)
-        gwyfile.get_gwyitem_object.return_value = gwygraphmodels
         graphs = GwyContainer._dump_graphs(gwyfile)
         self.assertListEqual(graphs,
                              [mock_GwyGraphModel(gwygraphmodel)
