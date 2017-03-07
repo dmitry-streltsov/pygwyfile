@@ -38,7 +38,6 @@ class Gwyfile:
     Attributes:
         c_gwyfile (cdata  GwyfileObject*): gwyfile object from
                                            Libgwyfile C library
-        filename ('string'): name of the file
 
     Methods:
         check_gwyobject(key):  Check presence of object in the gwyfile
@@ -50,13 +49,11 @@ class Gwyfile:
         get_gwyitem_string(item): Get string value contained in Gyw data item
     """
 
-    def __init__(self, c_gwyfile, basename):
+    def __init__(self, c_gwyfile):
         """
         Args:
             c_gwyfile (cdata GwyfileOjbect*): gwyfile object from
                                               Libgwyfile C library
-            basename (string): name of file without path
-                               (e.g. 'sample.gwy' for 'data/sample.gwy')
 
         The top-level object of the c_gwyfile must be 'GwyContainer'
         """
@@ -77,7 +74,6 @@ class Gwyfile:
             raise GwyfileError(error_msg)
 
         self.c_gwyfile = c_gwyfile
-        self.filename = basename
 
     def _get_gwyitem_value(self, item_key, cfunc):
         """Get value (in C representation) contained in Gwy data item
@@ -205,7 +201,5 @@ class Gwyfile:
         if not c_gwyfile:
             raise GwyfileErrorCMsg(errorp[0].message)
 
-        basename = os.path.basename(filename)
-
-        gwyfile = Gwyfile(c_gwyfile, basename)
+        gwyfile = Gwyfile(c_gwyfile)
         return gwyfile

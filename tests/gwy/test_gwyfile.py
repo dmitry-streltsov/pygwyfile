@@ -42,8 +42,7 @@ class Gwyfile_init_TestCase(unittest.TestCase):
         """
 
         c_gwyfile = ffi.NULL
-        basename = 'test.gwy'
-        self.assertRaises(GwyfileError, Gwyfile, c_gwyfile, basename=basename)
+        self.assertRaises(GwyfileError, Gwyfile, c_gwyfile)
 
     @patch('gwydb.gwy.gwyfile.lib', autospec=True)
     def test_raise_exception_if_top_level_object_is_empty(self, mock_lib):
@@ -53,13 +52,11 @@ class Gwyfile_init_TestCase(unittest.TestCase):
 
         c_gwyfile = Mock()
         mock_lib.gwyfile_object_name.return_value = ffi.NULL
-        basename = 'test.gwy'
         error_msg = 'The top-level object of c_gwyfile is empty'
         self.assertRaisesRegex(GwyfileError,
                                error_msg,
                                Gwyfile,
-                               c_gwyfile,
-                               basename=basename)
+                               c_gwyfile)
 
     @patch('gwydb.gwy.gwyfile.lib', autospec=True)
     def test_check_top_level_object_of_c_gwyfile(self, mock_lib):
@@ -68,24 +65,21 @@ class Gwyfile_init_TestCase(unittest.TestCase):
         """
 
         c_gwyfile = Mock()
-        basename = 'test.gwy'
         test_name = ffi.new("char[]", b"non-GwyContainer")
         mock_lib.gwyfile_object_name.return_value = test_name
-        self.assertRaises(GwyfileError, Gwyfile, c_gwyfile, basename=basename)
+        self.assertRaises(GwyfileError, Gwyfile, c_gwyfile)
 
     @patch('gwydb.gwy.gwyfile.lib', autospec=True)
     def test_attribute_of_GwyFile_instance(self, mock_lib):
         """
-        Create self.c_gwyfile and filename attributes
+        Create self.c_gwyfile attribute
         """
 
         c_gwyfile = Mock()
-        basename = 'test.gwy'
         test_name = ffi.new("char[]", b"GwyContainer")
         mock_lib.gwyfile_object_name.return_value = test_name
-        test_instance = Gwyfile(c_gwyfile, basename=basename)
-        self.assertEqual(c_gwyfile, test_instance.c_gwyfile)
-        self.assertEqual(basename, test_instance.filename)
+        test_instance = Gwyfile(c_gwyfile)
+        self.assertIs(c_gwyfile, test_instance.c_gwyfile)
 
 
 class Gwyfile_from_gwy(unittest.TestCase):
@@ -93,7 +87,7 @@ class Gwyfile_from_gwy(unittest.TestCase):
     """
 
     def setUp(self):
-        self.filename = 'data/test.gwy'
+        self.filename = 'test.gwy'
 
         patcher_isfile = patch('gwydb.gwy.gwyfile.os.path.isfile',
                                autospec=True)
@@ -146,7 +140,7 @@ class Gwyfile_from_gwy(unittest.TestCase):
         self.mock_lib.gwyfile_read_file.return_value = c_gwyfile
         Gwyfile.from_gwy(self.filename)
         self.mock_Gwyfile.assert_has_calls(
-            [call(c_gwyfile, 'test.gwy')])
+            [call(c_gwyfile)])
 
     def test_returned_value(self):
         """Return Gwyfile instance
