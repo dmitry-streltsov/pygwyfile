@@ -56,6 +56,10 @@ ffibuilder.cdef("""
     double gwyfile_item_get_double(const GwyfileItem* item);
     const char* gwyfile_item_get_string(const GwyfileItem* item);
     int32_t gwyfile_item_get_int32(const GwyfileItem* item);
+    GwyfileObject* gwyfile_object_new_selectionpoint(int nsel, ...);
+    GwyfileObject* gwyfile_object_new_selectionline(int nsel, ...);
+    GwyfileObject* gwyfile_object_new_selectionrectangle(int nsel, ...);
+    GwyfileObject* gwyfile_object_new_selectionellipse(int nsel, ...);
 """)
 
 

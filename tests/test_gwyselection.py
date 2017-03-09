@@ -232,9 +232,49 @@ class GwyPointSelection_from_gwy(unittest.TestCase):
         self.assertIsNone(point_sel)
 
 
+class GwyPointSelection_cdata(unittest.TestCase):
+    """ Test _cdata property of GwyPointSelection class """
+
+    def setUp(self):
+        self.points = [(0., 0.), (1., 1.)]
+        self.cdata = ffi.cast("double*", ffi.new("double[]", [0., 0., 1., 1.]))
+        self.pointsel = GwyPointSelection(points=self.points)
+
+    def test_return_None_if_data_list_is_empty(self):
+        """Return None if point selection data list is empty"""
+        self.pointsel.data = []
+        cdata = self.pointsel._cdata
+        self.assertIsNone(cdata)
+
+    def test_return_value_if_data_list_is_not_empty(self):
+        """Return C array if selection data list is not empty"""
+        cdata = self.pointsel._cdata
+        self.assertAlmostEqual(cdata, self.cdata)
+
+
+class GwyPointSelection_to_gwy(unittest.TestCase):
+    """ Test to_gwy method of GwyPointSelection class """
+
+    def setUp(self):
+        self.points = [(0., 0.), (1., 1.)]
+        self.pointsel = GwyPointSelection(points=self.points)
+
+    def test_return_None_if_selection_list_is_empty(self):
+        """ Return None if point selection list is empty"""
+        self.pointsel.data = []
+        gwysel = self.pointsel.to_gwy()
+        self.assertIsNone(gwysel)
+
+    @patch.object(GwyPointSelection, '_new_sel_func')
+    def test_call_of_libgwyfile_new_selection_func(self, mock_new_sel_func):
+        """Test call of _new_sel_func of GwyPointSelection class"""
+        expected_return = mock_new_sel_func.return_value
+        actual_return = self.pointsel.to_gwy()
+        self.assertEqual(actual_return, expected_return)
+
+
 class GwyPointerSelection_init(unittest.TestCase):
-    """Test constructor of GwyPointerSelection class
-    """
+    """Test constructor of GwyPointerSelection class """
 
     def test_arg_is_list_of_points(self):
         """GwyPointerSelection.__init__ arg is a list
@@ -260,8 +300,7 @@ class GwyPointerSelection_init(unittest.TestCase):
 
 
 class GwyPointerSelection_from_gwy(unittest.TestCase):
-    """Test from_gwy method of GwyPointerSelection class
-    """
+    """Test from_gwy method of GwyPointerSelection class """
 
     def setUp(self):
         self.gwysel = Mock()
@@ -292,6 +331,26 @@ class GwyPointerSelection_from_gwy(unittest.TestCase):
         self.from_gwy_parent.return_value = None
         pointer_sel = GwyPointerSelection.from_gwy(self.gwysel)
         self.assertIsNone(pointer_sel)
+
+
+class GwyPointerSelection_cdata(unittest.TestCase):
+    """ Test _cdata property of GwyPointerSelection class """
+
+    def setUp(self):
+        self.points = [(0., 0.), (1., 1.)]
+        self.cdata = ffi.cast("double*", ffi.new("double[]", [0., 0., 1., 1.]))
+        self.pointersel = GwyPointerSelection(points=self.points)
+
+    def test_return_None_if_data_list_is_empty(self):
+        """Return None if point selection data list is empty"""
+        self.pointersel.data = []
+        cdata = self.pointersel._cdata
+        self.assertIsNone(cdata)
+
+    def test_return_value_if_data_list_is_not_empty(self):
+        """Return C array if selection data list is not empty"""
+        cdata = self.pointersel._cdata
+        self.assertAlmostEqual(cdata, self.cdata)
 
 
 class GwyLineSelections_init(unittest.TestCase):
@@ -362,6 +421,28 @@ class GwyLineSelection_from_gwy(unittest.TestCase):
         self.assertIsNone(line_sel)
 
 
+class GwyLineSelection_cdata(unittest.TestCase):
+    """ Test _cdata property of GwyLineSelection class """
+
+    def setUp(self):
+        self.point_pairs = [((0., 0.), (1., 1.)), ((2., 2.), (3., 3.))]
+        self.cdata = ffi.cast("double*", ffi.new("double[]",
+                                                 [0., 0., 1., 1.,
+                                                  2., 2., 3., 3.]))
+        self.linesel = GwyLineSelection(point_pairs=self.point_pairs)
+
+    def test_return_None_if_data_list_is_empty(self):
+        """Return None if line selection data list is empty"""
+        self.linesel.data = []
+        cdata = self.linesel._cdata
+        self.assertIsNone(cdata)
+
+    def test_return_value_if_data_list_is_not_empty(self):
+        """Return C array if selection data list is not empty"""
+        cdata = self.linesel._cdata
+        self.assertAlmostEqual(cdata, self.cdata)
+
+
 class GwyRectangleSelection_init(unittest.TestCase):
     """Test constructor of GwyRectangleSelection class
     """
@@ -430,6 +511,28 @@ class GwyRectangleSelection_from_gwy(unittest.TestCase):
         self.assertIsNone(rectangle_sel)
 
 
+class GwyRectangleSelection_cdata(unittest.TestCase):
+    """ Test _cdata property of GwyRectangleSelection class """
+    def setUp(self):
+        self.point_pairs = [((0., 0.), (1., 1.)), ((2., 2.), (3., 3.))]
+        self.cdata = ffi.cast("double*", ffi.new("double[]",
+                                                 [0., 0., 1., 1.,
+                                                  2., 2., 3., 3.]))
+        self.rectanglesel = GwyRectangleSelection(
+            point_pairs=self.point_pairs)
+
+    def test_return_None_if_data_list_is_empty(self):
+        """Return None if rectangle selection data list is empty"""
+        self.rectanglesel.data = []
+        cdata = self.rectanglesel._cdata
+        self.assertIsNone(cdata)
+
+    def test_return_value_if_data_list_is_not_empty(self):
+        """Return C array if selection data list is not empty"""
+        cdata = self.rectanglesel._cdata
+        self.assertAlmostEqual(cdata, self.cdata)
+
+
 class GwyEllipseSelection_init(unittest.TestCase):
     """Test constructor of GwyEllipseSelection class
     """
@@ -462,8 +565,7 @@ class GwyEllipseSelection_init(unittest.TestCase):
 
 
 class GwyEllipseSelection_from_gwy(unittest.TestCase):
-    """Test from_gwy method of GwyEllipseSelection class
-    """
+    """Test from_gwy method of GwyEllipseSelection class"""
 
     def setUp(self):
         self.gwysel = Mock()
@@ -496,6 +598,27 @@ class GwyEllipseSelection_from_gwy(unittest.TestCase):
         self.from_gwy_parent.return_value = None
         ellipse_sel = GwyEllipseSelection.from_gwy(self.gwysel)
         self.assertIsNone(ellipse_sel)
+
+
+class GwyEllipseSelection_cdata(unittest.TestCase):
+    """ Test _cdata property of GwyEllipseSelection class """
+    def setUp(self):
+        self.point_pairs = [((0., 0.), (1., 1.)), ((2., 2.), (3., 3.))]
+        self.cdata = ffi.cast("double*", ffi.new("double[]",
+                                                 [0., 0., 1., 1.,
+                                                  2., 2., 3., 3.]))
+        self.ellipsesel = GwyEllipseSelection(point_pairs=self.point_pairs)
+
+    def test_return_None_if_data_list_is_empty(self):
+        """Return None if ellipse selection data list is empty"""
+        self.ellipsesel.data = []
+        cdata = self.ellipsesel._cdata
+        self.assertIsNone(cdata)
+
+    def test_return_value_if_data_list_is_not_empty(self):
+        """Return C array if selection data list is not empty"""
+        cdata = self.ellipsesel._cdata
+        self.assertAlmostEqual(cdata, self.cdata)
 
 
 if __name__ == '__main__':

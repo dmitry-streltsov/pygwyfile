@@ -34,6 +34,7 @@ class GwySelection(ABC):
     # _npoints (int): Number of points in one selection
     #                 (e.g. 1 for point selection, 2 for line selection)
     _get_sel_func = None
+    _new_sel_func = None
     _npoints = 1
 
     data = []
@@ -44,6 +45,13 @@ class GwySelection(ABC):
         Args:
             points: list or tuple of points
                     each point is a tuple of coordinates (x, y)
+        """
+        pass
+
+    @property
+    @abstractmethod
+    def _cdata(self):
+        """ Representation of selection data as C array
         """
         pass
 
@@ -67,6 +75,24 @@ class GwySelection(ABC):
         nsel = cls._get_selection_nsel(gwysel)
         points = cls._get_selection_points(gwysel, nsel)
         return points
+
+    def to_gwy(self):
+        """ Get <GwyfileObject*> representation of the selection class
+
+        Returns:
+            <GwyfileObject*> for given type of selection or None if
+            selection data is empty
+
+        """
+        nsel = len(self.data)
+        if nsel == 0:
+            return None
+        else:
+            gwysel = self._new_sel_func(nsel,
+                                        ffi.new("char[]", b"data(copy)"),
+                                        self._cdata,
+                                        ffi.NULL)
+            return gwysel
 
     @classmethod
     def _get_selection_nsel(cls, gwysel):
@@ -166,6 +192,7 @@ class GwyPointSelection(GwySelection):
 
     _npoints = 1  # number of points in one point selection
     _get_sel_func = lib.gwyfile_object_selectionpoint_get
+    _new_sel_func = lib.gwyfile_object_new_selectionpoint
 
     def __init__(self, points):
         """
@@ -176,6 +203,17 @@ class GwyPointSelection(GwySelection):
             self.data = list(points)
         else:
             raise ValueError("points list is empty")
+
+    @property
+    def _cdata(self):
+        """ Representation of point selections list as C array
+        """
+        if self.data:
+            flat_data_list = [val for point in self.data for val in point]
+            cdata = ffi.new("double[]", flat_data_list)
+            return cdata
+        else:
+            return None
 
     @classmethod
     def from_gwy(cls, gwysel):
@@ -210,6 +248,7 @@ class GwyPointerSelection(GwySelection):
 
     _npoints = 1  # number of points in one pointer selection
     _get_sel_func = lib.gwyfile_object_selectionpoint_get
+    _new_sel_func = lib.gwyfile_object_new_selectionpoint
 
     def __init__(self, points):
         if points:
@@ -236,6 +275,17 @@ class GwyPointerSelection(GwySelection):
         else:
             return None
 
+    @property
+    def _cdata(self):
+        """ Representation of pointer selections list as C array
+        """
+        if self.data:
+            flat_data_list = [val for point in self.data for val in point]
+            cdata = ffi.new("double[]", flat_data_list)
+            return cdata
+        else:
+            return None
+
 
 class GwyLineSelection(GwySelection):
     """Class for line selections
@@ -251,6 +301,7 @@ class GwyLineSelection(GwySelection):
 
     _npoints = 2  # number of points in one line selection
     _get_sel_func = lib.gwyfile_object_selectionline_get
+    _new_sel_func = lib.gwyfile_object_new_selectionline
 
     def __init__(self, point_pairs):
         if point_pairs:
@@ -278,6 +329,18 @@ class GwyLineSelection(GwySelection):
         else:
             return None
 
+    @property
+    def _cdata(self):
+        """Representation of line selections list as C array"""
+        if self.data:
+            flat_data_list = [val for line in self.data
+                              for point in line
+                              for val in point]
+            cdata = ffi.new("double[]", flat_data_list)
+            return cdata
+        else:
+            return None
+
 
 class GwyRectangleSelection(GwySelection):
     """Class for rectange selections
@@ -293,6 +356,7 @@ class GwyRectangleSelection(GwySelection):
 
     _npoints = 2  # number of points in one rectangle selection
     _get_sel_func = lib.gwyfile_object_selectionrectangle_get
+    _new_sel_func = lib.gwyfile_object_new_selectionrectangle
 
     def __init__(self, point_pairs):
         if point_pairs:
@@ -321,6 +385,18 @@ class GwyRectangleSelection(GwySelection):
         else:
             return None
 
+    @property
+    def _cdata(self):
+        """Representation of rectangle selections list as C array"""
+        if self.data:
+            flat_data_list = [val for line in self.data
+                              for point in line
+                              for val in point]
+            cdata = ffi.new("double[]", flat_data_list)
+            return cdata
+        else:
+            return None
+
 
 class GwyEllipseSelection(GwySelection):
     """Class for ellipse selections
@@ -337,6 +413,7 @@ class GwyEllipseSelection(GwySelection):
 
     _npoints = 2  # number of points in one ellipse selection
     _get_sel_func = lib.gwyfile_object_selectionellipse_get
+    _new_sel_func = lib.gwyfile_object_new_selectionellipse
 
     def __init__(self, point_pairs):
         if point_pairs:
@@ -361,5 +438,17 @@ class GwyEllipseSelection(GwySelection):
         if points is not None:
             point_pairs = super()._combine_points_in_pair(points)
             return GwyEllipseSelection(point_pairs)
+        else:
+            return None
+
+    @property
+    def _cdata(self):
+        """Representation of ellipse selections list as C array"""
+        if self.data:
+            flat_data_list = [val for line in self.data
+                              for point in line
+                              for val in point]
+            cdata = ffi.new("double[]", flat_data_list)
+            return cdata
         else:
             return None
