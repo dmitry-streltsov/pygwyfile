@@ -1,7 +1,7 @@
 import unittest
 from unittest.mock import patch, call, Mock
 
-from pygwyfile._libgwyfile import ffi
+from pygwyfile._libgwyfile import ffi, lib
 from pygwyfile.gwyfile import GwyfileErrorCMsg
 from pygwyfile.gwyselection import (GwySelection,
                                     GwyPointSelection,

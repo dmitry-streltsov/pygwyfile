@@ -495,5 +495,56 @@ class GwyGraphCurve_get_data(unittest.TestCase):
         return truep[0]
 
 
+class GwyGraphCurve_to_gwy(unittest.TestCase):
+    """ Tests for to_gwy method of GwyGraphCurve class"""
+    def setUp(self):
+        self.ndata = 10
+        self.data = np.random.rand(2, self.ndata)
+        self.curve = GwyGraphCurve(data=self.data)
+        self.description = "Curve"
+        self.curve.meta['description'] = self.description
+        patcher_lib = patch('pygwyfile.gwygraphcurve.lib',
+                            autospec=True)
+        self.addCleanup(patcher_lib.stop)
+        self.mock_lib = patcher_lib.start()
+        self.gwycurve = Mock()
+
+    def test_arguments_of_libgwyfile_func(self):
+        """ Test arguments of gwyfile_object_new_graphcurvemodel call"""
+        self.mock_lib.gwyfile_object_new_graphcurvemodel.side_effect = (
+            self._side_effect)
+        gwycurve = self.curve.to_gwy()
+        self.assertEqual(gwycurve, self.gwycurve)
+
+    def _side_effect(self, *args):
+        self.assertEqual(int(args[0]), self.ndata)
+        self.assertEqual(ffi.string(args[1]), b"xdata")
+        self.assertEqual(args[2], ffi.cast("double*",
+                                           self.curve.data[0].ctypes.data))
+        self.assertEqual(ffi.string(args[3]), b"ydata")
+        self.assertEqual(args[4], ffi.cast("double*",
+                                           self.curve.data[1].ctypes.data))
+        self.assertEqual(ffi.string(args[5]), b"description")
+        self.assertEqual(ffi.string(args[6]), self.description.encode('utf-8'))
+        self.assertEqual(ffi.string(args[7]), b"type")
+        self.assertEqual(int(args[8]), self.curve.meta['type'])
+        self.assertEqual(ffi.string(args[9]), b"point_type")
+        self.assertEqual(int(args[10]), self.curve.meta['point_type'])
+        self.assertEqual(ffi.string(args[11]), b"line_style")
+        self.assertEqual(int(args[12]), self.curve.meta['line_style'])
+        self.assertEqual(ffi.string(args[13]), b"point_size")
+        self.assertEqual(int(args[14]), self.curve.meta['point_size'])
+        self.assertEqual(ffi.string(args[15]), b"line_size")
+        self.assertEqual(int(args[16]), self.curve.meta['line_size'])
+        self.assertEqual(ffi.string(args[17]), b"color.red")
+        self.assertAlmostEqual(float(args[18]), self.curve.meta['color.red'])
+        self.assertEqual(ffi.string(args[19]), b"color.green")
+        self.assertAlmostEqual(float(args[20]), self.curve.meta['color.green'])
+        self.assertEqual(ffi.string(args[21]), b"color.blue")
+        self.assertAlmostEqual(float(args[22]), self.curve.meta['color.blue'])
+        self.assertEqual(args[-1], ffi.NULL)
+        return self.gwycurve
+
+
 if __name__ == '__main__':
     unittest.main()

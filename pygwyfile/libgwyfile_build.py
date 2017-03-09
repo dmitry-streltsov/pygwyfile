@@ -60,6 +60,7 @@ ffibuilder.cdef("""
     GwyfileObject* gwyfile_object_new_selectionline(int nsel, ...);
     GwyfileObject* gwyfile_object_new_selectionrectangle(int nsel, ...);
     GwyfileObject* gwyfile_object_new_selectionellipse(int nsel, ...);
+    GwyfileObject* gwyfile_object_new_graphcurvemodel(int ndata, ...);
 """)
 
 

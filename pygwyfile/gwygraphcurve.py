@@ -247,6 +247,70 @@ class GwyGraphCurve:
             data_array = np.vstack((xdata_array, ydata_array))
             return data_array
 
+    def to_gwy(self):
+        """ Get a new GWY file GwyGraphCurveModel object
+
+        Returns:
+            <GwyfileObject*>: GwyGraphCurveModel object
+
+        """
+        args = []
+
+        ndata = ffi.cast("int32_t", self.meta['ndata'])
+        args.append(ndata)
+
+        xdata = self.data[0]
+        xdatap = ffi.cast("double*", xdata.ctypes.data)
+        args.append(ffi.new("char[]", b"xdata"))
+        args.append(xdatap)
+
+        ydata = self.data[1]
+        ydatap = ffi.cast("double*", ydata.ctypes.data)
+        args.append(ffi.new("char[]", b"ydata"))
+        args.append(ydatap)
+
+        if self.meta['description'] is not None:
+            args.append(ffi.new("char[]", b'description'))
+            args.append(ffi.new("char[]",
+                                self.meta['description'].encode('utf-8')))
+
+        if self.meta['type'] is not None:
+            args.append(ffi.new("char[]", b'type'))
+            args.append(ffi.cast("int32_t", self.meta['type']))
+
+        if self.meta['point_type'] is not None:
+            args.append(ffi.new("char[]", b'point_type'))
+            args.append(ffi.cast("int32_t", self.meta['point_type']))
+
+        if self.meta['line_style'] is not None:
+            args.append(ffi.new("char[]", b'line_style'))
+            args.append(ffi.cast("int32_t", self.meta['line_style']))
+
+        if self.meta['point_size'] is not None:
+            args.append(ffi.new("char[]", b'point_size'))
+            args.append(ffi.cast("int32_t", self.meta['point_size']))
+
+        if self.meta['line_size'] is not None:
+            args.append(ffi.new("char[]", b'line_size'))
+            args.append(ffi.cast("int32_t", self.meta['line_size']))
+
+        if self.meta['color.red'] is not None:
+            args.append(ffi.new("char[]", b'color.red'))
+            args.append(ffi.cast("double", self.meta['color.red']))
+
+        if self.meta['color.green'] is not None:
+            args.append(ffi.new("char[]", b'color.green'))
+            args.append(ffi.cast("double", self.meta['color.green']))
+
+        if self.meta['color.blue'] is not None:
+            args.append(ffi.new("char[]", b'color.blue'))
+            args.append(ffi.cast("double", self.meta['color.blue']))
+
+        args.append(ffi.NULL)
+
+        gwycurve = lib.gwyfile_object_new_graphcurvemodel(*args)
+        return gwycurve
+
     def __repr__(self):
         return "<{} instance at {}. Description: {}>".format(
             self.__class__.__name__,
