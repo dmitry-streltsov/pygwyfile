@@ -269,5 +269,54 @@ class GwyDataField_get_data(unittest.TestCase):
         return self.truep[0]
 
 
+class GwyDataField_to_gwy(unittest.TestCase):
+    """ Tests for to_gwy method of GwyDataField class """
+
+    def setUp(self):
+        self.gwydatafield = Mock(spec=GwyDataField)
+        self.gwydatafield.to_gwy = GwyDataField.to_gwy
+        self.gwydatafield.meta = {}
+        self.gwydatafield.meta['xres'] = 128
+        self.gwydatafield.meta['yres'] = 64
+        self.gwydatafield.data = np.random.rand(self.gwydatafield.meta['xres'],
+                                                self.gwydatafield.meta['yres'])
+        self.gwydatafield.meta['xreal'] = 1.
+        self.gwydatafield.meta['yreal'] = 0.5
+        self.gwydatafield.meta['xoff'] = 0.
+        self.gwydatafield.meta['yoff'] = 0.
+        self.gwydatafield.meta['si_unit_xy'] = 'm'
+        self.gwydatafield.meta['si_unit_z'] = 'A'
+        self.expected_return = Mock()
+
+    @patch('pygwyfile.gwydatafield.lib', autospec=True)
+    def test_args_of_libgwyfile_func(self, mock_lib):
+        """ Test args of gwyfile_object_new_datafield C function """
+        mock_lib.gwyfile_object_new_datafield.side_effect = self._side_effect
+        actual_return = self.gwydatafield.to_gwy(self.gwydatafield)
+        self.assertEqual(actual_return, self.expected_return)
+
+    def _side_effect(self, *args):
+        self.assertEqual(int(args[0]), self.gwydatafield.meta['xres'])
+        self.assertEqual(int(args[1]), self.gwydatafield.meta['yres'])
+        self.assertEqual(float(args[2]), self.gwydatafield.meta['xreal'])
+        self.assertEqual(float(args[3]), self.gwydatafield.meta['yreal'])
+        self.assertEqual(ffi.string(args[4]), b'data(copy)')
+        self.assertEqual(args[5],
+                         ffi.cast("double*",
+                                  self.gwydatafield.data.ctypes.data))
+        self.assertEqual(ffi.string(args[6]), b"xoff")
+        self.assertEqual(float(args[7]), self.gwydatafield.meta['xoff'])
+        self.assertEqual(ffi.string(args[8]), b"yoff")
+        self.assertEqual(float(args[9]), self.gwydatafield.meta['yoff'])
+        self.assertEqual(ffi.string(args[10]), b"si_unit_xy")
+        self.assertEqual(ffi.string(args[11]),
+                         self.gwydatafield.meta['si_unit_xy'].encode('utf-8'))
+        self.assertEqual(ffi.string(args[12]), b"si_unit_z")
+        self.assertEqual(ffi.string(args[13]),
+                         self.gwydatafield.meta['si_unit_z'].encode('utf-8'))
+        self.assertEqual(args[-1], ffi.NULL)
+        return self.expected_return
+
+
 if __name__ == '__main__':
     unittest.main()

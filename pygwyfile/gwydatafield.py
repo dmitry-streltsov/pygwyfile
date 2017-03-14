@@ -22,7 +22,7 @@ class GwyDataField:
 
     Methods:
         from_gwy(gwyobject): Create GwyDataField instance from
-        <GwyDataField*> object
+                             <GwyDataField*> object
     """
 
     def __init__(self, data, meta=None):
@@ -224,6 +224,56 @@ class GwyDataField:
             return data_array
         else:
             raise GwyfileErrorCMsg(errorp[0].message)
+
+    def to_gwy(self):
+        """Get C representation of GwyDataField instance
+
+        Returns:
+            gwydatafield (<cdata GwyfileObject*>):
+                A new GWY file GwyDataField object
+
+        """
+        args = []
+
+        xres, yres = self.data.shape
+        xres = ffi.cast("int32_t", xres)
+        yres = ffi.cast("int32_t", yres)
+        args.append(xres)
+        args.append(yres)
+
+        xreal = self.meta['xreal']
+        yreal = self.meta['yreal']
+        xreal = ffi.cast("double", xreal)
+        yreal = ffi.cast("double", yreal)
+        args.append(xreal)
+        args.append(yreal)
+
+        args.append(ffi.new("char[]", b"data(copy)"))
+        datap = ffi.cast("double*", self.data.ctypes.data)
+        args.append(datap)
+
+        if self.meta['xoff'] is not None:
+            args.append(ffi.new("char[]", b"xoff"))
+            args.append(ffi.cast("double", self.meta['xoff']))
+
+        if self.meta['yoff'] is not None:
+            args.append(ffi.new("char[]", b"yoff"))
+            args.append(ffi.cast("double", self.meta['yoff']))
+
+        if self.meta['si_unit_xy'] is not None:
+            args.append(ffi.new("char[]", b"si_unit_xy"))
+            args.append(ffi.new("char[]",
+                                self.meta['si_unit_xy'].encode('utf-8')))
+
+        if self.meta['si_unit_z'] is not None:
+            args.append(ffi.new("char[]", b"si_unit_z"))
+            args.append(ffi.new("char[]",
+                                self.meta['si_unit_z'].encode('utf-8')))
+
+        args.append(ffi.NULL)
+
+        gwydatafield = lib.gwyfile_object_new_datafield(*args)
+        return gwydatafield
 
     def __repr__(self):
         return "<{} instance at {}.\n meta: {},\n data: {}>".format(
