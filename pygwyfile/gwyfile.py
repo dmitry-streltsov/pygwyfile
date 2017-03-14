@@ -96,6 +96,22 @@ class Gwyfile:
         else:
             return None
 
+    @staticmethod
+    def _new_gwyitem(cfunc, item_key, cvalue):
+        """ Create GWY file item
+
+        Args:
+            cfunc (<C function>): C function to create a new GWY file item,
+                                  (e.g. lib.gwyfile_item_new_int32)
+            item_key (string): GWY file item name
+            cvalue: value of the GWY file item value in C representation
+
+        Returns:
+            gwyitem (<cdata GwyfileItem*>): new GWY file item
+        """
+        gwyitem = cfunc(item_key.encode('utf-8'), cvalue)
+        return gwyitem
+
     def get_gwyitem_bool(self, item_key):
         """Get boolean value contained in Gwy data item
 
@@ -114,6 +130,22 @@ class Gwyfile:
         else:
             return False
 
+    @classmethod
+    def new_gwyitem_bool(cls, item_key, value):
+        """ Create a new boolean GWY file item
+
+        Args:
+            item_key (string): GWY file item name
+            value (boolean): GWY file item value
+
+        Returns:
+            gwyitem (<cdata GwyfileItem*>): new GWY file item
+        """
+        cvalue = ffi.cast("bool", value)
+        cfunc = lib.gwyfile_item_new_bool
+        gwyitem = cls._new_gwyitem(cfunc, item_key, cvalue)
+        return gwyitem
+
     def get_gwyitem_string(self, item_key):
         """Get string value contained in Gwy data item
 
@@ -129,6 +161,26 @@ class Gwyfile:
         cvalue = self._get_gwyitem_value(item_key, cfunc)
         if cvalue:
             return ffi.string(cvalue).decode('utf-8')
+        else:
+            return None
+
+    @classmethod
+    def new_gwyitem_string(cls, item_key, value):
+        """ Create a new string GWY file item
+
+        Args:
+            item_key (string): GWY file item name
+            value (string): GWY file item value
+
+        Returns:
+            gwyitem (<cdata GwyfileItem*>): new GWY file item or
+                                            None if value is None
+        """
+        if value is not None:
+            cvalue = ffi.new("char[]", value.encode('utf-8'))
+            cfunc = lib.gwyfile_item_new_string_copy
+            gwyitem = cls._new_gwyitem(cfunc, item_key, cvalue)
+            return gwyitem
         else:
             return None
 
@@ -150,6 +202,21 @@ class Gwyfile:
         else:
             return None
 
+    @classmethod
+    def new_gwyitem_object(cls, item_key, value):
+        """ Create a new object GWY file item
+
+        Args:
+            item_key (string): GWY file item name
+            value (<cdata GwyfileObject*>): item value
+
+        Returns:
+            gwyitem (<cdata GwyfileItem*>): new GWY file imte
+        """
+        cfunc = lib.gwyfile_item_new_object
+        gwyitem = cls._new_gwyitem(cfunc, item_key, value)
+        return gwyitem
+
     def get_gwyitem_int32(self, item_key):
         """Get the 32bit integer value contained in a Gwy file data item
 
@@ -164,6 +231,22 @@ class Gwyfile:
         value = self._get_gwyitem_value(item_key, cfunc)
         return value
 
+    @classmethod
+    def new_gwyitem_int32(cls, item_key, value):
+        """ Create a new 32bit integer GWY file item
+
+        Args:
+            item_key (string): GWY file item name
+            value (int): item value
+
+        Returns:
+            gwyitem (<cdata GwyfileItem*>): new GWY file item
+        """
+        cfunc = lib.gwyfile_item_new_int32
+        cvalue = ffi.cast("int32_t", value)
+        gwyitem = cls._new_gwyitem(cfunc, item_key, cvalue)
+        return gwyitem
+
     def get_gwyitem_double(self, item_key):
         """Get the double value contained in a Gwy file data item
 
@@ -177,6 +260,22 @@ class Gwyfile:
         cfunc = lib.gwyfile_item_get_double
         value = self._get_gwyitem_value(item_key, cfunc)
         return value
+
+    @classmethod
+    def new_gwyitem_double(cls, item_key, value):
+        """ Create a new double GWY file item
+
+        Args:
+            item_key (string): GWY file item name
+            value (double): item value
+
+        Returns:
+            gwyitem (<cdata GwyfileItem*>): new GWY file item
+        """
+        cfunc = lib.gwyfile_item_new_double
+        cvalue = ffi.cast("double", value)
+        gwyitem = cls._new_gwyitem(cfunc, item_key, cvalue)
+        return gwyitem
 
     @staticmethod
     def from_gwy(filename):

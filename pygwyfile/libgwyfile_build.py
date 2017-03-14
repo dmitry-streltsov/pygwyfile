@@ -67,6 +67,16 @@ GwyfileObject* gwyfile_object_new_datafield(int xres,
                                             double xreal,
                                             double yreal,
                                             ...);
+GwyfileItem* gwyfile_item_new_object(const char* name,
+                                     GwyfileObject* value);
+GwyfileItem* gwyfile_item_new_bool(const char* name,
+                                   bool value);
+GwyfileItem* gwyfile_item_new_double(const char* name,
+                                     double value);
+GwyfileItem* gwyfile_item_new_string_copy(const char* name,
+                                          const char* value);
+GwyfileItem* gwyfile_item_new_int32(const char* name,
+                                    int32_t value);
 """)
 
 

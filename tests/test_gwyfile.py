@@ -192,6 +192,20 @@ class Gwyfile__get_gwyitem_value(unittest.TestCase):
         self.assertEqual(actual_return, self.cfunc.return_value)
 
 
+class Gwyfile_new_gwyitem(unittest.TestCase):
+    """ Tests for _new_gwyitem method of Gwyfile class"""
+
+    def test_new_gwyitem(self):
+        """ Test Gwyfile._new_gwyitem"""
+        cfunc = Mock()
+        item_key = '/test_key'
+        cvalue = Mock()
+        actual_return = Gwyfile._new_gwyitem(cfunc, item_key, cvalue)
+        self.assertEqual(actual_return, cfunc.return_value)
+        cfunc.assert_has_calls(
+            [call(item_key.encode('utf-8'), cvalue)])
+
+
 class Gwyfile_get_gwyitem_bool(unittest.TestCase):
     """ Tests for Gwyfile.get_gwyitem_bool method """
     def setUp(self):
