@@ -1194,5 +1194,131 @@ class GwyGraphModel_get_curves(unittest.TestCase):
         return truep[0]
 
 
+class GwyGraphModel_to_gwy(unittest.TestCase):
+    """Tests for to_gwy method of GwyGraphModel class """
+    def setUp(self):
+        self.gwygraphmodel = Mock(spec=GwyGraphModel)
+        self.ncurves = 2
+        self.gwygraphmodel.curves = [GwyGraphCurve(np.random.rand(2, 10))
+                                     for curve in range(self.ncurves)]
+        self.gwygraphmodel.meta = {'title': 'Title',
+                                   'top_label': '',
+                                   'left_label': 'y',
+                                   'right_label': '',
+                                   'bottom_label': 'x',
+                                   'x_unit': 'm',
+                                   'y_unit': 'm',
+                                   'x_min': 0.,
+                                   'x_min_set': True,
+                                   'x_max': 1.,
+                                   'x_max_set': True,
+                                   'x_is_logarithmic': False,
+                                   'y_is_logarithmic': False,
+                                   'label.visible': True,
+                                   'label.has_frame': True,
+                                   'label.reverse': False,
+                                   'label.frame_thickness': 1,
+                                   'label.position': 0,
+                                   'grid-type': 1}
+        self.gwygraphmodel.to_gwy = GwyGraphModel.to_gwy
+        self.expected_return = Mock()
+
+    @patch('pygwyfile.gwygraph.lib', autospec=True)
+    def test_args_of_libgwyfile_func(self, mock_lib):
+        """ Test args of gwyfile_object_new_graphmodel """
+        mock_lib.gwyfile_object_new_graphmodel.side_effect = (
+            self._side_effect)
+        actual_return = self.gwygraphmodel.to_gwy(self.gwygraphmodel)
+        self.assertEqual(actual_return, self.expected_return)
+
+    def _side_effect(self, *args):
+
+        self.assertEqual(int(args[0]), self.ncurves)
+
+        self.assertEqual(ffi.string(args[1]), b"curves")
+
+        self.assertEqual(ffi.string(args[3]), b"title")
+        self.assertEqual(ffi.string(args[4]),
+                         self.gwygraphmodel.meta['title'].encode('utf-8'))
+
+        self.assertEqual(ffi.string(args[5]), b"top_label")
+        self.assertEqual(
+            ffi.string(args[6]),
+            self.gwygraphmodel.meta['top_label'].encode('utf-8'))
+
+        self.assertEqual(ffi.string(args[7]), b"left_label")
+        self.assertEqual(
+            ffi.string(args[8]),
+            self.gwygraphmodel.meta['left_label'].encode('utf-8'))
+
+        self.assertEqual(ffi.string(args[9]), b"right_label")
+        self.assertEqual(
+            ffi.string(args[10]),
+            self.gwygraphmodel.meta['right_label'].encode('utf-8'))
+
+        self.assertEqual(ffi.string(args[11]), b"bottom_label")
+        self.assertEqual(
+            ffi.string(args[12]),
+            self.gwygraphmodel.meta['bottom_label'].encode('utf-8'))
+
+        self.assertEqual(ffi.string(args[13]), b"x_unit")
+        self.assertEqual(
+            ffi.string(args[14]),
+            self.gwygraphmodel.meta['x_unit'].encode('utf-8'))
+
+        self.assertEqual(ffi.string(args[15]), b"y_unit")
+        self.assertEqual(
+            ffi.string(args[16]),
+            self.gwygraphmodel.meta['y_unit'].encode('utf-8'))
+
+        self.assertEqual(ffi.string(args[17]), b"x_min")
+        self.assertEqual(float(args[18]), self.gwygraphmodel.meta['x_min'])
+
+        self.assertEqual(ffi.string(args[19]), b"x_min_set")
+        self.assertEqual(bool(args[20]), self.gwygraphmodel.meta['x_min_set'])
+
+        self.assertEqual(ffi.string(args[21]), b"x_max")
+        self.assertEqual(float(args[22]), self.gwygraphmodel.meta['x_max'])
+
+        self.assertEqual(ffi.string(args[23]), b"x_max_set")
+        self.assertEqual(bool(args[24]), self.gwygraphmodel.meta['x_max_set'])
+
+        self.assertEqual(ffi.string(args[25]), b"x_is_logarithmic")
+        self.assertEqual(bool(args[26]),
+                         self.gwygraphmodel.meta['x_is_logarithmic'])
+
+        self.assertEqual(ffi.string(args[27]), b"y_is_logarithmic")
+        self.assertEqual(bool(args[28]),
+                         self.gwygraphmodel.meta['y_is_logarithmic'])
+
+        self.assertEqual(ffi.string(args[29]), b'label.visible')
+        self.assertEqual(bool(args[30]),
+                         self.gwygraphmodel.meta['label.visible'])
+
+        self.assertEqual(ffi.string(args[31]), b"label.has_frame")
+        self.assertEqual(bool(args[32]),
+                         self.gwygraphmodel.meta['label.has_frame'])
+
+        self.assertEqual(ffi.string(args[33]), b"label.reverse")
+        self.assertEqual(bool(args[34]),
+                         self.gwygraphmodel.meta['label.reverse'])
+
+        self.assertEqual(ffi.string(args[35]), b'label.frame_thickness')
+        self.assertEqual(int(args[36]),
+                         self.gwygraphmodel.meta['label.frame_thickness'])
+
+        self.assertEqual(ffi.string(args[37]), b'label.position')
+        self.assertEqual(int(args[38]),
+                         self.gwygraphmodel.meta['label.position'])
+
+        self.assertEqual(ffi.string(args[39]), b'grid-type')
+        self.assertEqual(int(args[40]),
+                         self.gwygraphmodel.meta['grid-type'])
+
+        self.assertEqual(args[-1], ffi.NULL)
+
+        return self.expected_return
+
+
 if __name__ == '__main__':
     unittest.main()

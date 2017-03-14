@@ -4,9 +4,15 @@
         GwyGraphModel: pythonic representation of GwyGraphModel gwy object
 
 """
+import weakref
+
 from pygwyfile._libgwyfile import ffi, lib
 from pygwyfile.gwyfile import GwyfileErrorCMsg
 from pygwyfile.gwygraphcurve import GwyGraphCurve
+
+# weak key dictionary to keep alive gwycurves objects
+# in gwygraph container
+_graph_curves_dict = weakref.WeakKeyDictionary()
 
 
 class GwyGraphModel:
@@ -435,6 +441,109 @@ class GwyGraphModel:
             return curves
         else:
             raise GwyfileErrorCMsg(errorp[0].message)
+
+    def to_gwy(self):
+        """ Create a new GWY file GwyGraphModel object."""
+        args = []
+
+        gwycurves = ffi.new('GwyfileObject*[]',
+                            [curve.to_gwy() for curve in self.curves])
+        ncurves = ffi.cast("int32_t", len(self.curves))
+        args.append(ncurves)
+
+        args.append(ffi.new("char[]", b"curves"))
+        args.append(gwycurves)
+
+        if self.meta['title'] is not None:
+            args.append(ffi.new("char[]", b"title"))
+            args.append(ffi.new("char[]", self.meta['title'].encode('utf-8')))
+
+        if self.meta['top_label'] is not None:
+            args.append(ffi.new("char[]", b'top_label'))
+            args.append(ffi.new("char[]",
+                                self.meta['top_label'].encode('utf-8')))
+
+        if self.meta['left_label'] is not None:
+            args.append(ffi.new("char[]", b'left_label'))
+            args.append(ffi.new("char[]",
+                                self.meta['left_label'].encode('utf-8')))
+
+        if self.meta['right_label'] is not None:
+            args.append(ffi.new("char[]", b'right_label'))
+            args.append(ffi.new("char[]",
+                                self.meta['right_label'].encode('utf-8')))
+
+        if self.meta['bottom_label'] is not None:
+            args.append(ffi.new("char[]", b'bottom_label'))
+            args.append(ffi.new("char[]",
+                                self.meta['bottom_label'].encode('utf-8')))
+
+        if self.meta['x_unit'] is not None:
+            args.append(ffi.new("char[]", b'x_unit'))
+            args.append(ffi.new("char[]",
+                                self.meta['x_unit'].encode('utf-8')))
+
+        if self.meta['y_unit'] is not None:
+            args.append(ffi.new("char[]", b'y_unit'))
+            args.append(ffi.new("char[]",
+                                self.meta['y_unit'].encode('utf-8')))
+
+        if self.meta['x_min'] is not None:
+            args.append(ffi.new("char[]", b'x_min'))
+            args.append(ffi.cast("double", self.meta['x_min']))
+
+        if self.meta['x_min_set'] is not None:
+            args.append(ffi.new("char[]", b'x_min_set'))
+            args.append(ffi.cast("bool", self.meta['x_min_set']))
+
+        if self.meta['x_max'] is not None:
+            args.append(ffi.new("char[]", b'x_max'))
+            args.append(ffi.cast("double", self.meta['x_max']))
+
+        if self.meta['x_max_set'] is not None:
+            args.append(ffi.new("char[]", b'x_max_set'))
+            args.append(ffi.cast("bool", self.meta['x_max_set']))
+
+        if self.meta['x_is_logarithmic'] is not None:
+            args.append(ffi.new("char[]", b'x_is_logarithmic'))
+            args.append(ffi.cast("bool", self.meta['x_is_logarithmic']))
+
+        if self.meta['y_is_logarithmic'] is not None:
+            args.append(ffi.new("char[]", b'y_is_logarithmic'))
+            args.append(ffi.cast("bool", self.meta['y_is_logarithmic']))
+
+        if self.meta['label.visible'] is not None:
+            args.append(ffi.new("char[]", b'label.visible'))
+            args.append(ffi.cast("bool", self.meta['label.visible']))
+
+        if self.meta['label.has_frame'] is not None:
+            args.append(ffi.new("char[]", b'label.has_frame'))
+            args.append(ffi.cast("bool", self.meta['label.has_frame']))
+
+        if self.meta['label.reverse'] is not None:
+            args.append(ffi.new("char[]", b'label.reverse'))
+            args.append(ffi.cast("bool", self.meta['label.reverse']))
+
+        if self.meta['label.frame_thickness'] is not None:
+            args.append(ffi.new("char[]", b'label.frame_thickness'))
+            args.append(ffi.cast("int32_t",
+                                 self.meta['label.frame_thickness']))
+
+        if self.meta['label.position'] is not None:
+            args.append(ffi.new("char[]", b'label.position'))
+            args.append(ffi.cast("int32_t", self.meta['label.position']))
+
+        if self.meta['grid-type'] is not None:
+            args.append(ffi.new("char[]", b'grid-type'))
+            args.append(ffi.cast("int32_t", self.meta['grid-type']))
+
+        args.append(ffi.NULL)
+        gwygraphmodel = lib.gwyfile_object_new_graphmodel(*args)
+
+        # gwygraphmodel object keeps alive gwycurves objects
+        _graph_curves_dict[gwygraphmodel] = gwycurves
+
+        return gwygraphmodel
 
     def __repr__(self):
         return "<{} instance at {}. Title: {}. Curves: {}.>".format(
