@@ -211,7 +211,7 @@ class Gwyfile:
             value (<cdata GwyfileObject*>): item value
 
         Returns:
-            gwyitem (<cdata GwyfileItem*>): new GWY file imte
+            gwyitem (<cdata GwyfileItem*>): new GWY file item
         """
         cfunc = lib.gwyfile_item_new_object
         gwyitem = cls._new_gwyitem(cfunc, item_key, value)
@@ -302,3 +302,33 @@ class Gwyfile:
 
         gwyfile = Gwyfile(c_gwyfile)
         return gwyfile
+
+
+def new_gwycontainer():
+    """ Create new empty GwyContainer
+
+    Returns:
+        gwycontainer (<cdata GwyfileObject*>):
+            empty Gwyddion Container
+    """
+    gwycontainer = lib.gwyfile_object_new(
+        ffi.new("char[]", b"GwyContainer"),
+        ffi.NULL)
+    return gwycontainer
+
+
+def add_gwyitem_to_gwycontainer(gwyitem, gwycontainer):
+    """ Add an data item to a GwyContainer
+
+    Args:
+        gwyitem (GwyfileItem*): A GWY file data item
+                                that is not present in any object
+        gywcontainer (GwyfileObject*): A GwyContainer
+
+    Returns:
+        True if the item was actually added
+    """
+    if lib.gwyfile_object_add(gwycontainer, gwyitem):
+        return True
+    else:
+        return False

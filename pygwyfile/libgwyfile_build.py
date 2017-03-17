@@ -77,6 +77,9 @@ GwyfileItem* gwyfile_item_new_string_copy(const char* name,
                                           const char* value);
 GwyfileItem* gwyfile_item_new_int32(const char* name,
                                     int32_t value);
+GwyfileObject* gwyfile_object_new(const char* name,
+                                  ...);
+bool gwyfile_object_add(GwyfileObject* object, GwyfileItem* item);
 """)
 
 

@@ -6,6 +6,7 @@
 """
 from pygwyfile.gwyfile import GwyfileError
 from pygwyfile.gwyfile import Gwyfile
+from pygwyfile.gwyfile import add_gwyitem_to_gwycontainer
 from pygwyfile.gwydatafield import GwyDataField
 from pygwyfile.gwyselection import (GwyPointSelection,
                                     GwyPointerSelection,
@@ -180,6 +181,22 @@ class GwyChannel:
         title = gwyfile.get_gwyitem_string(key)
         return title
 
+    def _add_title_to_gwy(self, gwycontainer, channel_id):
+        """ Add channel title to GwyContainer
+        
+        Args:
+            gwycontainer (<GwyfileObject*>):
+                Gwyddion container
+            channel_id (int): id of the channel in GwyContainer
+
+        Returns:
+            True if the item was actually added.
+        """
+        item_key = "/{:d}/data/title".format(channel_id)
+        gwyitem = Gwyfile.new_gwyitem_string(item_key, self.title)
+        is_added = add_gwyitem_to_gwycontainer(gwyitem, gwycontainer)
+        return is_added
+
     @staticmethod
     def _get_palette(gwyfile, channel_id):
         """Get name of the false color gradient used to display the channel
@@ -197,6 +214,23 @@ class GwyChannel:
         palette = gwyfile.get_gwyitem_string(key)
         return palette
 
+    def _add_palette_to_gwy(self, gwycontainer, channel_id):
+        """ Add name of the false color gradient to GwyContainer
+
+        Args:
+            gwycontainer (<GwyfileObject*>):
+                Gwyddion container
+            channel_id (int): id of the channel in GwyContainer
+
+        Returns:
+            True if the item was actually added.
+
+        """
+        item_key = "/{:d}/base/palette".format(channel_id)
+        gwyitem = Gwyfile.new_gwyitem_string(item_key, self.palette)
+        is_added = add_gwyitem_to_gwycontainer(gwyitem, gwycontainer)
+        return is_added
+
     @staticmethod
     def _get_visibility(gwyfile, channel_id):
         """ Get visibility flag for channel with id=channel_id from Gwyfile
@@ -212,6 +246,22 @@ class GwyChannel:
         key = "/{:d}/data/visible".format(channel_id)
         visible = gwyfile.get_gwyitem_bool(key)
         return visible
+
+    def _add_visibility_to_gwy(self, gwycontainer, channel_id):
+        """ Add visibility flag for channel to GwyContainer
+
+        Args:
+            gwycontainer (<GwyfileObject*>):
+                Gwyddion container
+            channel_id (int): id of the channel in GwyContainer
+
+        Returns:
+            True if the item was actually added.
+        """
+        item_key = "/{:d}/data/visible".format(channel_id)
+        gwyitem = Gwyfile.new_gwyitem_bool(item_key, self.visible)
+        is_added = add_gwyitem_to_gwycontainer(gwyitem, gwycontainer)
+        return is_added
 
     @staticmethod
     def _get_range_type(gwyfile, channel_id):
@@ -229,6 +279,23 @@ class GwyChannel:
         range_type = gwyfile.get_gwyitem_int32(key)
         return range_type
 
+    def _add_range_type_to_gwy(self, gwycontainer, channel_id):
+        """ Add fale color mapping type (as set by the Color range tool)
+            to GwyContainer
+
+        Args:
+            gwycontainer (<GwyfileObject*>):
+                Gwyddion container
+            channel_id (int): id of the channel in GwyContainer
+
+        Returns:
+            True if the item was actually added.
+        """
+        item_key = "/{:d}/base/range-type".format(channel_id)
+        gwyitem = Gwyfile.new_gwyitem_int32(item_key, self.range_type)
+        is_added = add_gwyitem_to_gwycontainer(gwyitem, gwycontainer)
+        return is_added
+    
     @staticmethod
     def _get_range_min(gwyfile, channel_id):
         """ Get minimum value for user-set display range
@@ -243,6 +310,22 @@ class GwyChannel:
         key = "/{:d}/base/min".format(channel_id)
         range_min = gwyfile.get_gwyitem_double(key)
         return range_min
+
+    def _add_range_min_to_gwy(self, gwycontainer, channel_id):
+        """ Add minimum value for user-set display range to GwyContainer
+
+        Args:
+            gwycontainer (<GwyfileObject*>):
+                Gwyddion container
+            channel_id (int): id of the channel in GwyContainer
+
+        Returns:
+            True if the item was actually added.
+        """
+        item_key = "/{:d}/base/min".format(channel_id)
+        gwyitem = Gwyfile.new_gwyitem_double(item_key, self.range_min)
+        is_added = add_gwyitem_to_gwycontainer(gwyitem, gwycontainer)
+        return is_added
 
     @staticmethod
     def _get_range_max(gwyfile, channel_id):
@@ -259,6 +342,22 @@ class GwyChannel:
         range_max = gwyfile.get_gwyitem_double(key)
         return range_max
 
+    def _add_range_max_to_gwy(self, gwycontainer, channel_id):
+        """ Add maximum value for user-set display range to GwyContainer
+
+        Args:
+            gwycontainer (<GwyfileObject*>):
+                Gwyddion container
+            channel_id (int): id of the channel in GwyContainer
+
+        Returns:
+            True if the item was actually added.
+        """
+        item_key = "/{:d}/base/max".format(channel_id)
+        gwyitem = Gwyfile.new_gwyitem_double(item_key, self.range_max)
+        is_added = add_gwyitem_to_gwycontainer(gwyitem, gwycontainer)
+        return is_added
+
     @staticmethod
     def _get_mask_red(gwyfile, channel_id):
         """ Get red component of the mask color
@@ -273,6 +372,22 @@ class GwyChannel:
         key = "/{:d}/mask/red".format(channel_id)
         mask_red = gwyfile.get_gwyitem_double(key)
         return mask_red
+
+    def _add_mask_red_to_gwy(self, gwycontainer, channel_id):
+        """ Add red component of the mask color to GwyContainer
+
+        Args:
+            gwycontainer (<GwyfileObject*>):
+                Gwyddion container
+            channel_id (int): id of the channel in GwyContainer
+
+        Returns:
+            True if the item was actually added.
+        """
+        item_key = "/{:d}/mask/red".format(channel_id)
+        gwyitem = Gwyfile.new_gwyitem_double(item_key, self.mask_red)
+        is_added = add_gwyitem_to_gwycontainer(gwyitem, gwycontainer)
+        return is_added
 
     @staticmethod
     def _get_mask_green(gwyfile, channel_id):
@@ -289,6 +404,22 @@ class GwyChannel:
         mask_green = gwyfile.get_gwyitem_double(key)
         return mask_green
 
+    def _add_mask_green_to_gwy(self, gwycontainer, channel_id):
+        """ Add green component of the mask color to GwyContainer
+
+        Args:
+            gwycontainer (<GwyfileObject*>):
+                Gwyddion container
+            channel_id (int): id of the channel in GwyContainer
+
+        Returns:
+            True if the item was actually added.
+        """
+        item_key = "/{:d}/mask/green".format(channel_id)
+        gwyitem = Gwyfile.new_gwyitem_double(item_key, self.mask_green)
+        is_added = add_gwyitem_to_gwycontainer(gwyitem, gwycontainer)
+        return is_added
+
     @staticmethod
     def _get_mask_blue(gwyfile, channel_id):
         """ Get blue component of the mask color
@@ -304,6 +435,22 @@ class GwyChannel:
         mask_blue = gwyfile.get_gwyitem_double(key)
         return mask_blue
 
+    def _add_mask_blue_to_gwy(self, gwycontainer, channel_id):
+        """ Add blue component of the mask color to GwyContainer
+
+        Args:
+            gwycontainer (<GwyfileObject*>):
+                Gwyddion container
+            channel_id (int): id of the channel in GwyContainer
+
+        Returns:
+            True if the item was actually added.
+        """
+        item_key = "/{:d}/mask/blue".format(channel_id)
+        gwyitem = Gwyfile.new_gwyitem_double(item_key, self.mask_blue)
+        is_added = add_gwyitem_to_gwycontainer(gwyitem, gwycontainer)
+        return is_added
+
     @staticmethod
     def _get_mask_alpha(gwyfile, channel_id):
         """ Get alpha (opacity) component of the mask color
@@ -318,6 +465,22 @@ class GwyChannel:
         key = "/{:d}/mask/alpha".format(channel_id)
         mask_alpha = gwyfile.get_gwyitem_double(key)
         return mask_alpha
+
+    def _add_mask_alpha_to_gwy(self, gwycontainer, channel_id):
+        """ Add alpha (opacity) component of the mask color to GwyContainer
+
+        Args:
+            gwycontainer (<GwyfileObject*>):
+                Gwyddion container
+            channel_id (int): id of the channel in GwyContainer
+
+        Returns:
+            True if the item was actually added.
+        """
+        item_key = "/{:d}/mask/alpha".format(channel_id)
+        gwyitem = Gwyfile.new_gwyitem_double(item_key, self.mask_alpha)
+        is_added = add_gwyitem_to_gwycontainer(gwyitem, gwycontainer)
+        return is_added
 
     @staticmethod
     def _get_data(gwyfile, channel_id):
@@ -340,6 +503,23 @@ class GwyChannel:
             raise GwyfileError(
                 "Channel with id:{:d} is not found".format(channel_id))
 
+    def _add_data_to_gwy(self, gwycontainer, channel_id):
+        """ Add datafield from the channel to GwyContainer
+                
+        Args:
+            gwycontainer (<GwyfileObject*>):
+                Gwyddion container
+            channel_id (int): id of the channel in GwyContainer
+
+        Returns:
+            True if the item was actually added.
+        """
+        key = "/{:d}/data".format(channel_id)
+        gwydf = self.data.to_gwy()
+        gwyitem = Gwyfile.new_gwyitem_object(key, gwydf)
+        is_added = add_gwyitem_to_gwycontainer(gwyitem, gwycontainer)
+        return is_added
+
     @staticmethod
     def _get_mask(gwyfile, channel_id):
         """ Get mask datafield from the channel with id=channel_id from Gwyfile
@@ -359,6 +539,23 @@ class GwyChannel:
             return GwyDataField.from_gwy(gwymask)
         else:
             return None
+
+    def _add_mask_to_gwy(self, gwycontainer, channel_id):
+        """ Add mask datafield from the channel to GwyContainer
+                
+        Args:
+            gwycontainer (<GwyfileObject*>):
+                Gwyddion container
+            channel_id (int): id of the channel in GwyContainer
+
+        Returns:
+            True if the item was actually added.
+        """
+        key = "/{:d}/mask".format(channel_id)
+        gwydf = self.mask.to_gwy()
+        gwyitem = Gwyfile.new_gwyitem_object(key, gwydf)
+        is_added = add_gwyitem_to_gwycontainer(gwyitem, gwycontainer)
+        return is_added
 
     @staticmethod
     def _get_show(gwyfile, channel_id):
@@ -381,6 +578,23 @@ class GwyChannel:
         else:
             return None
 
+    def _add_show_to_gwy(self, gwycontainer, channel_id):
+        """ Add presentation datafield from the channel to GwyContainer
+                
+        Args:
+            gwycontainer (<GwyfileObject*>):
+                Gwyddion container
+            channel_id (int): id of the channel in GwyContainer
+
+        Returns:
+            True if the item was actually added.
+        """
+        key = "/{:d}/show".format(channel_id)
+        gwydf = self.show.to_gwy()
+        gwyitem = Gwyfile.new_gwyitem_object(key, gwydf)
+        is_added = add_gwyitem_to_gwycontainer(gwyitem, gwycontainer)
+        return is_added
+
     @staticmethod
     def _get_point_sel(gwyfile, channel_id):
         """Get point selections from the channel with id=channel_id
@@ -400,6 +614,23 @@ class GwyChannel:
             return GwyPointSelection.from_gwy(gwysel)
         else:
             return None
+
+    def _add_point_sel_to_gwy(self, gwycontainer, channel_id):
+        """ Add point selections from the channel to GwyContainer
+        
+        Args:
+            gwycontainer (<GwyfileObject*>):
+                Gwyddion container
+            channel_id (int): id of the channel in GwyContainer
+
+        Returns:
+            True if the item was actually added.
+        """
+        key = "/{:d}/select/point".format(channel_id)
+        gwysel = self.point_selections.to_gwy()
+        gwyitem = Gwyfile.new_gwyitem_object(key, gwysel)
+        is_added = add_gwyitem_to_gwycontainer(gwyitem, gwycontainer)
+        return is_added
 
     @staticmethod
     def _get_pointer_sel(gwyfile, channel_id):
@@ -421,6 +652,23 @@ class GwyChannel:
         else:
             return None
 
+    def _add_pointer_sel_to_gwy(self, gwycontainer, channel_id):
+        """ Add pointer selections from the channel to GwyContainer
+        
+        Args:
+            gwycontainer (<GwyfileObject*>):
+                Gwyddion container
+            channel_id (int): id of the channel in GwyContainer
+
+        Returns:
+            True if the item was actually added.
+        """
+        key = "/{:d}/select/pointer".format(channel_id)
+        gwysel = self.pointer_selections.to_gwy()
+        gwyitem = Gwyfile.new_gwyitem_object(key, gwysel)
+        is_added = add_gwyitem_to_gwycontainer(gwyitem, gwycontainer)
+        return is_added
+
     @staticmethod
     def _get_line_sel(gwyfile, channel_id):
         """Get line selections from the channel with id=channel_id
@@ -440,6 +688,23 @@ class GwyChannel:
             return GwyLineSelection.from_gwy(gwysel)
         else:
             return None
+
+    def _add_line_sel_to_gwy(self, gwycontainer, channel_id):
+        """ Add line selections from the channel to GwyContainer
+        
+        Args:
+            gwycontainer (<GwyfileObject*>):
+                Gwyddion container
+            channel_id (int): id of the channel in GwyContainer
+
+        Returns:
+            True if the item was actually added.
+        """
+        key = "/{:d}/select/line".format(channel_id)
+        gwysel = self.line_selections.to_gwy()
+        gwyitem = Gwyfile.new_gwyitem_object(key, gwysel)
+        is_added = add_gwyitem_to_gwycontainer(gwyitem, gwycontainer)
+        return is_added
 
     @staticmethod
     def _get_rectangle_sel(gwyfile, channel_id):
@@ -461,6 +726,23 @@ class GwyChannel:
         else:
             return None
 
+    def _add_rectangle_sel_to_gwy(self, gwycontainer, channel_id):
+        """ Add rectangle selections from the channel to GwyContainer
+        
+        Args:
+            gwycontainer (<GwyfileObject*>):
+                Gwyddion container
+            channel_id (int): id of the channel in GwyContainer
+
+        Returns:
+            True if the item was actually added.
+        """
+        key = "/{:d}/select/rectangle".format(channel_id)
+        gwysel = self.rectangle_selections.to_gwy()
+        gwyitem = Gwyfile.new_gwyitem_object(key, gwysel)
+        is_added = add_gwyitem_to_gwycontainer(gwyitem, gwycontainer)
+        return is_added
+
     @staticmethod
     def _get_ellipse_sel(gwyfile, channel_id):
         """Get ellipse selections from the channel with id=channel_id
@@ -480,6 +762,23 @@ class GwyChannel:
             return GwyEllipseSelection.from_gwy(gwysel)
         else:
             return None
+
+    def _add_ellipse_sel_to_gwy(self, gwycontainer, channel_id):
+        """ Add ellipse selections from the channel to GwyContainer
+        
+        Args:
+            gwycontainer (<GwyfileObject*>):
+                Gwyddion container
+            channel_id (int): id of the channel in GwyContainer
+
+        Returns:
+            True if the item was actually added.
+        """
+        key = "/{:d}/select/ellipse".format(channel_id)
+        gwysel = self.ellipse_selections.to_gwy()
+        gwyitem = Gwyfile.new_gwyitem_object(key, gwysel)
+        is_added = add_gwyitem_to_gwycontainer(gwyitem, gwycontainer)
+        return is_added
 
     def __repr__(self):
         return "<{} instance at {}. Title: {}>".format(
