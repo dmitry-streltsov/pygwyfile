@@ -245,6 +245,34 @@ class Gwyfile_get_gwyitem_bool(unittest.TestCase):
             [call(self.item_key, lib.gwyfile_item_get_bool)])
 
 
+class Gwyfile_new_gwyitem_bool(unittest.TestCase):
+    """Tests for Gwyfile.new_gwyitem_bool method"""
+    def setUp(self):
+        self.Gwyfile = Mock(spec=Gwyfile)
+
+        patcher_new_gwyitem = patch.object(Gwyfile, '_new_gwyitem')
+        self.mock_new_gwyitem = patcher_new_gwyitem.start()
+        self.addCleanup(patcher_new_gwyitem.stop)
+
+        self.item_key = '/key'
+        self.value = True
+        self.gwyitem = Mock()
+
+    def test_return_value(self):
+        """Test return value"""
+        self.mock_new_gwyitem.side_effect = self._side_effect
+        actual_return = Gwyfile.new_gwyitem_bool(self.item_key, self.value)
+        self.assertEqual(actual_return,
+                         self.gwyitem)
+
+    def _side_effect(self, *args):
+        """ Test arguments of gwyfile_item_new_bool C func call"""
+        self.assertEqual(args[0], lib.gwyfile_item_new_bool)
+        self.assertEqual(args[1], self.item_key)
+        self.assertEqual(bool(args[2]), self.value)
+        return self.gwyitem
+
+
 class Gwyfile_get_gwyitem_string(unittest.TestCase):
     """ Tests for Gwyfile.get_gwyitem_string method """
     def setUp(self):
@@ -274,6 +302,40 @@ class Gwyfile_get_gwyitem_string(unittest.TestCase):
         self.gwyfile.get_gwyitem_string(self.gwyfile, self.item_key)
         self.gwyfile._get_gwyitem_value.assert_has_calls(
             [call(self.item_key, lib.gwyfile_item_get_string)])
+
+
+class Gwyfile_new_gwyitem_string(unittest.TestCase):
+    """Tests for Gwyfile.new_gwyitem_string method"""
+    def setUp(self):
+        self.Gwyfile = Mock(spec=Gwyfile)
+
+        patcher_new_gwyitem = patch.object(Gwyfile, '_new_gwyitem')
+        self.mock_new_gwyitem = patcher_new_gwyitem.start()
+        self.addCleanup(patcher_new_gwyitem.stop)
+
+        self.item_key = '/key'
+        self.value = 'test string'
+        self.gwyitem = Mock()
+
+    def test_return_None_if_value_is_None(self):
+        """Return None if value string is None"""
+        actual_return = Gwyfile.new_gwyitem_string(self.item_key,
+                                                   None)
+        self.assertIsNone(actual_return)
+
+    def test_return_value(self):
+        """Test return value"""
+        self.mock_new_gwyitem.side_effect = self._side_effect
+        actual_return = Gwyfile.new_gwyitem_string(self.item_key, self.value)
+        self.assertEqual(actual_return,
+                         self.gwyitem)
+
+    def _side_effect(self, *args):
+        """ Test arguments of gwyfile_item_new_string_copy C func call"""
+        self.assertEqual(args[0], lib.gwyfile_item_new_string_copy)
+        self.assertEqual(args[1], self.item_key)
+        self.assertEqual(ffi.string(args[2]), self.value.encode('utf-8'))
+        return self.gwyitem
 
 
 class Gwyfile_get_gwyitem_object(unittest.TestCase):
@@ -307,6 +369,34 @@ class Gwyfile_get_gwyitem_object(unittest.TestCase):
             [call(self.item_key, lib.gwyfile_item_get_object)])
 
 
+class Gwyfile_new_gwyitem_object(unittest.TestCase):
+    """Tests for Gwyfile.new_gwyitem_object method"""
+    def setUp(self):
+        self.Gwyfile = Mock(spec=Gwyfile)
+
+        patcher_new_gwyitem = patch.object(Gwyfile, '_new_gwyitem')
+        self.mock_new_gwyitem = patcher_new_gwyitem.start()
+        self.addCleanup(patcher_new_gwyitem.stop)
+
+        self.item_key = '/key'
+        self.value = Mock()
+        self.gwyitem = Mock()
+
+    def test_return_value(self):
+        """Test return value"""
+        self.mock_new_gwyitem.side_effect = self._side_effect
+        actual_return = Gwyfile.new_gwyitem_object(self.item_key, self.value)
+        self.assertEqual(actual_return,
+                         self.gwyitem)
+
+    def _side_effect(self, *args):
+        """ Test arguments of gwyfile_item_new_object C func call"""
+        self.assertEqual(args[0], lib.gwyfile_item_new_object)
+        self.assertEqual(args[1], self.item_key)
+        self.assertEqual(args[2], self.value)
+        return self.gwyitem
+
+
 class Gwyfile_get_gwyitem_int32(unittest.TestCase):
     """ Tests for Gwyfile.get_gwyitem_int32 method"""
     def setUp(self):
@@ -337,6 +427,34 @@ class Gwyfile_get_gwyitem_int32(unittest.TestCase):
             [call(self.item_key, lib.gwyfile_item_get_int32)])
 
 
+class Gwyfile_new_gwyitem_int32(unittest.TestCase):
+    """Tests for Gwyfile.new_gwyitem_int32 method"""
+    def setUp(self):
+        self.Gwyfile = Mock(spec=Gwyfile)
+
+        patcher_new_gwyitem = patch.object(Gwyfile, '_new_gwyitem')
+        self.mock_new_gwyitem = patcher_new_gwyitem.start()
+        self.addCleanup(patcher_new_gwyitem.stop)
+
+        self.item_key = '/key'
+        self.value = 42
+        self.gwyitem = Mock()
+
+    def test_return_value(self):
+        """Test return value"""
+        self.mock_new_gwyitem.side_effect = self._side_effect
+        actual_return = Gwyfile.new_gwyitem_int32(self.item_key, self.value)
+        self.assertEqual(actual_return,
+                         self.gwyitem)
+
+    def _side_effect(self, *args):
+        """ Test arguments of gwyfile_item_new_int32 C func call"""
+        self.assertEqual(args[0], lib.gwyfile_item_new_int32)
+        self.assertEqual(args[1], self.item_key)
+        self.assertEqual(int(args[2]), self.value)
+        return self.gwyitem
+
+
 class Gwyfile_get_gwyitem_double(unittest.TestCase):
     """ Tests for Gwyfile.get_gwyitem_double method"""
     def setUp(self):
@@ -365,6 +483,34 @@ class Gwyfile_get_gwyitem_double(unittest.TestCase):
         self.gwyfile.get_gwyitem_double(self.gwyfile, self.item_key)
         self.gwyfile._get_gwyitem_value.assert_has_calls(
             [call(self.item_key, lib.gwyfile_item_get_double)])
+
+
+class Gwyfile_new_gwyitem_double(unittest.TestCase):
+    """Tests for Gwyfile.new_gwyitem_double method"""
+    def setUp(self):
+        self.Gwyfile = Mock(spec=Gwyfile)
+
+        patcher_new_gwyitem = patch.object(Gwyfile, '_new_gwyitem')
+        self.mock_new_gwyitem = patcher_new_gwyitem.start()
+        self.addCleanup(patcher_new_gwyitem.stop)
+
+        self.item_key = '/key'
+        self.value = 3.14
+        self.gwyitem = Mock()
+
+    def test_return_value(self):
+        """Test return value"""
+        self.mock_new_gwyitem.side_effect = self._side_effect
+        actual_return = Gwyfile.new_gwyitem_double(self.item_key, self.value)
+        self.assertEqual(actual_return,
+                         self.gwyitem)
+
+    def _side_effect(self, *args):
+        """ Test arguments of gwyfile_item_new_double C func call"""
+        self.assertEqual(args[0], lib.gwyfile_item_new_double)
+        self.assertEqual(args[1], self.item_key)
+        self.assertEqual(float(args[2]), self.value)
+        return self.gwyitem
 
 
 if __name__ == '__main__':
