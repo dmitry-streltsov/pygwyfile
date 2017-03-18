@@ -4,6 +4,7 @@ from unittest.mock import patch, call, ANY, Mock
 from pygwyfile.gwyfile import Gwyfile
 from pygwyfile.gwyfile import GwyfileError, GwyfileErrorCMsg
 from pygwyfile.gwyfile import ffi, lib
+from pygwyfile.gwyfile import new_gwycontainer, add_gwyitem_to_gwycontainer
 
 
 class GwyfileErrorCMsg_exception(unittest.TestCase):
@@ -511,6 +512,63 @@ class Gwyfile_new_gwyitem_double(unittest.TestCase):
         self.assertEqual(args[1], self.item_key)
         self.assertEqual(float(args[2]), self.value)
         return self.gwyitem
+
+
+class Func_new_gwycontainer(unittest.TestCase):
+    """ Tests for new_gwycontainer function"""
+
+    def setUp(self):
+        self.gwycontainer = Mock()
+
+    @patch('pygwyfile.gwyfile.lib', autospec=True)
+    def test_args_of_libgwyfile_func_call(self, mock_lib):
+        """ Call gwyfile_object_new C func to create empty GwyContainer"""
+        mock_lib.gwyfile_object_new.side_effect = self._side_effect
+        gwycontainer = new_gwycontainer()
+        self.assertEqual(gwycontainer, self.gwycontainer)
+
+    def _side_effect(self, *args):
+        """ First arg of lib.gwyfile_object_new is b"GwyContainer"
+            Last arg of lib.gwyfile_object_new is ffi.NULL
+        """
+        self.assertEqual(ffi.string(args[0]), b"GwyContainer")
+        self.assertEqual(args[-1], ffi.NULL)
+        return self.gwycontainer
+
+
+class Func_add_gwyitem_to_gwycontainer(unittest.TestCase):
+    """ Tests for add_gwyitem_to_gwycontainer function"""
+    def setUp(self):
+        self.gwycontainer = Mock()
+        self.gwyitem = Mock()
+        self.is_added = True
+
+    @patch('pygwyfile.gwyfile.lib', autospec=True)
+    def test_return_True_if_gwyitem_was_added(self, mock_lib):
+        """ Return True if gwyfile_object_add func returned true"""
+        self.is_added = True
+        mock_lib.gwyfile_object_add.side_effect = self._side_effect
+        actual_return = add_gwyitem_to_gwycontainer(self.gwyitem,
+                                                    self.gwycontainer)
+        self.assertEqual(actual_return, self.is_added)
+
+    @patch('pygwyfile.gwyfile.lib', autospec=True)
+    def test_return_False_if_gwyitem_was_not_added(self, mock_lib):
+        """ Return False if gwyfile_object_add func returned false"""
+        self.is_added = False
+        mock_lib.gwyfile_object_add.side_effect = self._side_effect
+        actual_return = add_gwyitem_to_gwycontainer(self.gwyitem,
+                                                    self.gwycontainer)
+        self.assertEqual(actual_return, self.is_added)
+
+    def _side_effect(self, *args):
+        """ First arg is a GWY file data object
+            Second arg is a Gwy file data item
+            Returns true is the item was added to the object
+        """
+        self.assertEqual(args[0], self.gwycontainer)
+        self.assertEqual(args[1], self.gwyitem)
+        return ffi.cast("bool", self.is_added)
 
 
 if __name__ == '__main__':

@@ -183,7 +183,7 @@ class GwyChannel:
 
     def _add_title_to_gwy(self, gwycontainer, channel_id):
         """ Add channel title to GwyContainer
-        
+
         Args:
             gwycontainer (<GwyfileObject*>):
                 Gwyddion container
@@ -192,10 +192,13 @@ class GwyChannel:
         Returns:
             True if the item was actually added.
         """
-        item_key = "/{:d}/data/title".format(channel_id)
-        gwyitem = Gwyfile.new_gwyitem_string(item_key, self.title)
-        is_added = add_gwyitem_to_gwycontainer(gwyitem, gwycontainer)
-        return is_added
+        if self.title is not None:
+            item_key = "/{:d}/data/title".format(channel_id)
+            gwyitem = Gwyfile.new_gwyitem_string(item_key, self.title)
+            is_added = add_gwyitem_to_gwycontainer(gwyitem, gwycontainer)
+            return is_added
+        else:
+            raise TypeError("Title is a necessary attribute of Channel")
 
     @staticmethod
     def _get_palette(gwyfile, channel_id):
@@ -226,10 +229,13 @@ class GwyChannel:
             True if the item was actually added.
 
         """
-        item_key = "/{:d}/base/palette".format(channel_id)
-        gwyitem = Gwyfile.new_gwyitem_string(item_key, self.palette)
-        is_added = add_gwyitem_to_gwycontainer(gwyitem, gwycontainer)
-        return is_added
+        if self.palette is not None:
+            item_key = "/{:d}/base/palette".format(channel_id)
+            gwyitem = Gwyfile.new_gwyitem_string(item_key, self.palette)
+            is_added = add_gwyitem_to_gwycontainer(gwyitem, gwycontainer)
+            return is_added
+        else:
+            return False
 
     @staticmethod
     def _get_visibility(gwyfile, channel_id):
@@ -258,10 +264,13 @@ class GwyChannel:
         Returns:
             True if the item was actually added.
         """
-        item_key = "/{:d}/data/visible".format(channel_id)
-        gwyitem = Gwyfile.new_gwyitem_bool(item_key, self.visible)
-        is_added = add_gwyitem_to_gwycontainer(gwyitem, gwycontainer)
-        return is_added
+        if self.visible is not None:
+            item_key = "/{:d}/data/visible".format(channel_id)
+            gwyitem = Gwyfile.new_gwyitem_bool(item_key, self.visible)
+            is_added = add_gwyitem_to_gwycontainer(gwyitem, gwycontainer)
+            return is_added
+        else:
+            return False
 
     @staticmethod
     def _get_range_type(gwyfile, channel_id):
@@ -291,11 +300,14 @@ class GwyChannel:
         Returns:
             True if the item was actually added.
         """
-        item_key = "/{:d}/base/range-type".format(channel_id)
-        gwyitem = Gwyfile.new_gwyitem_int32(item_key, self.range_type)
-        is_added = add_gwyitem_to_gwycontainer(gwyitem, gwycontainer)
-        return is_added
-    
+        if self.range_type is not None:
+            item_key = "/{:d}/base/range-type".format(channel_id)
+            gwyitem = Gwyfile.new_gwyitem_int32(item_key, self.range_type)
+            is_added = add_gwyitem_to_gwycontainer(gwyitem, gwycontainer)
+            return is_added
+        else:
+            return False
+
     @staticmethod
     def _get_range_min(gwyfile, channel_id):
         """ Get minimum value for user-set display range
@@ -322,10 +334,13 @@ class GwyChannel:
         Returns:
             True if the item was actually added.
         """
-        item_key = "/{:d}/base/min".format(channel_id)
-        gwyitem = Gwyfile.new_gwyitem_double(item_key, self.range_min)
-        is_added = add_gwyitem_to_gwycontainer(gwyitem, gwycontainer)
-        return is_added
+        if self.range_min is not None:
+            item_key = "/{:d}/base/min".format(channel_id)
+            gwyitem = Gwyfile.new_gwyitem_double(item_key, self.range_min)
+            is_added = add_gwyitem_to_gwycontainer(gwyitem, gwycontainer)
+            return is_added
+        else:
+            return False
 
     @staticmethod
     def _get_range_max(gwyfile, channel_id):
@@ -353,10 +368,13 @@ class GwyChannel:
         Returns:
             True if the item was actually added.
         """
-        item_key = "/{:d}/base/max".format(channel_id)
-        gwyitem = Gwyfile.new_gwyitem_double(item_key, self.range_max)
-        is_added = add_gwyitem_to_gwycontainer(gwyitem, gwycontainer)
-        return is_added
+        if self.range_max is not None:
+            item_key = "/{:d}/base/max".format(channel_id)
+            gwyitem = Gwyfile.new_gwyitem_double(item_key, self.range_max)
+            is_added = add_gwyitem_to_gwycontainer(gwyitem, gwycontainer)
+            return is_added
+        else:
+            return False
 
     @staticmethod
     def _get_mask_red(gwyfile, channel_id):
@@ -384,10 +402,13 @@ class GwyChannel:
         Returns:
             True if the item was actually added.
         """
-        item_key = "/{:d}/mask/red".format(channel_id)
-        gwyitem = Gwyfile.new_gwyitem_double(item_key, self.mask_red)
-        is_added = add_gwyitem_to_gwycontainer(gwyitem, gwycontainer)
-        return is_added
+        if self.mask_red is not None:
+            item_key = "/{:d}/mask/red".format(channel_id)
+            gwyitem = Gwyfile.new_gwyitem_double(item_key, self.mask_red)
+            is_added = add_gwyitem_to_gwycontainer(gwyitem, gwycontainer)
+            return is_added
+        else:
+            return False
 
     @staticmethod
     def _get_mask_green(gwyfile, channel_id):
@@ -415,10 +436,13 @@ class GwyChannel:
         Returns:
             True if the item was actually added.
         """
-        item_key = "/{:d}/mask/green".format(channel_id)
-        gwyitem = Gwyfile.new_gwyitem_double(item_key, self.mask_green)
-        is_added = add_gwyitem_to_gwycontainer(gwyitem, gwycontainer)
-        return is_added
+        if self.mask_green is not None:
+            item_key = "/{:d}/mask/green".format(channel_id)
+            gwyitem = Gwyfile.new_gwyitem_double(item_key, self.mask_green)
+            is_added = add_gwyitem_to_gwycontainer(gwyitem, gwycontainer)
+            return is_added
+        else:
+            return False
 
     @staticmethod
     def _get_mask_blue(gwyfile, channel_id):
@@ -446,10 +470,13 @@ class GwyChannel:
         Returns:
             True if the item was actually added.
         """
-        item_key = "/{:d}/mask/blue".format(channel_id)
-        gwyitem = Gwyfile.new_gwyitem_double(item_key, self.mask_blue)
-        is_added = add_gwyitem_to_gwycontainer(gwyitem, gwycontainer)
-        return is_added
+        if self.mask_blue is not None:
+            item_key = "/{:d}/mask/blue".format(channel_id)
+            gwyitem = Gwyfile.new_gwyitem_double(item_key, self.mask_blue)
+            is_added = add_gwyitem_to_gwycontainer(gwyitem, gwycontainer)
+            return is_added
+        else:
+            return False
 
     @staticmethod
     def _get_mask_alpha(gwyfile, channel_id):
@@ -477,10 +504,13 @@ class GwyChannel:
         Returns:
             True if the item was actually added.
         """
-        item_key = "/{:d}/mask/alpha".format(channel_id)
-        gwyitem = Gwyfile.new_gwyitem_double(item_key, self.mask_alpha)
-        is_added = add_gwyitem_to_gwycontainer(gwyitem, gwycontainer)
-        return is_added
+        if self.mask_alpha is not None:
+            item_key = "/{:d}/mask/alpha".format(channel_id)
+            gwyitem = Gwyfile.new_gwyitem_double(item_key, self.mask_alpha)
+            is_added = add_gwyitem_to_gwycontainer(gwyitem, gwycontainer)
+            return is_added
+        else:
+            return False
 
     @staticmethod
     def _get_data(gwyfile, channel_id):
@@ -505,7 +535,7 @@ class GwyChannel:
 
     def _add_data_to_gwy(self, gwycontainer, channel_id):
         """ Add datafield from the channel to GwyContainer
-                
+
         Args:
             gwycontainer (<GwyfileObject*>):
                 Gwyddion container
@@ -514,11 +544,14 @@ class GwyChannel:
         Returns:
             True if the item was actually added.
         """
-        key = "/{:d}/data".format(channel_id)
-        gwydf = self.data.to_gwy()
-        gwyitem = Gwyfile.new_gwyitem_object(key, gwydf)
-        is_added = add_gwyitem_to_gwycontainer(gwyitem, gwycontainer)
-        return is_added
+        if isinstance(self.data, GwyDataField):
+            key = "/{:d}/data".format(channel_id)
+            gwydf = self.data.to_gwy()
+            gwyitem = Gwyfile.new_gwyitem_object(key, gwydf)
+            is_added = add_gwyitem_to_gwycontainer(gwyitem, gwycontainer)
+            return is_added
+        else:
+            raise TypeError("Datafield is of wrong type")
 
     @staticmethod
     def _get_mask(gwyfile, channel_id):
@@ -542,7 +575,7 @@ class GwyChannel:
 
     def _add_mask_to_gwy(self, gwycontainer, channel_id):
         """ Add mask datafield from the channel to GwyContainer
-                
+
         Args:
             gwycontainer (<GwyfileObject*>):
                 Gwyddion container
@@ -551,11 +584,16 @@ class GwyChannel:
         Returns:
             True if the item was actually added.
         """
-        key = "/{:d}/mask".format(channel_id)
-        gwydf = self.mask.to_gwy()
-        gwyitem = Gwyfile.new_gwyitem_object(key, gwydf)
-        is_added = add_gwyitem_to_gwycontainer(gwyitem, gwycontainer)
-        return is_added
+        if self.mask is None:
+            return False
+        elif isinstance(self.mask, GwyDataField):
+            key = "/{:d}/mask".format(channel_id)
+            gwydf = self.mask.to_gwy()
+            gwyitem = Gwyfile.new_gwyitem_object(key, gwydf)
+            is_added = add_gwyitem_to_gwycontainer(gwyitem, gwycontainer)
+            return is_added
+        else:
+            raise TypeError("Mask must be a GwyDataField instance or None")
 
     @staticmethod
     def _get_show(gwyfile, channel_id):
@@ -580,7 +618,7 @@ class GwyChannel:
 
     def _add_show_to_gwy(self, gwycontainer, channel_id):
         """ Add presentation datafield from the channel to GwyContainer
-                
+
         Args:
             gwycontainer (<GwyfileObject*>):
                 Gwyddion container
@@ -589,11 +627,16 @@ class GwyChannel:
         Returns:
             True if the item was actually added.
         """
-        key = "/{:d}/show".format(channel_id)
-        gwydf = self.show.to_gwy()
-        gwyitem = Gwyfile.new_gwyitem_object(key, gwydf)
-        is_added = add_gwyitem_to_gwycontainer(gwyitem, gwycontainer)
-        return is_added
+        if self.show is None:
+            return False
+        elif isinstance(self.show, GwyDataField):
+            key = "/{:d}/show".format(channel_id)
+            gwydf = self.show.to_gwy()
+            gwyitem = Gwyfile.new_gwyitem_object(key, gwydf)
+            is_added = add_gwyitem_to_gwycontainer(gwyitem, gwycontainer)
+            return is_added
+        else:
+            raise TypeError("Presentation must be a GwyDataField or None")
 
     @staticmethod
     def _get_point_sel(gwyfile, channel_id):
@@ -617,7 +660,7 @@ class GwyChannel:
 
     def _add_point_sel_to_gwy(self, gwycontainer, channel_id):
         """ Add point selections from the channel to GwyContainer
-        
+
         Args:
             gwycontainer (<GwyfileObject*>):
                 Gwyddion container
@@ -626,11 +669,17 @@ class GwyChannel:
         Returns:
             True if the item was actually added.
         """
-        key = "/{:d}/select/point".format(channel_id)
-        gwysel = self.point_selections.to_gwy()
-        gwyitem = Gwyfile.new_gwyitem_object(key, gwysel)
-        is_added = add_gwyitem_to_gwycontainer(gwyitem, gwycontainer)
-        return is_added
+        if self.point_selections is None:
+            return False
+        elif isinstance(self.point_selections, GwyPointSelection):
+            key = "/{:d}/select/point".format(channel_id)
+            gwysel = self.point_selections.to_gwy()
+            gwyitem = Gwyfile.new_gwyitem_object(key, gwysel)
+            is_added = add_gwyitem_to_gwycontainer(gwyitem, gwycontainer)
+            return is_added
+        else:
+            raise TypeError("point_selections must be "
+                            "a GwyPointSelection instance or None")
 
     @staticmethod
     def _get_pointer_sel(gwyfile, channel_id):
@@ -654,7 +703,7 @@ class GwyChannel:
 
     def _add_pointer_sel_to_gwy(self, gwycontainer, channel_id):
         """ Add pointer selections from the channel to GwyContainer
-        
+
         Args:
             gwycontainer (<GwyfileObject*>):
                 Gwyddion container
@@ -663,11 +712,17 @@ class GwyChannel:
         Returns:
             True if the item was actually added.
         """
-        key = "/{:d}/select/pointer".format(channel_id)
-        gwysel = self.pointer_selections.to_gwy()
-        gwyitem = Gwyfile.new_gwyitem_object(key, gwysel)
-        is_added = add_gwyitem_to_gwycontainer(gwyitem, gwycontainer)
-        return is_added
+        if self.pointer_selections is None:
+            return False
+        elif isinstance(self.pointer_selections, GwyPointerSelection):
+            key = "/{:d}/select/pointer".format(channel_id)
+            gwysel = self.pointer_selections.to_gwy()
+            gwyitem = Gwyfile.new_gwyitem_object(key, gwysel)
+            is_added = add_gwyitem_to_gwycontainer(gwyitem, gwycontainer)
+            return is_added
+        else:
+            raise TypeError("pointer_selections must be "
+                            "a GwyPointerSelection instance or None")
 
     @staticmethod
     def _get_line_sel(gwyfile, channel_id):
@@ -691,7 +746,7 @@ class GwyChannel:
 
     def _add_line_sel_to_gwy(self, gwycontainer, channel_id):
         """ Add line selections from the channel to GwyContainer
-        
+
         Args:
             gwycontainer (<GwyfileObject*>):
                 Gwyddion container
@@ -700,11 +755,17 @@ class GwyChannel:
         Returns:
             True if the item was actually added.
         """
-        key = "/{:d}/select/line".format(channel_id)
-        gwysel = self.line_selections.to_gwy()
-        gwyitem = Gwyfile.new_gwyitem_object(key, gwysel)
-        is_added = add_gwyitem_to_gwycontainer(gwyitem, gwycontainer)
-        return is_added
+        if self.line_selections is None:
+            return False
+        elif isinstance(self.line_selections, GwyLineSelection):
+            key = "/{:d}/select/line".format(channel_id)
+            gwysel = self.line_selections.to_gwy()
+            gwyitem = Gwyfile.new_gwyitem_object(key, gwysel)
+            is_added = add_gwyitem_to_gwycontainer(gwyitem, gwycontainer)
+            return is_added
+        else:
+            raise TypeError("line_selections must be "
+                            "a GwyLineSelection instance or None")
 
     @staticmethod
     def _get_rectangle_sel(gwyfile, channel_id):
@@ -728,7 +789,7 @@ class GwyChannel:
 
     def _add_rectangle_sel_to_gwy(self, gwycontainer, channel_id):
         """ Add rectangle selections from the channel to GwyContainer
-        
+
         Args:
             gwycontainer (<GwyfileObject*>):
                 Gwyddion container
@@ -737,11 +798,17 @@ class GwyChannel:
         Returns:
             True if the item was actually added.
         """
-        key = "/{:d}/select/rectangle".format(channel_id)
-        gwysel = self.rectangle_selections.to_gwy()
-        gwyitem = Gwyfile.new_gwyitem_object(key, gwysel)
-        is_added = add_gwyitem_to_gwycontainer(gwyitem, gwycontainer)
-        return is_added
+        if self.rectangle_selections is None:
+            return False
+        elif isinstance(self.rectangle_selections, GwyRectangleSelection):
+            key = "/{:d}/select/rectangle".format(channel_id)
+            gwysel = self.rectangle_selections.to_gwy()
+            gwyitem = Gwyfile.new_gwyitem_object(key, gwysel)
+            is_added = add_gwyitem_to_gwycontainer(gwyitem, gwycontainer)
+            return is_added
+        else:
+            raise TypeError("rectangle_selections must be "
+                            "a GwyRectangleSelection instance or None")
 
     @staticmethod
     def _get_ellipse_sel(gwyfile, channel_id):
@@ -765,7 +832,7 @@ class GwyChannel:
 
     def _add_ellipse_sel_to_gwy(self, gwycontainer, channel_id):
         """ Add ellipse selections from the channel to GwyContainer
-        
+
         Args:
             gwycontainer (<GwyfileObject*>):
                 Gwyddion container
@@ -774,11 +841,17 @@ class GwyChannel:
         Returns:
             True if the item was actually added.
         """
-        key = "/{:d}/select/ellipse".format(channel_id)
-        gwysel = self.ellipse_selections.to_gwy()
-        gwyitem = Gwyfile.new_gwyitem_object(key, gwysel)
-        is_added = add_gwyitem_to_gwycontainer(gwyitem, gwycontainer)
-        return is_added
+        if self.ellipse_selections is None:
+            return False
+        elif isinstance(self.ellipse_selections, GwyEllipseSelection):
+            key = "/{:d}/select/ellipse".format(channel_id)
+            gwysel = self.ellipse_selections.to_gwy()
+            gwyitem = Gwyfile.new_gwyitem_object(key, gwysel)
+            is_added = add_gwyitem_to_gwycontainer(gwyitem, gwycontainer)
+            return is_added
+        else:
+            raise TypeError("ellipse_selections must be"
+                            "a GwyEllipseSelection instance or None")
 
     def __repr__(self):
         return "<{} instance at {}. Title: {}>".format(

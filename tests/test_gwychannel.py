@@ -35,6 +35,63 @@ class GwyChannel_get_title(unittest.TestCase):
                          self.gwyfile.get_gwyitem_string.return_value)
 
 
+class GwyChannel_add_title_to_gwy(unittest.TestCase):
+    """ Test _add_title_to_gwy method of GwyChannel class"""
+
+    def setUp(self):
+        self.gwychannel = Mock(spec=GwyChannel)
+        self.gwychannel._add_title_to_gwy = GwyChannel._add_title_to_gwy
+        self.gwychannel.title = 'Title'
+        self.gwycontainer = Mock()
+        self.channel_id = 0
+
+    def test_raise_TypeError_if_title_is_None(self):
+        """ Raise TypeError exception if title attribute is None"""
+        self.gwychannel.title = None
+        self.assertRaises(TypeError,
+                          self.gwychannel._add_title_to_gwy,
+                          self.gwychannel,
+                          self.gwycontainer,
+                          self.channel_id)
+
+    @patch('pygwyfile.gwychannel.add_gwyitem_to_gwycontainer', autospec=True)
+    @patch.object(Gwyfile, 'new_gwyitem_string')
+    def test_create_new_gwyitem(self,
+                                mock_new_gwyitem_string,
+                                mock_add_gwyitem_to_gwycontainer):
+        """Create new string gwyitem with title value"""
+        self.gwychannel._add_title_to_gwy(self.gwychannel,
+                                          self.gwycontainer,
+                                          self.channel_id)
+        mock_new_gwyitem_string.assert_has_calls(
+            [call("/{:d}/data/title".format(self.channel_id),
+                  self.gwychannel.title)])
+
+    @patch('pygwyfile.gwychannel.add_gwyitem_to_gwycontainer', autospec=True)
+    @patch.object(Gwyfile, 'new_gwyitem_string')
+    def test_add_gwyitem_to_container(self,
+                                      mock_new_gwyitem_string,
+                                      mock_add_gwyitem_to_gwycontainer):
+        """Add created gwyitem to gywcontainer"""
+        gwyitem = mock_new_gwyitem_string.return_value
+        self.gwychannel._add_title_to_gwy(self.gwychannel,
+                                          self.gwycontainer,
+                                          self.channel_id)
+        mock_add_gwyitem_to_gwycontainer.assert_has_calls(
+            [call(gwyitem, self.gwycontainer)])
+
+    @patch('pygwyfile.gwychannel.add_gwyitem_to_gwycontainer', autospec=True)
+    @patch.object(Gwyfile, 'new_gwyitem_string')
+    def test_return_value(self,
+                          mock_new_gwyitem_string,
+                          mock_add_gwyitem_to_gwycontainer):
+        """Return result of add_gwyitem_to_gwycontainer call"""
+        is_added = self.gwychannel._add_title_to_gwy(self.gwychannel,
+                                                     self.gwycontainer,
+                                                     self.channel_id)
+        self.assertIs(is_added, mock_add_gwyitem_to_gwycontainer.return_value)
+
+
 class GwyChannel_get_palette(unittest.TestCase):
     """Test _get_palette method of GwyChannel class"""
 
@@ -54,6 +111,68 @@ class GwyChannel_get_palette(unittest.TestCase):
                                                 self.channel_id)
         self.assertEqual(actual_return,
                          self.gwyfile.get_gwyitem_string.return_value)
+
+
+class GwyChannel_add_palette_to_gwy(unittest.TestCase):
+    """Test _add_palette_to_gwy method of GwyChannel class"""
+
+    def setUp(self):
+        self.gwychannel = Mock(spec=GwyChannel)
+        self.gwychannel._add_palette_to_gwy = GwyChannel._add_palette_to_gwy
+        self.gwycontainer = Mock()
+        self.channel_id = 0
+        self.gwychannel.palette = 'Gold'
+
+    @patch('pygwyfile.gwychannel.add_gwyitem_to_gwycontainer', autospec=True)
+    def test_return_False_if_palette_does_not_set(self,
+                                                  mock_add_gwyitem):
+        """ If palette attribute is None do not add anything to gwycontainer
+            add retrun False
+        """
+        self.gwychannel.palette = None
+        is_added = self.gwychannel._add_palette_to_gwy(self.gwychannel,
+                                                       self.gwycontainer,
+                                                       self.channel_id)
+        self.assertIs(is_added, False)
+        mock_add_gwyitem.assert_has_calls([])
+
+    @patch.object(Gwyfile, 'new_gwyitem_string')
+    @patch('pygwyfile.gwychannel.add_gwyitem_to_gwycontainer', autospec=True)
+    def test_create_new_gwyitem_with_palette_string(self,
+                                                    mock_add_gwyitem,
+                                                    mock_new_gwyitem_string):
+        """Create new gwyitem with palette string """
+        self.gwychannel._add_palette_to_gwy(self.gwychannel,
+                                            self.gwycontainer,
+                                            self.channel_id)
+        mock_new_gwyitem_string.assert_has_calls(
+            [call("/{:d}/base/palette".format(self.channel_id),
+                  self.gwychannel.palette)])
+
+    @patch.object(Gwyfile, 'new_gwyitem_string')
+    @patch('pygwyfile.gwychannel.add_gwyitem_to_gwycontainer', autospec=True)
+    def test_add_gwyitem_to_container(self,
+                                      mock_add_gwyitem,
+                                      mock_new_gwyitem_string):
+        """ Add created gwyitem to gwycontainer"""
+        self.gwychannel._add_palette_to_gwy(self.gwychannel,
+                                            self.gwycontainer,
+                                            self.channel_id)
+        mock_add_gwyitem.assert_has_calls(
+            [call(mock_new_gwyitem_string.return_value,
+                  self.gwycontainer)])
+
+    @patch.object(Gwyfile, 'new_gwyitem_string')
+    @patch('pygwyfile.gwychannel.add_gwyitem_to_gwycontainer', autospec=True)
+    def test_returned_value(self,
+                            mock_add_gwyitem,
+                            mock_new_gwyitem_string):
+        """ Return result of add_gwyitem_to_gwycontainer call"""
+        is_added = self.gwychannel._add_palette_to_gwy(self.gwychannel,
+                                                       self.gwycontainer,
+                                                       self.channel_id)
+        self.assertEqual(is_added,
+                         mock_add_gwyitem.return_value)
 
 
 class GwyChannel_get_visibility(unittest.TestCase):
@@ -77,6 +196,69 @@ class GwyChannel_get_visibility(unittest.TestCase):
                          self.gwyfile.get_gwyitem_bool.return_value)
 
 
+class GwyChannel_add_visibility_to_gwy(unittest.TestCase):
+    """Test _add_visibility_to_gwy method of GwyChannel class"""
+
+    def setUp(self):
+        self.gwychannel = Mock(spec=GwyChannel)
+        self.gwychannel._add_visibility_to_gwy = (
+            GwyChannel._add_visibility_to_gwy)
+        self.gwycontainer = Mock()
+        self.channel_id = 0
+        self.gwychannel.visible = True
+
+    @patch('pygwyfile.gwychannel.add_gwyitem_to_gwycontainer', autospec=True)
+    def test_return_False_if_visible_flag_does_not_set(self,
+                                                       mock_add_gwyitem):
+        """ If visible attribute is None do not add anything to gwycontainer
+            add retrun False
+        """
+        self.gwychannel.visible = None
+        is_added = self.gwychannel._add_visibility_to_gwy(self.gwychannel,
+                                                          self.gwycontainer,
+                                                          self.channel_id)
+        self.assertIs(is_added, False)
+        mock_add_gwyitem.assert_has_calls([])
+
+    @patch.object(Gwyfile, 'new_gwyitem_bool')
+    @patch('pygwyfile.gwychannel.add_gwyitem_to_gwycontainer', autospec=True)
+    def test_create_new_gwyitem_with_palette_string(self,
+                                                    mock_add_gwyitem,
+                                                    mock_new_gwyitem_bool):
+        """Create new gwyitem with visible boolean value """
+        self.gwychannel._add_visibility_to_gwy(self.gwychannel,
+                                               self.gwycontainer,
+                                               self.channel_id)
+        mock_new_gwyitem_bool.assert_has_calls(
+            [call("/{:d}/data/visible".format(self.channel_id),
+                  self.gwychannel.visible)])
+
+    @patch.object(Gwyfile, 'new_gwyitem_bool')
+    @patch('pygwyfile.gwychannel.add_gwyitem_to_gwycontainer', autospec=True)
+    def test_add_gwyitem_to_container(self,
+                                      mock_add_gwyitem,
+                                      mock_new_gwyitem_bool):
+        """ Add created gwyitem to gwycontainer"""
+        self.gwychannel._add_visibility_to_gwy(self.gwychannel,
+                                               self.gwycontainer,
+                                               self.channel_id)
+        mock_add_gwyitem.assert_has_calls(
+            [call(mock_new_gwyitem_bool.return_value,
+                  self.gwycontainer)])
+
+    @patch.object(Gwyfile, 'new_gwyitem_bool')
+    @patch('pygwyfile.gwychannel.add_gwyitem_to_gwycontainer', autospec=True)
+    def test_returned_value(self,
+                            mock_add_gwyitem,
+                            mock_new_gwyitem_bool):
+        """ Return result of add_gwyitem_to_gwycontainer call"""
+        is_added = self.gwychannel._add_visibility_to_gwy(self.gwychannel,
+                                                          self.gwycontainer,
+                                                          self.channel_id)
+        self.assertEqual(is_added,
+                         mock_add_gwyitem.return_value)
+
+
 class GwyChannel_get_range_type(unittest.TestCase):
     """Tests for _get_range_type method of GwyChannel class"""
 
@@ -96,6 +278,69 @@ class GwyChannel_get_range_type(unittest.TestCase):
                                                    self.channel_id)
         self.assertEqual(actual_return,
                          self.gwyfile.get_gwyitem_int32.return_value)
+
+
+class GwyChannel_add_range_type_to_gwy(unittest.TestCase):
+    """Test _add_range_type_to_gwy method of GwyChannel class"""
+
+    def setUp(self):
+        self.gwychannel = Mock(spec=GwyChannel)
+        self.gwychannel._add_range_type_to_gwy = (
+            GwyChannel._add_range_type_to_gwy)
+        self.gwycontainer = Mock()
+        self.channel_id = 0
+        self.gwychannel.range_type = 1
+
+    @patch('pygwyfile.gwychannel.add_gwyitem_to_gwycontainer', autospec=True)
+    def test_return_False_if_range_type_is_unset(self,
+                                                 mock_add_gwyitem):
+        """ If range_type attribute is None do not add anything to gwycontainer
+            add retrun False
+        """
+        self.gwychannel.range_type = None
+        is_added = self.gwychannel._add_range_type_to_gwy(self.gwychannel,
+                                                          self.gwycontainer,
+                                                          self.channel_id)
+        self.assertIs(is_added, False)
+        mock_add_gwyitem.assert_has_calls([])
+
+    @patch.object(Gwyfile, 'new_gwyitem_int32')
+    @patch('pygwyfile.gwychannel.add_gwyitem_to_gwycontainer', autospec=True)
+    def test_create_new_gwyitem_with_palette_string(self,
+                                                    mock_add_gwyitem,
+                                                    mock_new_gwyitem_int32):
+        """Create new gwyitem with range_type value"""
+        self.gwychannel._add_range_type_to_gwy(self.gwychannel,
+                                               self.gwycontainer,
+                                               self.channel_id)
+        mock_new_gwyitem_int32.assert_has_calls(
+            [call("/{:d}/base/range-type".format(self.channel_id),
+                  self.gwychannel.range_type)])
+
+    @patch.object(Gwyfile, 'new_gwyitem_int32')
+    @patch('pygwyfile.gwychannel.add_gwyitem_to_gwycontainer', autospec=True)
+    def test_add_gwyitem_to_container(self,
+                                      mock_add_gwyitem,
+                                      mock_new_gwyitem_int32):
+        """ Add created gwyitem to gwycontainer"""
+        self.gwychannel._add_range_type_to_gwy(self.gwychannel,
+                                               self.gwycontainer,
+                                               self.channel_id)
+        mock_add_gwyitem.assert_has_calls(
+            [call(mock_new_gwyitem_int32.return_value,
+                  self.gwycontainer)])
+
+    @patch.object(Gwyfile, 'new_gwyitem_int32')
+    @patch('pygwyfile.gwychannel.add_gwyitem_to_gwycontainer', autospec=True)
+    def test_returned_value(self,
+                            mock_add_gwyitem,
+                            mock_new_gwyitem_int32):
+        """ Return result of add_gwyitem_to_gwycontainer call"""
+        is_added = self.gwychannel._add_range_type_to_gwy(self.gwychannel,
+                                                          self.gwycontainer,
+                                                          self.channel_id)
+        self.assertEqual(is_added,
+                         mock_add_gwyitem.return_value)
 
 
 class GwyChannel_get_range_min(unittest.TestCase):
@@ -119,6 +364,69 @@ class GwyChannel_get_range_min(unittest.TestCase):
                          self.gwyfile.get_gwyitem_double.return_value)
 
 
+class GwyChannel_add_range_min_to_gwy(unittest.TestCase):
+    """Test _add_range_min_to_gwy method of GwyChannel class"""
+
+    def setUp(self):
+        self.gwychannel = Mock(spec=GwyChannel)
+        self.gwychannel._add_range_min_to_gwy = (
+            GwyChannel._add_range_min_to_gwy)
+        self.gwycontainer = Mock()
+        self.channel_id = 0
+        self.gwychannel.range_min = 0.
+
+    @patch('pygwyfile.gwychannel.add_gwyitem_to_gwycontainer', autospec=True)
+    def test_return_False_if_range_min_is_unset(self,
+                                                mock_add_gwyitem):
+        """ If range_min attribute is None do not add anything to gwycontainer
+            add retrun False
+        """
+        self.gwychannel.range_min = None
+        is_added = self.gwychannel._add_range_min_to_gwy(self.gwychannel,
+                                                         self.gwycontainer,
+                                                         self.channel_id)
+        self.assertIs(is_added, False)
+        mock_add_gwyitem.assert_has_calls([])
+
+    @patch.object(Gwyfile, 'new_gwyitem_double')
+    @patch('pygwyfile.gwychannel.add_gwyitem_to_gwycontainer', autospec=True)
+    def test_create_new_gwyitem_with_range_min_value(self,
+                                                     mock_add_gwyitem,
+                                                     mock_new_gwyitem_double):
+        """Create new gwyitem with range_min value"""
+        self.gwychannel._add_range_min_to_gwy(self.gwychannel,
+                                              self.gwycontainer,
+                                              self.channel_id)
+        mock_new_gwyitem_double.assert_has_calls(
+            [call("/{:d}/base/min".format(self.channel_id),
+                  self.gwychannel.range_min)])
+
+    @patch.object(Gwyfile, 'new_gwyitem_double')
+    @patch('pygwyfile.gwychannel.add_gwyitem_to_gwycontainer', autospec=True)
+    def test_add_gwyitem_to_container(self,
+                                      mock_add_gwyitem,
+                                      mock_new_gwyitem_double):
+        """ Add created gwyitem to gwycontainer"""
+        self.gwychannel._add_range_min_to_gwy(self.gwychannel,
+                                              self.gwycontainer,
+                                              self.channel_id)
+        mock_add_gwyitem.assert_has_calls(
+            [call(mock_new_gwyitem_double.return_value,
+                  self.gwycontainer)])
+
+    @patch.object(Gwyfile, 'new_gwyitem_double')
+    @patch('pygwyfile.gwychannel.add_gwyitem_to_gwycontainer', autospec=True)
+    def test_returned_value(self,
+                            mock_add_gwyitem,
+                            mock_new_gwyitem_double):
+        """ Return result of add_gwyitem_to_gwycontainer call"""
+        is_added = self.gwychannel._add_range_min_to_gwy(self.gwychannel,
+                                                         self.gwycontainer,
+                                                         self.channel_id)
+        self.assertEqual(is_added,
+                         mock_add_gwyitem.return_value)
+
+
 class GwyChannel_get_range_max(unittest.TestCase):
     """Tests for _get_range_max method of GwyChannel class"""
 
@@ -138,6 +446,69 @@ class GwyChannel_get_range_max(unittest.TestCase):
                                                   self.channel_id)
         self.assertEqual(actual_return,
                          self.gwyfile.get_gwyitem_double.return_value)
+
+
+class GwyChannel_add_range_max_to_gwy(unittest.TestCase):
+    """Test _add_range_max_to_gwy method of GwyChannel class"""
+
+    def setUp(self):
+        self.gwychannel = Mock(spec=GwyChannel)
+        self.gwychannel._add_range_max_to_gwy = (
+            GwyChannel._add_range_max_to_gwy)
+        self.gwycontainer = Mock()
+        self.channel_id = 0
+        self.gwychannel.range_max = 1.
+
+    @patch('pygwyfile.gwychannel.add_gwyitem_to_gwycontainer', autospec=True)
+    def test_return_False_if_range_max_is_unset(self,
+                                                mock_add_gwyitem):
+        """ If range_max attribute is None do not add anything to gwycontainer
+            add retrun False
+        """
+        self.gwychannel.range_max = None
+        is_added = self.gwychannel._add_range_max_to_gwy(self.gwychannel,
+                                                         self.gwycontainer,
+                                                         self.channel_id)
+        self.assertIs(is_added, False)
+        mock_add_gwyitem.assert_has_calls([])
+
+    @patch.object(Gwyfile, 'new_gwyitem_double')
+    @patch('pygwyfile.gwychannel.add_gwyitem_to_gwycontainer', autospec=True)
+    def test_create_new_gwyitem_with_range_max_value(self,
+                                                     mock_add_gwyitem,
+                                                     mock_new_gwyitem_double):
+        """Create new gwyitem with range_max value"""
+        self.gwychannel._add_range_max_to_gwy(self.gwychannel,
+                                              self.gwycontainer,
+                                              self.channel_id)
+        mock_new_gwyitem_double.assert_has_calls(
+            [call("/{:d}/base/max".format(self.channel_id),
+                  self.gwychannel.range_max)])
+
+    @patch.object(Gwyfile, 'new_gwyitem_double')
+    @patch('pygwyfile.gwychannel.add_gwyitem_to_gwycontainer', autospec=True)
+    def test_add_gwyitem_to_container(self,
+                                      mock_add_gwyitem,
+                                      mock_new_gwyitem_double):
+        """ Add created gwyitem to gwycontainer"""
+        self.gwychannel._add_range_max_to_gwy(self.gwychannel,
+                                              self.gwycontainer,
+                                              self.channel_id)
+        mock_add_gwyitem.assert_has_calls(
+            [call(mock_new_gwyitem_double.return_value,
+                  self.gwycontainer)])
+
+    @patch.object(Gwyfile, 'new_gwyitem_double')
+    @patch('pygwyfile.gwychannel.add_gwyitem_to_gwycontainer', autospec=True)
+    def test_returned_value(self,
+                            mock_add_gwyitem,
+                            mock_new_gwyitem_double):
+        """ Return result of add_gwyitem_to_gwycontainer call"""
+        is_added = self.gwychannel._add_range_max_to_gwy(self.gwychannel,
+                                                         self.gwycontainer,
+                                                         self.channel_id)
+        self.assertEqual(is_added,
+                         mock_add_gwyitem.return_value)
 
 
 class GwyChannel_get_mask_red(unittest.TestCase):
@@ -161,6 +532,67 @@ class GwyChannel_get_mask_red(unittest.TestCase):
                          self.gwyfile.get_gwyitem_double.return_value)
 
 
+class GwyChannel_add_mask_red_to_gwy(unittest.TestCase):
+    """Test _add_mask_red_to_gwy method of GwyChannel class"""
+
+    def setUp(self):
+        self.gwychannel = Mock(spec=GwyChannel)
+        self.gwychannel._add_mask_red_to_gwy = GwyChannel._add_mask_red_to_gwy
+        self.gwycontainer = Mock()
+        self.channel_id = 0
+        self.gwychannel.mask_red = 1.
+
+    @patch('pygwyfile.gwychannel.add_gwyitem_to_gwycontainer', autospec=True)
+    def test_return_False_if_mask_red_is_unset(self, mock_add_gwyitem):
+        """ If mask_red attribute is None do not add anything to gwycontainer
+            add return False
+        """
+        self.gwychannel.mask_red = None
+        is_added = self.gwychannel._add_mask_red_to_gwy(self.gwychannel,
+                                                        self.gwycontainer,
+                                                        self.channel_id)
+        self.assertIs(is_added, False)
+        mock_add_gwyitem.assert_has_calls([])
+
+    @patch.object(Gwyfile, 'new_gwyitem_double')
+    @patch('pygwyfile.gwychannel.add_gwyitem_to_gwycontainer', autospec=True)
+    def test_create_new_gwyitem_with_mask_red_value(self,
+                                                    mock_add_gwyitem,
+                                                    mock_new_gwyitem_double):
+        """Create new gwyitem with mask_red value"""
+        self.gwychannel._add_mask_red_to_gwy(self.gwychannel,
+                                             self.gwycontainer,
+                                             self.channel_id)
+        mock_new_gwyitem_double.assert_has_calls(
+            [call("/{:d}/mask/red".format(self.channel_id),
+                  self.gwychannel.mask_red)])
+
+    @patch.object(Gwyfile, 'new_gwyitem_double')
+    @patch('pygwyfile.gwychannel.add_gwyitem_to_gwycontainer', autospec=True)
+    def test_add_gwyitem_to_container(self,
+                                      mock_add_gwyitem,
+                                      mock_new_gwyitem_double):
+        """ Add created gwyitem to gwycontainer"""
+        self.gwychannel._add_mask_red_to_gwy(self.gwychannel,
+                                             self.gwycontainer,
+                                             self.channel_id)
+        mock_add_gwyitem.assert_has_calls(
+            [call(mock_new_gwyitem_double.return_value,
+                  self.gwycontainer)])
+
+    @patch.object(Gwyfile, 'new_gwyitem_double')
+    @patch('pygwyfile.gwychannel.add_gwyitem_to_gwycontainer', autospec=True)
+    def test_returned_value(self,
+                            mock_add_gwyitem,
+                            mock_new_gwyitem_double):
+        """ Return result of add_gwyitem_to_gwycontainer call"""
+        is_added = self.gwychannel._add_mask_red_to_gwy(self.gwychannel,
+                                                        self.gwycontainer,
+                                                        self.channel_id)
+        self.assertEqual(is_added,
+                         mock_add_gwyitem.return_value)
+
+
 class GwyChannel_get_mask_green(unittest.TestCase):
     """Tests for _get_mask_green method of GwyChannel class"""
 
@@ -180,6 +612,68 @@ class GwyChannel_get_mask_green(unittest.TestCase):
                                                    self.channel_id)
         self.assertEqual(actual_return,
                          self.gwyfile.get_gwyitem_double.return_value)
+
+
+class GwyChannel_add_mask_green_to_gwy(unittest.TestCase):
+    """Test _add_mask_green_to_gwy method of GwyChannel class"""
+
+    def setUp(self):
+        self.gwychannel = Mock(spec=GwyChannel)
+        self.gwychannel._add_mask_green_to_gwy = (
+            GwyChannel._add_mask_green_to_gwy)
+        self.gwycontainer = Mock()
+        self.channel_id = 0
+        self.gwychannel.mask_green = 0.
+
+    @patch('pygwyfile.gwychannel.add_gwyitem_to_gwycontainer', autospec=True)
+    def test_return_False_if_mask_green_is_unset(self, mock_add_gwyitem):
+        """ If mask_green attribute is None do not add anything to gwycontainer
+            add return False
+        """
+        self.gwychannel.mask_green = None
+        is_added = self.gwychannel._add_mask_green_to_gwy(self.gwychannel,
+                                                          self.gwycontainer,
+                                                          self.channel_id)
+        self.assertIs(is_added, False)
+        mock_add_gwyitem.assert_has_calls([])
+
+    @patch.object(Gwyfile, 'new_gwyitem_double')
+    @patch('pygwyfile.gwychannel.add_gwyitem_to_gwycontainer', autospec=True)
+    def test_create_new_gwyitem_with_mask_green_value(self,
+                                                      mock_add_gwyitem,
+                                                      mock_new_gwyitem_double):
+        """Create new gwyitem with mask_green value"""
+        self.gwychannel._add_mask_green_to_gwy(self.gwychannel,
+                                               self.gwycontainer,
+                                               self.channel_id)
+        mock_new_gwyitem_double.assert_has_calls(
+            [call("/{:d}/mask/green".format(self.channel_id),
+                  self.gwychannel.mask_green)])
+
+    @patch.object(Gwyfile, 'new_gwyitem_double')
+    @patch('pygwyfile.gwychannel.add_gwyitem_to_gwycontainer', autospec=True)
+    def test_add_gwyitem_to_container(self,
+                                      mock_add_gwyitem,
+                                      mock_new_gwyitem_double):
+        """ Add created gwyitem to gwycontainer"""
+        self.gwychannel._add_mask_green_to_gwy(self.gwychannel,
+                                               self.gwycontainer,
+                                               self.channel_id)
+        mock_add_gwyitem.assert_has_calls(
+            [call(mock_new_gwyitem_double.return_value,
+                  self.gwycontainer)])
+
+    @patch.object(Gwyfile, 'new_gwyitem_double')
+    @patch('pygwyfile.gwychannel.add_gwyitem_to_gwycontainer', autospec=True)
+    def test_returned_value(self,
+                            mock_add_gwyitem,
+                            mock_new_gwyitem_double):
+        """ Return result of add_gwyitem_to_gwycontainer call"""
+        is_added = self.gwychannel._add_mask_green_to_gwy(self.gwychannel,
+                                                          self.gwycontainer,
+                                                          self.channel_id)
+        self.assertEqual(is_added,
+                         mock_add_gwyitem.return_value)
 
 
 class GwyChannel_get_mask_blue(unittest.TestCase):
@@ -203,6 +697,68 @@ class GwyChannel_get_mask_blue(unittest.TestCase):
                          self.gwyfile.get_gwyitem_double.return_value)
 
 
+class GwyChannel_add_mask_blue_to_gwy(unittest.TestCase):
+    """Test _add_mask_blue_to_gwy method of GwyChannel class"""
+
+    def setUp(self):
+        self.gwychannel = Mock(spec=GwyChannel)
+        self.gwychannel._add_mask_blue_to_gwy = (
+            GwyChannel._add_mask_blue_to_gwy)
+        self.gwycontainer = Mock()
+        self.channel_id = 0
+        self.gwychannel.mask_blue = 0.
+
+    @patch('pygwyfile.gwychannel.add_gwyitem_to_gwycontainer', autospec=True)
+    def test_return_False_if_mask_blue_is_unset(self, mock_add_gwyitem):
+        """ If mask_blue attribute is None do not add anything to gwycontainer
+            add return False
+        """
+        self.gwychannel.mask_blue = None
+        is_added = self.gwychannel._add_mask_blue_to_gwy(self.gwychannel,
+                                                         self.gwycontainer,
+                                                         self.channel_id)
+        self.assertIs(is_added, False)
+        mock_add_gwyitem.assert_has_calls([])
+
+    @patch.object(Gwyfile, 'new_gwyitem_double')
+    @patch('pygwyfile.gwychannel.add_gwyitem_to_gwycontainer', autospec=True)
+    def test_create_new_gwyitem_with_mask_blue_value(self,
+                                                     mock_add_gwyitem,
+                                                     mock_new_gwyitem_double):
+        """Create new gwyitem with mask_blue value"""
+        self.gwychannel._add_mask_blue_to_gwy(self.gwychannel,
+                                              self.gwycontainer,
+                                              self.channel_id)
+        mock_new_gwyitem_double.assert_has_calls(
+            [call("/{:d}/mask/blue".format(self.channel_id),
+                  self.gwychannel.mask_blue)])
+
+    @patch.object(Gwyfile, 'new_gwyitem_double')
+    @patch('pygwyfile.gwychannel.add_gwyitem_to_gwycontainer', autospec=True)
+    def test_add_gwyitem_to_container(self,
+                                      mock_add_gwyitem,
+                                      mock_new_gwyitem_double):
+        """ Add created gwyitem to gwycontainer"""
+        self.gwychannel._add_mask_blue_to_gwy(self.gwychannel,
+                                              self.gwycontainer,
+                                              self.channel_id)
+        mock_add_gwyitem.assert_has_calls(
+            [call(mock_new_gwyitem_double.return_value,
+                  self.gwycontainer)])
+
+    @patch.object(Gwyfile, 'new_gwyitem_double')
+    @patch('pygwyfile.gwychannel.add_gwyitem_to_gwycontainer', autospec=True)
+    def test_returned_value(self,
+                            mock_add_gwyitem,
+                            mock_new_gwyitem_double):
+        """ Return result of add_gwyitem_to_gwycontainer call"""
+        is_added = self.gwychannel._add_mask_blue_to_gwy(self.gwychannel,
+                                                         self.gwycontainer,
+                                                         self.channel_id)
+        self.assertEqual(is_added,
+                         mock_add_gwyitem.return_value)
+
+
 class GwyChannel_get_mask_alpha(unittest.TestCase):
     """Tests for _get_mask_alpha method of GwyChannel class"""
 
@@ -222,6 +778,68 @@ class GwyChannel_get_mask_alpha(unittest.TestCase):
                                                    self.channel_id)
         self.assertEqual(actual_return,
                          self.gwyfile.get_gwyitem_double.return_value)
+
+
+class GwyChannel_add_mask_alpha_to_gwy(unittest.TestCase):
+    """Test _add_mask_alpha_to_gwy method of GwyChannel class"""
+
+    def setUp(self):
+        self.gwychannel = Mock(spec=GwyChannel)
+        self.gwychannel._add_mask_alpha_to_gwy = (
+            GwyChannel._add_mask_alpha_to_gwy)
+        self.gwycontainer = Mock()
+        self.channel_id = 0
+        self.gwychannel.mask_alpha = 1.
+
+    @patch('pygwyfile.gwychannel.add_gwyitem_to_gwycontainer', autospec=True)
+    def test_return_False_if_mask_alpha_is_unset(self, mock_add_gwyitem):
+        """ If mask_alpha attribute is None do not add anything to gwycontainer
+            add return False
+        """
+        self.gwychannel.mask_alpha = None
+        is_added = self.gwychannel._add_mask_alpha_to_gwy(self.gwychannel,
+                                                          self.gwycontainer,
+                                                          self.channel_id)
+        self.assertIs(is_added, False)
+        mock_add_gwyitem.assert_has_calls([])
+
+    @patch.object(Gwyfile, 'new_gwyitem_double')
+    @patch('pygwyfile.gwychannel.add_gwyitem_to_gwycontainer', autospec=True)
+    def test_create_new_gwyitem_with_mask_alpha_value(self,
+                                                      mock_add_gwyitem,
+                                                      mock_new_gwyitem_double):
+        """Create new gwyitem with mask_alpha value"""
+        self.gwychannel._add_mask_alpha_to_gwy(self.gwychannel,
+                                               self.gwycontainer,
+                                               self.channel_id)
+        mock_new_gwyitem_double.assert_has_calls(
+            [call("/{:d}/mask/alpha".format(self.channel_id),
+                  self.gwychannel.mask_alpha)])
+
+    @patch.object(Gwyfile, 'new_gwyitem_double')
+    @patch('pygwyfile.gwychannel.add_gwyitem_to_gwycontainer', autospec=True)
+    def test_add_gwyitem_to_container(self,
+                                      mock_add_gwyitem,
+                                      mock_new_gwyitem_double):
+        """ Add created gwyitem to gwycontainer"""
+        self.gwychannel._add_mask_alpha_to_gwy(self.gwychannel,
+                                               self.gwycontainer,
+                                               self.channel_id)
+        mock_add_gwyitem.assert_has_calls(
+            [call(mock_new_gwyitem_double.return_value,
+                  self.gwycontainer)])
+
+    @patch.object(Gwyfile, 'new_gwyitem_double')
+    @patch('pygwyfile.gwychannel.add_gwyitem_to_gwycontainer', autospec=True)
+    def test_returned_value(self,
+                            mock_add_gwyitem,
+                            mock_new_gwyitem_double):
+        """ Return result of add_gwyitem_to_gwycontainer call"""
+        is_added = self.gwychannel._add_mask_alpha_to_gwy(self.gwychannel,
+                                                          self.gwycontainer,
+                                                          self.channel_id)
+        self.assertEqual(is_added,
+                         mock_add_gwyitem.return_value)
 
 
 class GwyChannel_get_data(unittest.TestCase):
@@ -269,6 +887,65 @@ class GwyChannel_get_data(unittest.TestCase):
         expected_return = self.mock_GwyDataField.from_gwy.return_value
         actual_return = GwyChannel._get_data(self.gwyfile, self.channel_id)
         self.assertIs(expected_return, actual_return)
+
+
+class GwyChannel_add_data_to_gwy(unittest.TestCase):
+    """ Test _add_data_to_gwy method of GwyChannel class"""
+
+    def setUp(self):
+        self.gwychannel = Mock(spec=GwyChannel)
+        self.gwychannel._add_data_to_gwy = GwyChannel._add_data_to_gwy
+        self.gwychannel.data = Mock(spec=GwyDataField)
+        self.gwydf = Mock()
+        self.gwychannel.data.to_gwy.return_value = self.gwydf
+        self.gwycontainer = Mock()
+        self.channel_id = 0
+
+    def test_raise_TypeError_if_data_is_not_GwyDataField(self):
+        """ Raise TypeError exception if data is not GwyDataField"""
+        self.gwychannel.data = 'Wrong data'
+        self.assertRaises(TypeError,
+                          self.gwychannel._add_data_to_gwy,
+                          self.gwychannel,
+                          self.gwycontainer,
+                          self.channel_id)
+
+    @patch('pygwyfile.gwychannel.add_gwyitem_to_gwycontainer', autospec=True)
+    @patch.object(Gwyfile, 'new_gwyitem_object')
+    def test_create_new_gwyitem(self,
+                                mock_new_gwyitem_object,
+                                mock_add_gwyitem_to_gwycontainer):
+        """Create new object gwyitem with data"""
+        self.gwychannel._add_data_to_gwy(self.gwychannel,
+                                         self.gwycontainer,
+                                         self.channel_id)
+        mock_new_gwyitem_object.assert_has_calls(
+            [call("/{:d}/data".format(self.channel_id),
+                  self.gwydf)])
+
+    @patch('pygwyfile.gwychannel.add_gwyitem_to_gwycontainer', autospec=True)
+    @patch.object(Gwyfile, 'new_gwyitem_object')
+    def test_add_gwyitem_to_container(self,
+                                      mock_new_gwyitem_object,
+                                      mock_add_gwyitem_to_gwycontainer):
+        """Add created gwyitem to gywcontainer"""
+        gwyitem = mock_new_gwyitem_object.return_value
+        self.gwychannel._add_data_to_gwy(self.gwychannel,
+                                         self.gwycontainer,
+                                         self.channel_id)
+        mock_add_gwyitem_to_gwycontainer.assert_has_calls(
+            [call(gwyitem, self.gwycontainer)])
+
+    @patch('pygwyfile.gwychannel.add_gwyitem_to_gwycontainer', autospec=True)
+    @patch.object(Gwyfile, 'new_gwyitem_object')
+    def test_return_value(self,
+                          mock_new_gwyitem_object,
+                          mock_add_gwyitem_to_gwycontainer):
+        """Return result of add_gwyitem_to_gwycontainer call"""
+        is_added = self.gwychannel._add_data_to_gwy(self.gwychannel,
+                                                    self.gwycontainer,
+                                                    self.channel_id)
+        self.assertIs(is_added, mock_add_gwyitem_to_gwycontainer.return_value)
 
 
 class GwyChannel_get_mask(unittest.TestCase):
@@ -320,6 +997,76 @@ class GwyChannel_get_mask(unittest.TestCase):
         self.assertIs(expected_return, actual_return)
 
 
+class GwyChannel_add_mask_to_gwy(unittest.TestCase):
+    """ Test _add_mask_to_gwy method of GwyChannel class"""
+
+    def setUp(self):
+        self.gwychannel = Mock(spec=GwyChannel)
+        self.gwychannel._add_mask_to_gwy = GwyChannel._add_mask_to_gwy
+        self.gwychannel.mask = Mock(spec=GwyDataField)
+        self.gwydf = Mock()
+        self.gwychannel.mask.to_gwy.return_value = self.gwydf
+        self.gwycontainer = Mock()
+        self.channel_id = 0
+
+    def test_raise_TypeError_if_data_is_not_GwyDataField_or_None(self):
+        """ Raise TypeError exception if mask is not GwyDataField or None"""
+        self.gwychannel.mask = 'Wrong mask'
+        self.assertRaises(TypeError,
+                          self.gwychannel._add_mask_to_gwy,
+                          self.gwychannel,
+                          self.gwycontainer,
+                          self.channel_id)
+
+    @patch('pygwyfile.gwychannel.add_gwyitem_to_gwycontainer', autospec=True)
+    def test_return_False_if_mask_is_None(self,
+                                          mock_add_gwyitem_to_gwycontainer):
+        """Return False if mask is None and add nothing to gwycontainer"""
+        self.gwychannel.mask = None
+        actual_return = self.gwychannel._add_mask_to_gwy(self.gwychannel,
+                                                         self.gwycontainer,
+                                                         self.channel_id)
+        self.assertIs(actual_return, False)
+        mock_add_gwyitem_to_gwycontainer.assert_has_calls([])
+
+    @patch('pygwyfile.gwychannel.add_gwyitem_to_gwycontainer', autospec=True)
+    @patch.object(Gwyfile, 'new_gwyitem_object')
+    def test_create_new_gwyitem(self,
+                                mock_new_gwyitem_object,
+                                mock_add_gwyitem_to_gwycontainer):
+        """Create new object gwyitem with mask data"""
+        self.gwychannel._add_mask_to_gwy(self.gwychannel,
+                                         self.gwycontainer,
+                                         self.channel_id)
+        mock_new_gwyitem_object.assert_has_calls(
+            [call("/{:d}/mask".format(self.channel_id),
+                  self.gwydf)])
+
+    @patch('pygwyfile.gwychannel.add_gwyitem_to_gwycontainer', autospec=True)
+    @patch.object(Gwyfile, 'new_gwyitem_object')
+    def test_add_gwyitem_to_container(self,
+                                      mock_new_gwyitem_object,
+                                      mock_add_gwyitem_to_gwycontainer):
+        """Add created gwyitem to gywcontainer"""
+        gwyitem = mock_new_gwyitem_object.return_value
+        self.gwychannel._add_mask_to_gwy(self.gwychannel,
+                                         self.gwycontainer,
+                                         self.channel_id)
+        mock_add_gwyitem_to_gwycontainer.assert_has_calls(
+            [call(gwyitem, self.gwycontainer)])
+
+    @patch('pygwyfile.gwychannel.add_gwyitem_to_gwycontainer', autospec=True)
+    @patch.object(Gwyfile, 'new_gwyitem_object')
+    def test_return_value(self,
+                          mock_new_gwyitem_object,
+                          mock_add_gwyitem_to_gwycontainer):
+        """Return result of add_gwyitem_to_gwycontainer call"""
+        is_added = self.gwychannel._add_mask_to_gwy(self.gwychannel,
+                                                    self.gwycontainer,
+                                                    self.channel_id)
+        self.assertIs(is_added, mock_add_gwyitem_to_gwycontainer.return_value)
+
+
 class GwyChannel_get_show(unittest.TestCase):
     """Test _get_show method of GwyChannel class
     """
@@ -367,6 +1114,76 @@ class GwyChannel_get_show(unittest.TestCase):
         expected_return = self.mock_GwyDataField.from_gwy.return_value
         actual_return = GwyChannel._get_show(self.gwyfile, self.channel_id)
         self.assertIs(expected_return, actual_return)
+
+
+class GwyChannel_add_show_to_gwy(unittest.TestCase):
+    """ Test _add_show_to_gwy method of GwyChannel class"""
+
+    def setUp(self):
+        self.gwychannel = Mock(spec=GwyChannel)
+        self.gwychannel._add_show_to_gwy = GwyChannel._add_show_to_gwy
+        self.gwychannel.show = Mock(spec=GwyDataField)
+        self.gwydf = Mock()
+        self.gwychannel.show.to_gwy.return_value = self.gwydf
+        self.gwycontainer = Mock()
+        self.channel_id = 0
+
+    def test_raise_TypeError_if_show_is_not_GwyDataField_or_None(self):
+        """ Raise TypeError exception if show is not GwyDataField or None"""
+        self.gwychannel.show = 'Wrong presentation'
+        self.assertRaises(TypeError,
+                          self.gwychannel._add_show_to_gwy,
+                          self.gwychannel,
+                          self.gwycontainer,
+                          self.channel_id)
+
+    @patch('pygwyfile.gwychannel.add_gwyitem_to_gwycontainer', autospec=True)
+    def test_return_False_if_show_is_None(self,
+                                          mock_add_gwyitem_to_gwycontainer):
+        """Return False if show is None and add nothing to gwycontainer"""
+        self.gwychannel.show = None
+        actual_return = self.gwychannel._add_show_to_gwy(self.gwychannel,
+                                                         self.gwycontainer,
+                                                         self.channel_id)
+        self.assertIs(actual_return, False)
+        mock_add_gwyitem_to_gwycontainer.assert_has_calls([])
+
+    @patch('pygwyfile.gwychannel.add_gwyitem_to_gwycontainer', autospec=True)
+    @patch.object(Gwyfile, 'new_gwyitem_object')
+    def test_create_new_gwyitem(self,
+                                mock_new_gwyitem_object,
+                                mock_add_gwyitem_to_gwycontainer):
+        """Create new object gwyitem with show data"""
+        self.gwychannel._add_show_to_gwy(self.gwychannel,
+                                         self.gwycontainer,
+                                         self.channel_id)
+        mock_new_gwyitem_object.assert_has_calls(
+            [call("/{:d}/show".format(self.channel_id),
+                  self.gwydf)])
+
+    @patch('pygwyfile.gwychannel.add_gwyitem_to_gwycontainer', autospec=True)
+    @patch.object(Gwyfile, 'new_gwyitem_object')
+    def test_add_gwyitem_to_container(self,
+                                      mock_new_gwyitem_object,
+                                      mock_add_gwyitem_to_gwycontainer):
+        """Add created gwyitem to gywcontainer"""
+        gwyitem = mock_new_gwyitem_object.return_value
+        self.gwychannel._add_show_to_gwy(self.gwychannel,
+                                         self.gwycontainer,
+                                         self.channel_id)
+        mock_add_gwyitem_to_gwycontainer.assert_has_calls(
+            [call(gwyitem, self.gwycontainer)])
+
+    @patch('pygwyfile.gwychannel.add_gwyitem_to_gwycontainer', autospec=True)
+    @patch.object(Gwyfile, 'new_gwyitem_object')
+    def test_return_value(self,
+                          mock_new_gwyitem_object,
+                          mock_add_gwyitem_to_gwycontainer):
+        """Return result of add_gwyitem_to_gwycontainer call"""
+        is_added = self.gwychannel._add_show_to_gwy(self.gwychannel,
+                                                    self.gwycontainer,
+                                                    self.channel_id)
+        self.assertIs(is_added, mock_add_gwyitem_to_gwycontainer.return_value)
 
 
 class GwyChannel_get_point_sel(unittest.TestCase):
@@ -419,6 +1236,83 @@ class GwyChannel_get_point_sel(unittest.TestCase):
         self.assertIs(expected_return, actual_return)
 
 
+class GwyChannel_add_point_sel_to_gwy(unittest.TestCase):
+    """ Test _add_point_sel_to_gwy method of GwyChannel class"""
+
+    def setUp(self):
+        self.gwychannel = Mock(spec=GwyChannel)
+        self.gwychannel._add_point_sel_to_gwy = (
+            GwyChannel._add_point_sel_to_gwy)
+        self.gwychannel.point_selections = Mock(spec=GwyPointSelection)
+        self.gwysel = Mock()
+        self.gwychannel.point_selections.to_gwy.return_value = self.gwysel
+        self.gwycontainer = Mock()
+        self.channel_id = 0
+
+    def test_raise_TypeError_if_point_sel_is_not_GwyDataField_or_None(self):
+        """ Raise TypeError exception if point_selections is not GwyDataField
+            or None
+        """
+        self.gwychannel.point_selections = 'Wrong type'
+        self.assertRaises(TypeError,
+                          self.gwychannel._add_point_sel_to_gwy,
+                          self.gwychannel,
+                          self.gwycontainer,
+                          self.channel_id)
+
+    @patch('pygwyfile.gwychannel.add_gwyitem_to_gwycontainer', autospec=True)
+    def test_return_False_if_point_selections_is_None(
+            self,
+            mock_add_gwyitem_to_gwycontainer):
+        """Return False if point_selections is None and
+           add nothing to gwycontainer
+        """
+        self.gwychannel.point_selections = None
+        actual_return = self.gwychannel._add_point_sel_to_gwy(
+            self.gwychannel,
+            self.gwycontainer,
+            self.channel_id)
+        self.assertIs(actual_return, False)
+        mock_add_gwyitem_to_gwycontainer.assert_has_calls([])
+
+    @patch('pygwyfile.gwychannel.add_gwyitem_to_gwycontainer', autospec=True)
+    @patch.object(Gwyfile, 'new_gwyitem_object')
+    def test_create_new_gwyitem(self,
+                                mock_new_gwyitem_object,
+                                mock_add_gwyitem_to_gwycontainer):
+        """Create new object gwyitem with point_selections data"""
+        self.gwychannel._add_point_sel_to_gwy(self.gwychannel,
+                                              self.gwycontainer,
+                                              self.channel_id)
+        mock_new_gwyitem_object.assert_has_calls(
+            [call("/{:d}/select/point".format(self.channel_id),
+                  self.gwysel)])
+
+    @patch('pygwyfile.gwychannel.add_gwyitem_to_gwycontainer', autospec=True)
+    @patch.object(Gwyfile, 'new_gwyitem_object')
+    def test_add_gwyitem_to_container(self,
+                                      mock_new_gwyitem_object,
+                                      mock_add_gwyitem_to_gwycontainer):
+        """Add created gwyitem to gywcontainer"""
+        gwyitem = mock_new_gwyitem_object.return_value
+        self.gwychannel._add_point_sel_to_gwy(self.gwychannel,
+                                              self.gwycontainer,
+                                              self.channel_id)
+        mock_add_gwyitem_to_gwycontainer.assert_has_calls(
+            [call(gwyitem, self.gwycontainer)])
+
+    @patch('pygwyfile.gwychannel.add_gwyitem_to_gwycontainer', autospec=True)
+    @patch.object(Gwyfile, 'new_gwyitem_object')
+    def test_return_value(self,
+                          mock_new_gwyitem_object,
+                          mock_add_gwyitem_to_gwycontainer):
+        """Return result of add_gwyitem_to_gwycontainer call"""
+        is_added = self.gwychannel._add_point_sel_to_gwy(self.gwychannel,
+                                                         self.gwycontainer,
+                                                         self.channel_id)
+        self.assertIs(is_added, mock_add_gwyitem_to_gwycontainer.return_value)
+
+
 class GwyChannel_get_pointer_sel(unittest.TestCase):
     """Test _get_pointer_sel method of GwyChannel class
     """
@@ -469,6 +1363,83 @@ class GwyChannel_get_pointer_sel(unittest.TestCase):
         self.assertIs(expected_return, actual_return)
 
 
+class GwyChannel_add_pointer_sel_to_gwy(unittest.TestCase):
+    """ Test _add_pointer_sel_to_gwy method of GwyChannel class"""
+
+    def setUp(self):
+        self.gwychannel = Mock(spec=GwyChannel)
+        self.gwychannel._add_pointer_sel_to_gwy = (
+            GwyChannel._add_pointer_sel_to_gwy)
+        self.gwychannel.pointer_selections = Mock(spec=GwyPointerSelection)
+        self.gwysel = Mock()
+        self.gwychannel.pointer_selections.to_gwy.return_value = self.gwysel
+        self.gwycontainer = Mock()
+        self.channel_id = 0
+
+    def test_raise_TypeError_if_pointer_sel_is_not_GwyDataField_or_None(self):
+        """ Raise TypeError exception if pointer_selections is not GwyDataField
+            or None
+        """
+        self.gwychannel.pointer_selections = 'Wrong type'
+        self.assertRaises(TypeError,
+                          self.gwychannel._add_pointer_sel_to_gwy,
+                          self.gwychannel,
+                          self.gwycontainer,
+                          self.channel_id)
+
+    @patch('pygwyfile.gwychannel.add_gwyitem_to_gwycontainer', autospec=True)
+    def test_return_False_if_pointer_selections_is_None(
+            self,
+            mock_add_gwyitem_to_gwycontainer):
+        """Return False if pointer_selections is None and
+           add nothing to gwycontainer
+        """
+        self.gwychannel.pointer_selections = None
+        actual_return = self.gwychannel._add_pointer_sel_to_gwy(
+            self.gwychannel,
+            self.gwycontainer,
+            self.channel_id)
+        self.assertIs(actual_return, False)
+        mock_add_gwyitem_to_gwycontainer.assert_has_calls([])
+
+    @patch('pygwyfile.gwychannel.add_gwyitem_to_gwycontainer', autospec=True)
+    @patch.object(Gwyfile, 'new_gwyitem_object')
+    def test_create_new_gwyitem(self,
+                                mock_new_gwyitem_object,
+                                mock_add_gwyitem_to_gwycontainer):
+        """Create new object gwyitem with point_selections data"""
+        self.gwychannel._add_pointer_sel_to_gwy(self.gwychannel,
+                                                self.gwycontainer,
+                                                self.channel_id)
+        mock_new_gwyitem_object.assert_has_calls(
+            [call("/{:d}/select/pointer".format(self.channel_id),
+                  self.gwysel)])
+
+    @patch('pygwyfile.gwychannel.add_gwyitem_to_gwycontainer', autospec=True)
+    @patch.object(Gwyfile, 'new_gwyitem_object')
+    def test_add_gwyitem_to_container(self,
+                                      mock_new_gwyitem_object,
+                                      mock_add_gwyitem_to_gwycontainer):
+        """Add created gwyitem to gywcontainer"""
+        gwyitem = mock_new_gwyitem_object.return_value
+        self.gwychannel._add_pointer_sel_to_gwy(self.gwychannel,
+                                                self.gwycontainer,
+                                                self.channel_id)
+        mock_add_gwyitem_to_gwycontainer.assert_has_calls(
+            [call(gwyitem, self.gwycontainer)])
+
+    @patch('pygwyfile.gwychannel.add_gwyitem_to_gwycontainer', autospec=True)
+    @patch.object(Gwyfile, 'new_gwyitem_object')
+    def test_return_value(self,
+                          mock_new_gwyitem_object,
+                          mock_add_gwyitem_to_gwycontainer):
+        """Return result of add_gwyitem_to_gwycontainer call"""
+        is_added = self.gwychannel._add_pointer_sel_to_gwy(self.gwychannel,
+                                                           self.gwycontainer,
+                                                           self.channel_id)
+        self.assertIs(is_added, mock_add_gwyitem_to_gwycontainer.return_value)
+
+
 class GwyChannel_get_line_sel(unittest.TestCase):
     """Test _get_line_sel method of GwyChannel class
     """
@@ -517,6 +1488,82 @@ class GwyChannel_get_line_sel(unittest.TestCase):
         actual_return = GwyChannel._get_line_sel(self.gwyfile,
                                                  self.channel_id)
         self.assertIs(expected_return, actual_return)
+
+
+class GwyChannel_add_line_sel_to_gwy(unittest.TestCase):
+    """ Test _add_line_sel_to_gwy method of GwyChannel class"""
+
+    def setUp(self):
+        self.gwychannel = Mock(spec=GwyChannel)
+        self.gwychannel._add_line_sel_to_gwy = GwyChannel._add_line_sel_to_gwy
+        self.gwychannel.line_selections = Mock(spec=GwyLineSelection)
+        self.gwysel = Mock()
+        self.gwychannel.line_selections.to_gwy.return_value = self.gwysel
+        self.gwycontainer = Mock()
+        self.channel_id = 0
+
+    def test_raise_TypeError_if_line_sel_is_not_GwyDataField_or_None(self):
+        """ Raise TypeError exception if line_selections is not GwyDataField
+            or None
+        """
+        self.gwychannel.line_selections = 'Wrong type'
+        self.assertRaises(TypeError,
+                          self.gwychannel._add_line_sel_to_gwy,
+                          self.gwychannel,
+                          self.gwycontainer,
+                          self.channel_id)
+
+    @patch('pygwyfile.gwychannel.add_gwyitem_to_gwycontainer', autospec=True)
+    def test_return_False_if_line_selections_is_None(
+            self,
+            mock_add_gwyitem_to_gwycontainer):
+        """Return False if line_selections is None and
+           add nothing to gwycontainer
+        """
+        self.gwychannel.line_selections = None
+        actual_return = self.gwychannel._add_line_sel_to_gwy(
+            self.gwychannel,
+            self.gwycontainer,
+            self.channel_id)
+        self.assertIs(actual_return, False)
+        mock_add_gwyitem_to_gwycontainer.assert_has_calls([])
+
+    @patch('pygwyfile.gwychannel.add_gwyitem_to_gwycontainer', autospec=True)
+    @patch.object(Gwyfile, 'new_gwyitem_object')
+    def test_create_new_gwyitem(self,
+                                mock_new_gwyitem_object,
+                                mock_add_gwyitem_to_gwycontainer):
+        """Create new object gwyitem with line_selections data"""
+        self.gwychannel._add_line_sel_to_gwy(self.gwychannel,
+                                             self.gwycontainer,
+                                             self.channel_id)
+        mock_new_gwyitem_object.assert_has_calls(
+            [call("/{:d}/select/line".format(self.channel_id),
+                  self.gwysel)])
+
+    @patch('pygwyfile.gwychannel.add_gwyitem_to_gwycontainer', autospec=True)
+    @patch.object(Gwyfile, 'new_gwyitem_object')
+    def test_add_gwyitem_to_container(self,
+                                      mock_new_gwyitem_object,
+                                      mock_add_gwyitem_to_gwycontainer):
+        """Add created gwyitem to gywcontainer"""
+        gwyitem = mock_new_gwyitem_object.return_value
+        self.gwychannel._add_line_sel_to_gwy(self.gwychannel,
+                                             self.gwycontainer,
+                                             self.channel_id)
+        mock_add_gwyitem_to_gwycontainer.assert_has_calls(
+            [call(gwyitem, self.gwycontainer)])
+
+    @patch('pygwyfile.gwychannel.add_gwyitem_to_gwycontainer', autospec=True)
+    @patch.object(Gwyfile, 'new_gwyitem_object')
+    def test_return_value(self,
+                          mock_new_gwyitem_object,
+                          mock_add_gwyitem_to_gwycontainer):
+        """Return result of add_gwyitem_to_gwycontainer call"""
+        is_added = self.gwychannel._add_line_sel_to_gwy(self.gwychannel,
+                                                        self.gwycontainer,
+                                                        self.channel_id)
+        self.assertIs(is_added, mock_add_gwyitem_to_gwycontainer.return_value)
 
 
 class GwyChannel_get_rectangle_sel(unittest.TestCase):
@@ -570,6 +1617,83 @@ class GwyChannel_get_rectangle_sel(unittest.TestCase):
         self.assertIs(expected_return, actual_return)
 
 
+class GwyChannel_add_rectangle_sel_to_gwy(unittest.TestCase):
+    """ Test _add_rectangle_sel_to_gwy method of GwyChannel class"""
+
+    def setUp(self):
+        self.gwychannel = Mock(spec=GwyChannel)
+        self.gwychannel._add_rectangle_sel_to_gwy = (
+            GwyChannel._add_rectangle_sel_to_gwy)
+        self.gwychannel.rectangle_selections = Mock(spec=GwyRectangleSelection)
+        self.gwysel = Mock()
+        self.gwychannel.rectangle_selections.to_gwy.return_value = self.gwysel
+        self.gwycontainer = Mock()
+        self.channel_id = 0
+
+    def test_raise_TypeError_if_rectangle_sel_is_not_GwyDataField(self):
+        """ Raise TypeError exception if rectangle_selections is not GwyDataField
+            or None
+        """
+        self.gwychannel.rectangle_selections = 'Wrong type'
+        self.assertRaises(TypeError,
+                          self.gwychannel._add_rectangle_sel_to_gwy,
+                          self.gwychannel,
+                          self.gwycontainer,
+                          self.channel_id)
+
+    @patch('pygwyfile.gwychannel.add_gwyitem_to_gwycontainer', autospec=True)
+    def test_return_False_if_rectangle_selections_is_None(
+            self,
+            mock_add_gwyitem_to_gwycontainer):
+        """Return False if ractangle_selections is None and
+           add nothing to gwycontainer
+        """
+        self.gwychannel.rectangle_selections = None
+        actual_return = self.gwychannel._add_rectangle_sel_to_gwy(
+            self.gwychannel,
+            self.gwycontainer,
+            self.channel_id)
+        self.assertIs(actual_return, False)
+        mock_add_gwyitem_to_gwycontainer.assert_has_calls([])
+
+    @patch('pygwyfile.gwychannel.add_gwyitem_to_gwycontainer', autospec=True)
+    @patch.object(Gwyfile, 'new_gwyitem_object')
+    def test_create_new_gwyitem(self,
+                                mock_new_gwyitem_object,
+                                mock_add_gwyitem_to_gwycontainer):
+        """Create new object gwyitem with rectangle_selections data"""
+        self.gwychannel._add_rectangle_sel_to_gwy(self.gwychannel,
+                                                  self.gwycontainer,
+                                                  self.channel_id)
+        mock_new_gwyitem_object.assert_has_calls(
+            [call("/{:d}/select/rectangle".format(self.channel_id),
+                  self.gwysel)])
+
+    @patch('pygwyfile.gwychannel.add_gwyitem_to_gwycontainer', autospec=True)
+    @patch.object(Gwyfile, 'new_gwyitem_object')
+    def test_add_gwyitem_to_container(self,
+                                      mock_new_gwyitem_object,
+                                      mock_add_gwyitem_to_gwycontainer):
+        """Add created gwyitem to gywcontainer"""
+        gwyitem = mock_new_gwyitem_object.return_value
+        self.gwychannel._add_rectangle_sel_to_gwy(self.gwychannel,
+                                                  self.gwycontainer,
+                                                  self.channel_id)
+        mock_add_gwyitem_to_gwycontainer.assert_has_calls(
+            [call(gwyitem, self.gwycontainer)])
+
+    @patch('pygwyfile.gwychannel.add_gwyitem_to_gwycontainer', autospec=True)
+    @patch.object(Gwyfile, 'new_gwyitem_object')
+    def test_return_value(self,
+                          mock_new_gwyitem_object,
+                          mock_add_gwyitem_to_gwycontainer):
+        """Return result of add_gwyitem_to_gwycontainer call"""
+        is_added = self.gwychannel._add_rectangle_sel_to_gwy(self.gwychannel,
+                                                             self.gwycontainer,
+                                                             self.channel_id)
+        self.assertIs(is_added, mock_add_gwyitem_to_gwycontainer.return_value)
+
+
 class GwyChannel_get_ellipse_sel(unittest.TestCase):
     """Test _get_ellipse_sel method of GwyChannel class
     """
@@ -615,6 +1739,83 @@ class GwyChannel_get_ellipse_sel(unittest.TestCase):
         actual_return = GwyChannel._get_ellipse_sel(self.gwyfile,
                                                     self.channel_id)
         self.assertIs(expected_return, actual_return)
+
+
+class GwyChannel_add_ellipse_sel_to_gwy(unittest.TestCase):
+    """ Test _add_ellipse_sel_to_gwy method of GwyChannel class"""
+
+    def setUp(self):
+        self.gwychannel = Mock(spec=GwyChannel)
+        self.gwychannel._add_ellipse_sel_to_gwy = (
+            GwyChannel._add_ellipse_sel_to_gwy)
+        self.gwychannel.ellipse_selections = Mock(spec=GwyEllipseSelection)
+        self.gwysel = Mock()
+        self.gwychannel.ellipse_selections.to_gwy.return_value = self.gwysel
+        self.gwycontainer = Mock()
+        self.channel_id = 0
+
+    def test_raise_TypeError_if_ellipse_sel_is_not_GwyDataField_or_None(self):
+        """ Raise TypeError exception if ellipse_selections is not GwyDataField
+            or None
+        """
+        self.gwychannel.ellipse_selections = 'Wrong type'
+        self.assertRaises(TypeError,
+                          self.gwychannel._add_ellipse_sel_to_gwy,
+                          self.gwychannel,
+                          self.gwycontainer,
+                          self.channel_id)
+
+    @patch('pygwyfile.gwychannel.add_gwyitem_to_gwycontainer', autospec=True)
+    def test_return_False_if_ellipse_selections_is_None(
+            self,
+            mock_add_gwyitem_to_gwycontainer):
+        """Return False if ellipse_selections is None and
+           add nothing to gwycontainer
+        """
+        self.gwychannel.ellipse_selections = None
+        actual_return = self.gwychannel._add_ellipse_sel_to_gwy(
+            self.gwychannel,
+            self.gwycontainer,
+            self.channel_id)
+        self.assertIs(actual_return, False)
+        mock_add_gwyitem_to_gwycontainer.assert_has_calls([])
+
+    @patch('pygwyfile.gwychannel.add_gwyitem_to_gwycontainer', autospec=True)
+    @patch.object(Gwyfile, 'new_gwyitem_object')
+    def test_create_new_gwyitem(self,
+                                mock_new_gwyitem_object,
+                                mock_add_gwyitem_to_gwycontainer):
+        """Create new object gwyitem with ellipse_selections data"""
+        self.gwychannel._add_ellipse_sel_to_gwy(self.gwychannel,
+                                                self.gwycontainer,
+                                                self.channel_id)
+        mock_new_gwyitem_object.assert_has_calls(
+            [call("/{:d}/select/ellipse".format(self.channel_id),
+                  self.gwysel)])
+
+    @patch('pygwyfile.gwychannel.add_gwyitem_to_gwycontainer', autospec=True)
+    @patch.object(Gwyfile, 'new_gwyitem_object')
+    def test_add_gwyitem_to_container(self,
+                                      mock_new_gwyitem_object,
+                                      mock_add_gwyitem_to_gwycontainer):
+        """Add created gwyitem to gywcontainer"""
+        gwyitem = mock_new_gwyitem_object.return_value
+        self.gwychannel._add_ellipse_sel_to_gwy(self.gwychannel,
+                                                self.gwycontainer,
+                                                self.channel_id)
+        mock_add_gwyitem_to_gwycontainer.assert_has_calls(
+            [call(gwyitem, self.gwycontainer)])
+
+    @patch('pygwyfile.gwychannel.add_gwyitem_to_gwycontainer', autospec=True)
+    @patch.object(Gwyfile, 'new_gwyitem_object')
+    def test_return_value(self,
+                          mock_new_gwyitem_object,
+                          mock_add_gwyitem_to_gwycontainer):
+        """Return result of add_gwyitem_to_gwycontainer call"""
+        is_added = self.gwychannel._add_ellipse_sel_to_gwy(self.gwychannel,
+                                                           self.gwycontainer,
+                                                           self.channel_id)
+        self.assertIs(is_added, mock_add_gwyitem_to_gwycontainer.return_value)
 
 
 class GwyChannel_init(unittest.TestCase):
