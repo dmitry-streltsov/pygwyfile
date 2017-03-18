@@ -164,6 +164,34 @@ class GwyChannel:
                           rectangle_sel=rectangle_sel,
                           ellipse_sel=ellipse_sel)
 
+    def to_gwy(self, gwycontainer, channel_id):
+        """ Add the channel to gwycontainer
+
+        Args:
+            gwycontainer (<GwyContainer*>):
+                Gwyddion container object
+            channel_id (int):
+                id of the channel in the gwycontainer
+        """
+        self._add_title_to_gwy(gwycontainer, channel_id)
+        self._add_data_to_gwy(gwycontainer, channel_id)
+        self._add_visibility_to_gwy(gwycontainer, channel_id)
+        self._add_palette_to_gwy(gwycontainer, channel_id)
+        self._add_range_type_to_gwy(gwycontainer, channel_id)
+        self._add_range_min_to_gwy(gwycontainer, channel_id)
+        self._add_range_max_to_gwy(gwycontainer, channel_id)
+        self._add_mask_to_gwy(gwycontainer, channel_id)
+        self._add_mask_red_to_gwy(gwycontainer, channel_id)
+        self._add_mask_green_to_gwy(gwycontainer, channel_id)
+        self._add_mask_blue_to_gwy(gwycontainer, channel_id)
+        self._add_mask_alpha_to_gwy(gwycontainer, channel_id)
+        self._add_show_to_gwy(gwycontainer, channel_id)
+        self._add_point_sel_to_gwy(gwycontainer, channel_id)
+        self._add_pointer_sel_to_gwy(gwycontainer, channel_id)
+        self._add_line_sel_to_gwy(gwycontainer, channel_id)
+        self._add_rectangle_sel_to_gwy(gwycontainer, channel_id)
+        self._add_ellipse_sel_to_gwy(gwycontainer, channel_id)
+
     @staticmethod
     def _get_title(gwyfile, channel_id):
         """Get title of channel with id=channel_id  from Gwyfile instance

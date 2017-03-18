@@ -2132,5 +2132,141 @@ class GwyChannel_from_gwy(unittest.TestCase):
                   ellipse_sel=ellipse_sel)])
 
 
+class GwyChannel_to_gwy(unittest.TestCase):
+    """ Tests for to_gwy method of GwyChannel class"""
+    def setUp(self):
+        self.channel = Mock(spec=GwyChannel)
+        self.channel.to_gwy = GwyChannel.to_gwy
+        self.channel._add_title_to_gwy = Mock(autospec=True)
+        self.channel._add_data_to_gwy = Mock(autospec=True)
+        self.channel._add_visibility_to_gwy = Mock(autospec=True)
+        self.channel._add_palette_to_gwy = Mock(autospec=True)
+        self.channel._add_range_type_to_gwy = Mock(autospec=True)
+        self.channel._add_range_min_to_gwy = Mock(autospec=True)
+        self.channel._add_range_max_to_gwy = Mock(autospec=True)
+        self.channel._add_mask_to_gwy = Mock(autospec=True)
+        self.channel._add_mask_red_to_gwy = Mock(autospec=True)
+        self.channel._add_mask_green_to_gwy = Mock(autospec=True)
+        self.channel._add_mask_blue_to_gwy = Mock(autospec=True)
+        self.channel._add_mask_alpha_to_gwy = Mock(autospec=True)
+        self.channel._add_show_to_gwy = Mock(autospec=True)
+        self.channel._add_point_sel_to_gwy = Mock(autospec=True)
+        self.channel._add_pointer_sel_to_gwy = Mock(autospec=True)
+        self.channel._add_line_sel_to_gwy = Mock(autospec=True)
+        self.channel._add_rectangle_sel_to_gwy = Mock(autospec=True)
+        self.channel._add_ellipse_sel_to_gwy = Mock(autspec=True)
+
+        self.gwycontainer = Mock()
+        self.channel_id = 0
+
+    def test_add_title_to_gwy(self):
+        """ Add title item to GwyContainer"""
+        self.channel.to_gwy(self.channel, self.gwycontainer, self.channel_id)
+        self.channel._add_title_to_gwy.assert_has_calls(
+            [call(self.gwycontainer, self.channel_id)])
+
+    def test_add_data_to_gwy(self):
+        """ Add data item to GwyContainer"""
+        self.channel.to_gwy(self.channel, self.gwycontainer, self.channel_id)
+        self.channel._add_data_to_gwy.assert_has_calls(
+            [call(self.gwycontainer, self.channel_id)])
+
+    def test_add_visibility_to_gwy(self):
+        """ Add visible item to GwyContainer"""
+        self.channel.to_gwy(self.channel, self.gwycontainer, self.channel_id)
+        self.channel._add_visibility_to_gwy.assert_has_calls(
+            [call(self.gwycontainer, self.channel_id)])
+
+    def test_add_palette_to_gwy(self):
+        """ Add palette item to GwyContainer"""
+        self.channel.to_gwy(self.channel, self.gwycontainer, self.channel_id)
+        self.channel._add_palette_to_gwy.assert_has_calls(
+            [call(self.gwycontainer, self.channel_id)])
+
+    def test_add_range_type_to_gwy(self):
+        """ Add range-type item to GwyContainer"""
+        self.channel.to_gwy(self.channel, self.gwycontainer, self.channel_id)
+        self.channel._add_range_type_to_gwy.assert_has_calls(
+            [call(self.gwycontainer, self.channel_id)])
+
+    def test_add_range_min_to_gwy(self):
+        """ Add range-min item to GwyContainer"""
+        self.channel.to_gwy(self.channel, self.gwycontainer, self.channel_id)
+        self.channel._add_range_min_to_gwy.assert_has_calls(
+            [call(self.gwycontainer, self.channel_id)])
+
+    def test_add_range_max_to_gwy(self):
+        """ Add range-max item to GwyContainer"""
+        self.channel.to_gwy(self.channel, self.gwycontainer, self.channel_id)
+        self.channel._add_range_max_to_gwy.assert_has_calls(
+            [call(self.gwycontainer, self.channel_id)])
+
+    def test_add_mask_to_gwy(self):
+        """ Add mask datafield item to GwyContainer"""
+        self.channel.to_gwy(self.channel, self.gwycontainer, self.channel_id)
+        self.channel._add_mask_to_gwy.assert_has_calls(
+            [call(self.gwycontainer, self.channel_id)])
+
+    def test_add_mask_red_to_gwy(self):
+        """ Add red component of the mask to GwyContainer"""
+        self.channel.to_gwy(self.channel, self.gwycontainer, self.channel_id)
+        self.channel._add_mask_red_to_gwy.assert_has_calls(
+            [call(self.gwycontainer, self.channel_id)])
+
+    def test_add_mask_green_to_gwy(self):
+        """ Add green component of the mask to GwyContainer"""
+        self.channel.to_gwy(self.channel, self.gwycontainer, self.channel_id)
+        self.channel._add_mask_green_to_gwy.assert_has_calls(
+            [call(self.gwycontainer, self.channel_id)])
+
+    def test_add_mask_blue_to_gwy(self):
+        """ Add blue component of the mask to GwyContainer"""
+        self.channel.to_gwy(self.channel, self.gwycontainer, self.channel_id)
+        self.channel._add_mask_blue_to_gwy.assert_has_calls(
+            [call(self.gwycontainer, self.channel_id)])
+
+    def test_add_mask_alpha_to_gwy(self):
+        """ Add alpha (opacity) component to the mask to GwyContainer"""
+        self.channel.to_gwy(self.channel, self.gwycontainer, self.channel_id)
+        self.channel._add_mask_alpha_to_gwy.assert_has_calls(
+            [call(self.gwycontainer, self.channel_id)])
+
+    def test_add_show_to_gwy(self):
+        """ Add presentation datafield to GwyContainer"""
+        self.channel.to_gwy(self.channel, self.gwycontainer, self.channel_id)
+        self.channel._add_show_to_gwy.assert_has_calls(
+            [call(self.gwycontainer, self.channel_id)])
+
+    def test_add_point_sel_to_gwy(self):
+        """ Add point selection item to GwyContainer"""
+        self.channel.to_gwy(self.channel, self.gwycontainer, self.channel_id)
+        self.channel._add_point_sel_to_gwy.assert_has_calls(
+            [call(self.gwycontainer, self.channel_id)])
+
+    def test_add_pointer_sel_to_gwy(self):
+        """ Add pointer selection item to GwyContainer"""
+        self.channel.to_gwy(self.channel, self.gwycontainer, self.channel_id)
+        self.channel._add_pointer_sel_to_gwy.assert_has_calls(
+            [call(self.gwycontainer, self.channel_id)])
+
+    def test_add_line_sel_to_gwy(self):
+        """ Add line selection item to GwyContainer"""
+        self.channel.to_gwy(self.channel, self.gwycontainer, self.channel_id)
+        self.channel._add_line_sel_to_gwy.assert_has_calls(
+            [call(self.gwycontainer, self.channel_id)])
+
+    def test_add_rectangle_sel_to_gwy(self):
+        """ Add rectangle selection item to GwyContainer"""
+        self.channel.to_gwy(self.channel, self.gwycontainer, self.channel_id)
+        self.channel._add_rectangle_sel_to_gwy.assert_has_calls(
+            [call(self.gwycontainer, self.channel_id)])
+
+    def test_add_ellipse_sel_to_gwy(self):
+        """ Add ellipse selection item to GwyContainer"""
+        self.channel.to_gwy(self.channel, self.gwycontainer, self.channel_id)
+        self.channel._add_ellipse_sel_to_gwy.assert_has_calls(
+            [call(self.gwycontainer, self.channel_id)])
+
+
 if __name__ == '__main__':
     unittest.main()
