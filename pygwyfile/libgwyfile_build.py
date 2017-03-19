@@ -23,6 +23,9 @@ typedef struct {
 
 GwyfileObject* gwyfile_read_file(const char*  filename,
                                  GwyfileError**  error);
+bool gwyfile_write_file(GwyfileObject* object,
+                        const char* filename,
+                        GwyfileError** error);
 const char* gwyfile_object_name(const GwyfileObject* object);
 int* gwyfile_object_container_enumerate_channels(const GwyfileObject* object,
                                                  unsigned int* nchannels);

@@ -7,11 +7,18 @@
         read_gwyfile: create GwyContainer instance from gwy file
 """
 import os.path
+import weakref
 
 from pygwyfile._libgwyfile import ffi, lib
-from pygwyfile.gwyfile import Gwyfile
+from pygwyfile.gwyfile import Gwyfile, new_gwycontainer
+from pygwyfile.gwyfile import add_gwyitem_to_gwycontainer
+from pygwyfile.gwyfile import write_gwycontainer_to_gwyfile
 from pygwyfile.gwychannel import GwyChannel
 from pygwyfile.gwygraph import GwyGraphModel
+
+# weak key dictionary to keep alive gwygraphs objects
+# in gwycontainer
+_container_graphs_dic = weakref.WeakKeyDictionary()
 
 
 class GwyContainer:
@@ -78,6 +85,57 @@ class GwyContainer:
             return GwyContainer(filename=filename,
                                 channels=channels,
                                 graphs=graphs)
+
+    def to_gwy(self):
+        """ Create a new GWY container object with data from this container
+
+        Returns:
+            gwycontainer (<GwyfileObject*>):
+                The newly created Gwy container object
+        """
+        gwycontainer = new_gwycontainer()
+        _container_graphs_dic[gwycontainer] = []
+
+        for channel_id, channel in enumerate(self.channels):
+            channel.to_gwy(gwycontainer, channel_id)
+
+        for graph_id, graph in enumerate(self.graphs):
+            gwygraph = graph.to_gwy()
+
+            # graph enumeration in gwyddion starts with 1
+            key = "/0/graph/graph/{:d}".format(graph_id + 1)
+            gwyitem = Gwyfile.new_gwyitem_object(key, gwygraph)
+
+            if not add_gwyitem_to_gwycontainer(gwyitem, gwycontainer):
+                continue
+
+            # gwycontainer object keeps alive gwygraph objects
+            _container_graphs_dic[gwycontainer].append(gwygraph)
+
+            if graph.visible is not None:
+                key_visible = '/'.join((key, 'visible'))
+                gwyitem_visible = Gwyfile.new_gwyitem_bool(key_visible,
+                                                           graph.visible)
+                add_gwyitem_to_gwycontainer(gwyitem_visible, gwycontainer)
+
+        return gwycontainer
+
+    def to_gwyfile(self, filename=None):
+        """ Write this container to gwy file.
+            The file will be overwritten if it exists.
+
+        Args:
+            filename (string): name of the gwy file or None.
+                               If None, self.filename attribute is used
+        """
+        if filename is None:
+            filename = self.filename
+
+        gwycontainer = self.to_gwy()
+        abspath = os.path.abspath(filename)
+        gwyitem = Gwyfile.new_gwyitem_string("/filename", abspath)
+        add_gwyitem_to_gwycontainer(gwyitem, gwycontainer)
+        write_gwycontainer_to_gwyfile(gwycontainer, filename)
 
     @staticmethod
     def _get_channel_ids(gwyfile):

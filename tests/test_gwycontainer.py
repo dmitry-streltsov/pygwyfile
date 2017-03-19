@@ -291,6 +291,110 @@ class GwyContainer_get_filename(unittest.TestCase):
         self.assertEqual(actual_return, basename)
 
 
+class GwyContainer_to_gwyfile(unittest.TestCase):
+    """ Tests for GwyContainer.to_gwyfile method"""
+    def setUp(self):
+        self.gwycontainer = Mock(spec=GwyContainer)
+        self.gwycontainer.to_gwy = Mock(autospec=True)
+        self.gwycontainer.to_gwyfile = GwyContainer.to_gwyfile
+        self.gwycontainer.filename = 'filename.gwy'
+        self.filename = 'another_filename.gwy'
+
+    @patch('pygwyfile.gwycontainer.os.path', autospec=True)
+    @patch('pygwyfile.gwycontainer.Gwyfile', autospec=True)
+    @patch('pygwyfile.gwycontainer.add_gwyitem_to_gwycontainer', autospec=True)
+    @patch('pygwyfile.gwycontainer.write_gwycontainer_to_gwyfile',
+           autospec=True)
+    def test_create_gwycontainer(self,
+                                 mock_write_gwy,
+                                 mock_add_gwyitem,
+                                 mock_gwyfile,
+                                 mock_path):
+        """ Create gwycontainer (GwyfileObject*) from this container"""
+        self.gwycontainer.to_gwyfile(self.gwycontainer, self.filename)
+        self.gwycontainer.to_gwy.assert_has_calls(
+            [call()])
+
+    @patch('pygwyfile.gwycontainer.os.path', autospec=True)
+    @patch('pygwyfile.gwycontainer.Gwyfile', autospec=True)
+    @patch('pygwyfile.gwycontainer.add_gwyitem_to_gwycontainer', autospec=True)
+    @patch('pygwyfile.gwycontainer.write_gwycontainer_to_gwyfile',
+           autospec=True)
+    def test_convert_filename_to_abspath(self,
+                                         mock_write_gwy,
+                                         mock_add_gwyitem,
+                                         mock_gwyfile,
+                                         mock_path):
+        """Convert filename argument to abspath"""
+        self.gwycontainer.to_gwyfile(self.gwycontainer, self.filename)
+        mock_path.abspath.assert_has_calls(
+            [call(self.filename)])
+
+    @patch('pygwyfile.gwycontainer.os.path', autospec=True)
+    @patch('pygwyfile.gwycontainer.Gwyfile', autospec=True)
+    @patch('pygwyfile.gwycontainer.add_gwyitem_to_gwycontainer', autospec=True)
+    @patch('pygwyfile.gwycontainer.write_gwycontainer_to_gwyfile',
+           autospec=True)
+    def test_use_filename_attribute_if_filename_arg_is_None(self,
+                                                            mock_write_gwy,
+                                                            mock_add_gwyitem,
+                                                            mock_gwyfile,
+                                                            mock_path):
+        """Use filename attribute of GwyContainer instance if filename arg.
+        is None
+        """
+        self.gwycontainer.to_gwyfile(self.gwycontainer)
+        mock_path.abspath.assert_has_calls(
+            [call(self.gwycontainer.filename)])
+
+    @patch('pygwyfile.gwycontainer.os.path', autospec=True)
+    @patch('pygwyfile.gwycontainer.Gwyfile', autospec=True)
+    @patch('pygwyfile.gwycontainer.add_gwyitem_to_gwycontainer', autospec=True)
+    @patch('pygwyfile.gwycontainer.write_gwycontainer_to_gwyfile',
+           autospec=True)
+    def test_convert_abspath_to_gwyitem(self,
+                                        mock_write_gwy,
+                                        mock_add_gwyitem,
+                                        mock_gwyfile,
+                                        mock_path):
+        """ Convert filename abspath to string gwyitem"""
+        self.gwycontainer.to_gwyfile(self.gwycontainer, self.filename)
+        mock_gwyfile.new_gwyitem_string.assert_has_calls(
+            [call("/filename", mock_path.abspath.return_value)])
+
+    @patch('pygwyfile.gwycontainer.os.path', autospec=True)
+    @patch('pygwyfile.gwycontainer.Gwyfile', autospec=True)
+    @patch('pygwyfile.gwycontainer.add_gwyitem_to_gwycontainer', autospec=True)
+    @patch('pygwyfile.gwycontainer.write_gwycontainer_to_gwyfile',
+           autospec=True)
+    def test_add_filename_gwyitem_to_gwycontainer(self,
+                                                  mock_write_gwy,
+                                                  mock_add_gwyitem,
+                                                  mock_gwyfile,
+                                                  mock_path):
+        """ Add created filename string gwyitem to created gwycontainer"""
+        self.gwycontainer.to_gwyfile(self.gwycontainer, self.filename)
+        mock_add_gwyitem.assert_has_calls(
+            [call(mock_gwyfile.new_gwyitem_string.return_value,
+                  self.gwycontainer.to_gwy.return_value)])
+
+    @patch('pygwyfile.gwycontainer.os.path', autospec=True)
+    @patch('pygwyfile.gwycontainer.Gwyfile', autospec=True)
+    @patch('pygwyfile.gwycontainer.add_gwyitem_to_gwycontainer', autospec=True)
+    @patch('pygwyfile.gwycontainer.write_gwycontainer_to_gwyfile',
+           autospec=True)
+    def test_write_gwycontainer_to_file(self,
+                                        mock_write_gwy,
+                                        mock_add_gwyitem,
+                                        mock_gwyfile,
+                                        mock_path):
+        """ Write gwycontainer to file"""
+        self.gwycontainer.to_gwyfile(self.gwycontainer, self.filename)
+        mock_write_gwy.assert_has_calls(
+            [call(self.gwycontainer.to_gwy.return_value,
+                  self.filename)])
+
+
 class Func_read_gwyfile_TestCase(unittest.TestCase):
     """ Test read_gwyfile function"""
 

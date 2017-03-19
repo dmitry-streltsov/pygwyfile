@@ -6,6 +6,7 @@
         Gwyfile: representation of GwyfileObject* from Libgwyfile C library
 
 """
+
 import os.path
 
 from pygwyfile._libgwyfile import ffi, lib
@@ -332,3 +333,20 @@ def add_gwyitem_to_gwycontainer(gwyitem, gwycontainer):
         return True
     else:
         return False
+
+
+def write_gwycontainer_to_gwyfile(gwycontainer, filename):
+    """Write gwycontainer to file.
+       The file will be overwritten if it exists
+
+    Args:
+        gwycontainer (<GwyfileObject*>)
+        filename (string): name of file
+    """
+    error = ffi.new("GwyfileError*")
+    errorp = ffi.new("GwyfileError**", error)
+    if not lib.gwyfile_write_file(gwycontainer,
+                                  ffi.new("char[]",
+                                          filename.encode('utf-8')),
+                                  errorp):
+        raise GwyfileErrorCMsg(errorp[0].message)

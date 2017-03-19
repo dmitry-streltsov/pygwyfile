@@ -5,6 +5,7 @@ from pygwyfile.gwyfile import Gwyfile
 from pygwyfile.gwyfile import GwyfileError, GwyfileErrorCMsg
 from pygwyfile.gwyfile import ffi, lib
 from pygwyfile.gwyfile import new_gwycontainer, add_gwyitem_to_gwycontainer
+from pygwyfile.gwyfile import write_gwycontainer_to_gwyfile
 
 
 class GwyfileErrorCMsg_exception(unittest.TestCase):
@@ -569,6 +570,39 @@ class Func_add_gwyitem_to_gwycontainer(unittest.TestCase):
         self.assertEqual(args[0], self.gwycontainer)
         self.assertEqual(args[1], self.gwyitem)
         return ffi.cast("bool", self.is_added)
+
+
+class Func_write_gwycontainer_to_gwyfile(unittest.TestCase):
+    """ Tests for write_gwycontainer_to_gwyfile function"""
+    def setUp(self):
+        self.gwycontainer = Mock()
+        self.filename = "test.gwy"
+
+    @patch('pygwyfile.gwyfile.lib', autospec=True)
+    def test_raise_GwyfileErrorCMsg_if_io_error_occurs(self, mock_lib):
+        """ Raise GwyfileErrorCMsg if I/O error occurs"""
+        mock_lib.gwyfile_write_file.return_value = ffi.cast("bool", False)
+        self.assertRaises(GwyfileErrorCMsg,
+                          write_gwycontainer_to_gwyfile,
+                          self.gwycontainer,
+                          self.filename)
+
+    @patch('pygwyfile.gwyfile.lib', autospec=True)
+    def test_args_of_libgwyfile_func_call(self, mock_lib):
+        """ Test arguments of gwyfile_write_file C func call"""
+        mock_lib.gwyfile_write_file.side_effect = self._side_effect
+        write_gwycontainer_to_gwyfile(self.gwycontainer, self.filename)
+
+    def _side_effect(self, *args):
+        """ First argument is GwyContainer
+            Second argument is name of the file
+            Third argument location of the error
+        """
+        self.assertEqual(args[0], self.gwycontainer)
+        self.assertEqual(ffi.string(args[1]), self.filename.encode('utf-8'))
+        self.assertEqual(ffi.typeof(args[2]),
+                         ffi.typeof(ffi.new("GwyfileError**")))
+        return ffi.cast("bool", True)
 
 
 if __name__ == '__main__':
