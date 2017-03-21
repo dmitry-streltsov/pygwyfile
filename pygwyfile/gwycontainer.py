@@ -13,6 +13,9 @@ from pygwyfile._libgwyfile import ffi, lib
 from pygwyfile.gwyfile import Gwyfile, new_gwycontainer
 from pygwyfile.gwyfile import add_gwyitem_to_gwycontainer
 from pygwyfile.gwyfile import write_gwycontainer_to_gwyfile
+from pygwyfile.gwyfile import (new_gwyitem_bool,
+                               new_gwyitem_string,
+                               new_gwyitem_object)
 from pygwyfile.gwychannel import GwyChannel
 from pygwyfile.gwygraph import GwyGraphModel
 
@@ -123,7 +126,7 @@ class GwyContainer:
 
             # graph enumeration in gwyddion starts with 1
             key = "/0/graph/graph/{:d}".format(graph_id + 1)
-            gwyitem = Gwyfile.new_gwyitem_object(key, gwygraph)
+            gwyitem = new_gwyitem_object(key, gwygraph)
 
             if add_gwyitem_to_gwycontainer(gwyitem, gwycontainer):
                 # gwycontainer object keeps alive gwygraph objects
@@ -146,8 +149,8 @@ class GwyContainer:
         """
         if graph.visible is not None:
             key_visible = '/'.join((key, 'visible'))
-            gwyitem_visible = Gwyfile.new_gwyitem_bool(key_visible,
-                                                       graph.visible)
+            gwyitem_visible = new_gwyitem_bool(key_visible,
+                                               graph.visible)
             add_gwyitem_to_gwycontainer(gwyitem_visible, gwycontainer)
 
     def to_gwyfile(self, filename=None):
@@ -163,7 +166,7 @@ class GwyContainer:
 
         gwycontainer = self.to_gwy()
         abspath = os.path.abspath(filename)
-        gwyitem = Gwyfile.new_gwyitem_string("/filename", abspath)
+        gwyitem = new_gwyitem_string("/filename", abspath)
         add_gwyitem_to_gwycontainer(gwyitem, gwycontainer)
         write_gwycontainer_to_gwyfile(gwycontainer, filename)
 

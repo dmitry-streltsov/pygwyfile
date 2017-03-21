@@ -55,7 +55,7 @@ class GwyChannel_add_title_to_gwy(unittest.TestCase):
                           self.channel_id)
 
     @patch('pygwyfile.gwychannel.add_gwyitem_to_gwycontainer', autospec=True)
-    @patch.object(Gwyfile, 'new_gwyitem_string')
+    @patch('pygwyfile.gwychannel.new_gwyitem_string', autospec=True)
     def test_create_new_gwyitem(self,
                                 mock_new_gwyitem_string,
                                 mock_add_gwyitem_to_gwycontainer):
@@ -68,7 +68,7 @@ class GwyChannel_add_title_to_gwy(unittest.TestCase):
                   self.gwychannel.title)])
 
     @patch('pygwyfile.gwychannel.add_gwyitem_to_gwycontainer', autospec=True)
-    @patch.object(Gwyfile, 'new_gwyitem_string')
+    @patch('pygwyfile.gwychannel.new_gwyitem_string', autospec=True)
     def test_add_gwyitem_to_container(self,
                                       mock_new_gwyitem_string,
                                       mock_add_gwyitem_to_gwycontainer):
@@ -81,7 +81,7 @@ class GwyChannel_add_title_to_gwy(unittest.TestCase):
             [call(gwyitem, self.gwycontainer)])
 
     @patch('pygwyfile.gwychannel.add_gwyitem_to_gwycontainer', autospec=True)
-    @patch.object(Gwyfile, 'new_gwyitem_string')
+    @patch('pygwyfile.gwyfile.new_gwyitem_string', autospec=True)
     def test_return_value(self,
                           mock_new_gwyitem_string,
                           mock_add_gwyitem_to_gwycontainer):
@@ -136,7 +136,7 @@ class GwyChannel_add_palette_to_gwy(unittest.TestCase):
         self.assertIs(is_added, False)
         mock_add_gwyitem.assert_has_calls([])
 
-    @patch.object(Gwyfile, 'new_gwyitem_string')
+    @patch('pygwyfile.gwychannel.new_gwyitem_string', autospec=True)
     @patch('pygwyfile.gwychannel.add_gwyitem_to_gwycontainer', autospec=True)
     def test_create_new_gwyitem_with_palette_string(self,
                                                     mock_add_gwyitem,
@@ -149,7 +149,7 @@ class GwyChannel_add_palette_to_gwy(unittest.TestCase):
             [call("/{:d}/base/palette".format(self.channel_id),
                   self.gwychannel.palette)])
 
-    @patch.object(Gwyfile, 'new_gwyitem_string')
+    @patch('pygwyfile.gwychannel.new_gwyitem_string', autospec=True)
     @patch('pygwyfile.gwychannel.add_gwyitem_to_gwycontainer', autospec=True)
     def test_add_gwyitem_to_container(self,
                                       mock_add_gwyitem,
@@ -162,7 +162,7 @@ class GwyChannel_add_palette_to_gwy(unittest.TestCase):
             [call(mock_new_gwyitem_string.return_value,
                   self.gwycontainer)])
 
-    @patch.object(Gwyfile, 'new_gwyitem_string')
+    @patch('pygwyfile.gwyfile.new_gwyitem_string', autospec=True)
     @patch('pygwyfile.gwychannel.add_gwyitem_to_gwycontainer', autospec=True)
     def test_returned_value(self,
                             mock_add_gwyitem,
@@ -220,7 +220,7 @@ class GwyChannel_add_visibility_to_gwy(unittest.TestCase):
         self.assertIs(is_added, False)
         mock_add_gwyitem.assert_has_calls([])
 
-    @patch.object(Gwyfile, 'new_gwyitem_bool')
+    @patch('pygwyfile.gwychannel.new_gwyitem_bool', autospec=True)
     @patch('pygwyfile.gwychannel.add_gwyitem_to_gwycontainer', autospec=True)
     def test_create_new_gwyitem_with_palette_string(self,
                                                     mock_add_gwyitem,
@@ -233,7 +233,7 @@ class GwyChannel_add_visibility_to_gwy(unittest.TestCase):
             [call("/{:d}/data/visible".format(self.channel_id),
                   self.gwychannel.visible)])
 
-    @patch.object(Gwyfile, 'new_gwyitem_bool')
+    @patch('pygwyfile.gwychannel.new_gwyitem_bool', autospec=True)
     @patch('pygwyfile.gwychannel.add_gwyitem_to_gwycontainer', autospec=True)
     def test_add_gwyitem_to_container(self,
                                       mock_add_gwyitem,
@@ -246,7 +246,7 @@ class GwyChannel_add_visibility_to_gwy(unittest.TestCase):
             [call(mock_new_gwyitem_bool.return_value,
                   self.gwycontainer)])
 
-    @patch.object(Gwyfile, 'new_gwyitem_bool')
+    @patch('pygwyfile.gwyfile.new_gwyitem_bool', autospec=True)
     @patch('pygwyfile.gwychannel.add_gwyitem_to_gwycontainer', autospec=True)
     def test_returned_value(self,
                             mock_add_gwyitem,
@@ -304,7 +304,7 @@ class GwyChannel_add_range_type_to_gwy(unittest.TestCase):
         self.assertIs(is_added, False)
         mock_add_gwyitem.assert_has_calls([])
 
-    @patch.object(Gwyfile, 'new_gwyitem_int32')
+    @patch('pygwyfile.gwychannel.new_gwyitem_int32', autospec=True)
     @patch('pygwyfile.gwychannel.add_gwyitem_to_gwycontainer', autospec=True)
     def test_create_new_gwyitem_with_palette_string(self,
                                                     mock_add_gwyitem,
@@ -317,7 +317,7 @@ class GwyChannel_add_range_type_to_gwy(unittest.TestCase):
             [call("/{:d}/base/range-type".format(self.channel_id),
                   self.gwychannel.range_type)])
 
-    @patch.object(Gwyfile, 'new_gwyitem_int32')
+    @patch('pygwyfile.gwychannel.new_gwyitem_int32', autospec=True)
     @patch('pygwyfile.gwychannel.add_gwyitem_to_gwycontainer', autospec=True)
     def test_add_gwyitem_to_container(self,
                                       mock_add_gwyitem,
@@ -330,7 +330,7 @@ class GwyChannel_add_range_type_to_gwy(unittest.TestCase):
             [call(mock_new_gwyitem_int32.return_value,
                   self.gwycontainer)])
 
-    @patch.object(Gwyfile, 'new_gwyitem_int32')
+    @patch('pygwyfile.gwyfile.new_gwyitem_int32', autospec=True)
     @patch('pygwyfile.gwychannel.add_gwyitem_to_gwycontainer', autospec=True)
     def test_returned_value(self,
                             mock_add_gwyitem,
@@ -388,7 +388,7 @@ class GwyChannel_add_range_min_to_gwy(unittest.TestCase):
         self.assertIs(is_added, False)
         mock_add_gwyitem.assert_has_calls([])
 
-    @patch.object(Gwyfile, 'new_gwyitem_double')
+    @patch('pygwyfile.gwychannel.new_gwyitem_double', autospec=True)
     @patch('pygwyfile.gwychannel.add_gwyitem_to_gwycontainer', autospec=True)
     def test_create_new_gwyitem_with_range_min_value(self,
                                                      mock_add_gwyitem,
@@ -401,7 +401,7 @@ class GwyChannel_add_range_min_to_gwy(unittest.TestCase):
             [call("/{:d}/base/min".format(self.channel_id),
                   self.gwychannel.range_min)])
 
-    @patch.object(Gwyfile, 'new_gwyitem_double')
+    @patch('pygwyfile.gwychannel.new_gwyitem_double', autospec=True)
     @patch('pygwyfile.gwychannel.add_gwyitem_to_gwycontainer', autospec=True)
     def test_add_gwyitem_to_container(self,
                                       mock_add_gwyitem,
@@ -414,7 +414,7 @@ class GwyChannel_add_range_min_to_gwy(unittest.TestCase):
             [call(mock_new_gwyitem_double.return_value,
                   self.gwycontainer)])
 
-    @patch.object(Gwyfile, 'new_gwyitem_double')
+    @patch('pygwyfile.gwyfile.new_gwyitem_double', autospec=True)
     @patch('pygwyfile.gwychannel.add_gwyitem_to_gwycontainer', autospec=True)
     def test_returned_value(self,
                             mock_add_gwyitem,
@@ -472,7 +472,7 @@ class GwyChannel_add_range_max_to_gwy(unittest.TestCase):
         self.assertIs(is_added, False)
         mock_add_gwyitem.assert_has_calls([])
 
-    @patch.object(Gwyfile, 'new_gwyitem_double')
+    @patch('pygwyfile.gwychannel.new_gwyitem_double', autospec=True)
     @patch('pygwyfile.gwychannel.add_gwyitem_to_gwycontainer', autospec=True)
     def test_create_new_gwyitem_with_range_max_value(self,
                                                      mock_add_gwyitem,
@@ -485,7 +485,7 @@ class GwyChannel_add_range_max_to_gwy(unittest.TestCase):
             [call("/{:d}/base/max".format(self.channel_id),
                   self.gwychannel.range_max)])
 
-    @patch.object(Gwyfile, 'new_gwyitem_double')
+    @patch('pygwyfile.gwychannel.new_gwyitem_double', autospec=True)
     @patch('pygwyfile.gwychannel.add_gwyitem_to_gwycontainer', autospec=True)
     def test_add_gwyitem_to_container(self,
                                       mock_add_gwyitem,
@@ -498,7 +498,7 @@ class GwyChannel_add_range_max_to_gwy(unittest.TestCase):
             [call(mock_new_gwyitem_double.return_value,
                   self.gwycontainer)])
 
-    @patch.object(Gwyfile, 'new_gwyitem_double')
+    @patch('pygwyfile.gwychannel.new_gwyitem_double', autospec=True)
     @patch('pygwyfile.gwychannel.add_gwyitem_to_gwycontainer', autospec=True)
     def test_returned_value(self,
                             mock_add_gwyitem,
@@ -554,7 +554,7 @@ class GwyChannel_add_mask_red_to_gwy(unittest.TestCase):
         self.assertIs(is_added, False)
         mock_add_gwyitem.assert_has_calls([])
 
-    @patch.object(Gwyfile, 'new_gwyitem_double')
+    @patch('pygwyfile.gwychannel.new_gwyitem_double', autospec=True)
     @patch('pygwyfile.gwychannel.add_gwyitem_to_gwycontainer', autospec=True)
     def test_create_new_gwyitem_with_mask_red_value(self,
                                                     mock_add_gwyitem,
@@ -567,7 +567,7 @@ class GwyChannel_add_mask_red_to_gwy(unittest.TestCase):
             [call("/{:d}/mask/red".format(self.channel_id),
                   self.gwychannel.mask_red)])
 
-    @patch.object(Gwyfile, 'new_gwyitem_double')
+    @patch('pygwyfile.gwychannel.new_gwyitem_double', autospec=True)
     @patch('pygwyfile.gwychannel.add_gwyitem_to_gwycontainer', autospec=True)
     def test_add_gwyitem_to_container(self,
                                       mock_add_gwyitem,
@@ -580,7 +580,7 @@ class GwyChannel_add_mask_red_to_gwy(unittest.TestCase):
             [call(mock_new_gwyitem_double.return_value,
                   self.gwycontainer)])
 
-    @patch.object(Gwyfile, 'new_gwyitem_double')
+    @patch('pygwyfile.gwychannel.new_gwyitem_double', autospec=True)
     @patch('pygwyfile.gwychannel.add_gwyitem_to_gwycontainer', autospec=True)
     def test_returned_value(self,
                             mock_add_gwyitem,
@@ -637,7 +637,7 @@ class GwyChannel_add_mask_green_to_gwy(unittest.TestCase):
         self.assertIs(is_added, False)
         mock_add_gwyitem.assert_has_calls([])
 
-    @patch.object(Gwyfile, 'new_gwyitem_double')
+    @patch('pygwyfile.gwychannel.new_gwyitem_double', autospec=True)
     @patch('pygwyfile.gwychannel.add_gwyitem_to_gwycontainer', autospec=True)
     def test_create_new_gwyitem_with_mask_green_value(self,
                                                       mock_add_gwyitem,
@@ -650,7 +650,7 @@ class GwyChannel_add_mask_green_to_gwy(unittest.TestCase):
             [call("/{:d}/mask/green".format(self.channel_id),
                   self.gwychannel.mask_green)])
 
-    @patch.object(Gwyfile, 'new_gwyitem_double')
+    @patch('pygwyfile.gwychannel.new_gwyitem_double', autospec=True)
     @patch('pygwyfile.gwychannel.add_gwyitem_to_gwycontainer', autospec=True)
     def test_add_gwyitem_to_container(self,
                                       mock_add_gwyitem,
@@ -663,7 +663,7 @@ class GwyChannel_add_mask_green_to_gwy(unittest.TestCase):
             [call(mock_new_gwyitem_double.return_value,
                   self.gwycontainer)])
 
-    @patch.object(Gwyfile, 'new_gwyitem_double')
+    @patch('pygwyfile.gwyfile.new_gwyitem_double', autospec=True)
     @patch('pygwyfile.gwychannel.add_gwyitem_to_gwycontainer', autospec=True)
     def test_returned_value(self,
                             mock_add_gwyitem,
@@ -720,7 +720,7 @@ class GwyChannel_add_mask_blue_to_gwy(unittest.TestCase):
         self.assertIs(is_added, False)
         mock_add_gwyitem.assert_has_calls([])
 
-    @patch.object(Gwyfile, 'new_gwyitem_double')
+    @patch('pygwyfile.gwychannel.new_gwyitem_double', autospec=True)
     @patch('pygwyfile.gwychannel.add_gwyitem_to_gwycontainer', autospec=True)
     def test_create_new_gwyitem_with_mask_blue_value(self,
                                                      mock_add_gwyitem,
@@ -733,7 +733,7 @@ class GwyChannel_add_mask_blue_to_gwy(unittest.TestCase):
             [call("/{:d}/mask/blue".format(self.channel_id),
                   self.gwychannel.mask_blue)])
 
-    @patch.object(Gwyfile, 'new_gwyitem_double')
+    @patch('pygwyfile.gwychannel.new_gwyitem_double', autospec=True)
     @patch('pygwyfile.gwychannel.add_gwyitem_to_gwycontainer', autospec=True)
     def test_add_gwyitem_to_container(self,
                                       mock_add_gwyitem,
@@ -746,7 +746,7 @@ class GwyChannel_add_mask_blue_to_gwy(unittest.TestCase):
             [call(mock_new_gwyitem_double.return_value,
                   self.gwycontainer)])
 
-    @patch.object(Gwyfile, 'new_gwyitem_double')
+    @patch('pygwyfile.gwyfile.new_gwyitem_double', autospec=True)
     @patch('pygwyfile.gwychannel.add_gwyitem_to_gwycontainer', autospec=True)
     def test_returned_value(self,
                             mock_add_gwyitem,
@@ -803,7 +803,7 @@ class GwyChannel_add_mask_alpha_to_gwy(unittest.TestCase):
         self.assertIs(is_added, False)
         mock_add_gwyitem.assert_has_calls([])
 
-    @patch.object(Gwyfile, 'new_gwyitem_double')
+    @patch('pygwyfile.gwychannel.new_gwyitem_double', autospec=True)
     @patch('pygwyfile.gwychannel.add_gwyitem_to_gwycontainer', autospec=True)
     def test_create_new_gwyitem_with_mask_alpha_value(self,
                                                       mock_add_gwyitem,
@@ -816,7 +816,7 @@ class GwyChannel_add_mask_alpha_to_gwy(unittest.TestCase):
             [call("/{:d}/mask/alpha".format(self.channel_id),
                   self.gwychannel.mask_alpha)])
 
-    @patch.object(Gwyfile, 'new_gwyitem_double')
+    @patch('pygwyfile.gwychannel.new_gwyitem_double', autospec=True)
     @patch('pygwyfile.gwychannel.add_gwyitem_to_gwycontainer', autospec=True)
     def test_add_gwyitem_to_container(self,
                                       mock_add_gwyitem,
@@ -829,7 +829,7 @@ class GwyChannel_add_mask_alpha_to_gwy(unittest.TestCase):
             [call(mock_new_gwyitem_double.return_value,
                   self.gwycontainer)])
 
-    @patch.object(Gwyfile, 'new_gwyitem_double')
+    @patch('pygwyfile.gwychannel.new_gwyitem_double', autospec=True)
     @patch('pygwyfile.gwychannel.add_gwyitem_to_gwycontainer', autospec=True)
     def test_returned_value(self,
                             mock_add_gwyitem,
@@ -911,7 +911,7 @@ class GwyChannel_add_data_to_gwy(unittest.TestCase):
                           self.channel_id)
 
     @patch('pygwyfile.gwychannel.add_gwyitem_to_gwycontainer', autospec=True)
-    @patch.object(Gwyfile, 'new_gwyitem_object')
+    @patch('pygwyfile.gwychannel.new_gwyitem_object', autospec=True)
     def test_create_new_gwyitem(self,
                                 mock_new_gwyitem_object,
                                 mock_add_gwyitem_to_gwycontainer):
@@ -924,7 +924,7 @@ class GwyChannel_add_data_to_gwy(unittest.TestCase):
                   self.gwydf)])
 
     @patch('pygwyfile.gwychannel.add_gwyitem_to_gwycontainer', autospec=True)
-    @patch.object(Gwyfile, 'new_gwyitem_object')
+    @patch('pygwyfile.gwychannel.new_gwyitem_object', autospec=True)
     def test_add_gwyitem_to_container(self,
                                       mock_new_gwyitem_object,
                                       mock_add_gwyitem_to_gwycontainer):
@@ -937,7 +937,7 @@ class GwyChannel_add_data_to_gwy(unittest.TestCase):
             [call(gwyitem, self.gwycontainer)])
 
     @patch('pygwyfile.gwychannel.add_gwyitem_to_gwycontainer', autospec=True)
-    @patch.object(Gwyfile, 'new_gwyitem_object')
+    @patch('pygwyfile.gwychannel.new_gwyitem_object', autospec=True)
     def test_return_value(self,
                           mock_new_gwyitem_object,
                           mock_add_gwyitem_to_gwycontainer):
@@ -1030,7 +1030,7 @@ class GwyChannel_add_mask_to_gwy(unittest.TestCase):
         mock_add_gwyitem_to_gwycontainer.assert_has_calls([])
 
     @patch('pygwyfile.gwychannel.add_gwyitem_to_gwycontainer', autospec=True)
-    @patch.object(Gwyfile, 'new_gwyitem_object')
+    @patch('pygwyfile.gwychannel.new_gwyitem_object', autospec=True)
     def test_create_new_gwyitem(self,
                                 mock_new_gwyitem_object,
                                 mock_add_gwyitem_to_gwycontainer):
@@ -1043,7 +1043,7 @@ class GwyChannel_add_mask_to_gwy(unittest.TestCase):
                   self.gwydf)])
 
     @patch('pygwyfile.gwychannel.add_gwyitem_to_gwycontainer', autospec=True)
-    @patch.object(Gwyfile, 'new_gwyitem_object')
+    @patch('pygwyfile.gwychannel.new_gwyitem_object', autospec=True)
     def test_add_gwyitem_to_container(self,
                                       mock_new_gwyitem_object,
                                       mock_add_gwyitem_to_gwycontainer):
@@ -1056,7 +1056,7 @@ class GwyChannel_add_mask_to_gwy(unittest.TestCase):
             [call(gwyitem, self.gwycontainer)])
 
     @patch('pygwyfile.gwychannel.add_gwyitem_to_gwycontainer', autospec=True)
-    @patch.object(Gwyfile, 'new_gwyitem_object')
+    @patch('pygwyfile.gwychannel.new_gwyitem_object', autospec=True)
     def test_return_value(self,
                           mock_new_gwyitem_object,
                           mock_add_gwyitem_to_gwycontainer):
@@ -1149,7 +1149,7 @@ class GwyChannel_add_show_to_gwy(unittest.TestCase):
         mock_add_gwyitem_to_gwycontainer.assert_has_calls([])
 
     @patch('pygwyfile.gwychannel.add_gwyitem_to_gwycontainer', autospec=True)
-    @patch.object(Gwyfile, 'new_gwyitem_object')
+    @patch('pygwyfile.gwychannel.new_gwyitem_object', autospec=True)
     def test_create_new_gwyitem(self,
                                 mock_new_gwyitem_object,
                                 mock_add_gwyitem_to_gwycontainer):
@@ -1162,7 +1162,7 @@ class GwyChannel_add_show_to_gwy(unittest.TestCase):
                   self.gwydf)])
 
     @patch('pygwyfile.gwychannel.add_gwyitem_to_gwycontainer', autospec=True)
-    @patch.object(Gwyfile, 'new_gwyitem_object')
+    @patch('pygwyfile.gwychannel.new_gwyitem_object', autospec=True)
     def test_add_gwyitem_to_container(self,
                                       mock_new_gwyitem_object,
                                       mock_add_gwyitem_to_gwycontainer):
@@ -1175,7 +1175,7 @@ class GwyChannel_add_show_to_gwy(unittest.TestCase):
             [call(gwyitem, self.gwycontainer)])
 
     @patch('pygwyfile.gwychannel.add_gwyitem_to_gwycontainer', autospec=True)
-    @patch.object(Gwyfile, 'new_gwyitem_object')
+    @patch('pygwyfile.gwychannel.new_gwyitem_object', autospec=True)
     def test_return_value(self,
                           mock_new_gwyitem_object,
                           mock_add_gwyitem_to_gwycontainer):
@@ -1276,7 +1276,7 @@ class GwyChannel_add_point_sel_to_gwy(unittest.TestCase):
         mock_add_gwyitem_to_gwycontainer.assert_has_calls([])
 
     @patch('pygwyfile.gwychannel.add_gwyitem_to_gwycontainer', autospec=True)
-    @patch.object(Gwyfile, 'new_gwyitem_object')
+    @patch('pygwyfile.gwychannel.new_gwyitem_object', autospec=True)
     def test_create_new_gwyitem(self,
                                 mock_new_gwyitem_object,
                                 mock_add_gwyitem_to_gwycontainer):
@@ -1289,7 +1289,7 @@ class GwyChannel_add_point_sel_to_gwy(unittest.TestCase):
                   self.gwysel)])
 
     @patch('pygwyfile.gwychannel.add_gwyitem_to_gwycontainer', autospec=True)
-    @patch.object(Gwyfile, 'new_gwyitem_object')
+    @patch('pygwyfile.gwychannel.new_gwyitem_object', autospec=True)
     def test_add_gwyitem_to_container(self,
                                       mock_new_gwyitem_object,
                                       mock_add_gwyitem_to_gwycontainer):
@@ -1302,7 +1302,7 @@ class GwyChannel_add_point_sel_to_gwy(unittest.TestCase):
             [call(gwyitem, self.gwycontainer)])
 
     @patch('pygwyfile.gwychannel.add_gwyitem_to_gwycontainer', autospec=True)
-    @patch.object(Gwyfile, 'new_gwyitem_object')
+    @patch('pygwyfile.gwychannel.new_gwyitem_object', autospec=True)
     def test_return_value(self,
                           mock_new_gwyitem_object,
                           mock_add_gwyitem_to_gwycontainer):
@@ -1403,7 +1403,7 @@ class GwyChannel_add_pointer_sel_to_gwy(unittest.TestCase):
         mock_add_gwyitem_to_gwycontainer.assert_has_calls([])
 
     @patch('pygwyfile.gwychannel.add_gwyitem_to_gwycontainer', autospec=True)
-    @patch.object(Gwyfile, 'new_gwyitem_object')
+    @patch('pygwyfile.gwychannel.new_gwyitem_object', autospec=True)
     def test_create_new_gwyitem(self,
                                 mock_new_gwyitem_object,
                                 mock_add_gwyitem_to_gwycontainer):
@@ -1416,7 +1416,7 @@ class GwyChannel_add_pointer_sel_to_gwy(unittest.TestCase):
                   self.gwysel)])
 
     @patch('pygwyfile.gwychannel.add_gwyitem_to_gwycontainer', autospec=True)
-    @patch.object(Gwyfile, 'new_gwyitem_object')
+    @patch('pygwyfile.gwychannel.new_gwyitem_object', autospec=True)
     def test_add_gwyitem_to_container(self,
                                       mock_new_gwyitem_object,
                                       mock_add_gwyitem_to_gwycontainer):
@@ -1429,7 +1429,7 @@ class GwyChannel_add_pointer_sel_to_gwy(unittest.TestCase):
             [call(gwyitem, self.gwycontainer)])
 
     @patch('pygwyfile.gwychannel.add_gwyitem_to_gwycontainer', autospec=True)
-    @patch.object(Gwyfile, 'new_gwyitem_object')
+    @patch('pygwyfile.gwychannel.new_gwyitem_object', autospec=True)
     def test_return_value(self,
                           mock_new_gwyitem_object,
                           mock_add_gwyitem_to_gwycontainer):
@@ -1529,7 +1529,7 @@ class GwyChannel_add_line_sel_to_gwy(unittest.TestCase):
         mock_add_gwyitem_to_gwycontainer.assert_has_calls([])
 
     @patch('pygwyfile.gwychannel.add_gwyitem_to_gwycontainer', autospec=True)
-    @patch.object(Gwyfile, 'new_gwyitem_object')
+    @patch('pygwyfile.gwychannel.new_gwyitem_object', autospec=True)
     def test_create_new_gwyitem(self,
                                 mock_new_gwyitem_object,
                                 mock_add_gwyitem_to_gwycontainer):
@@ -1542,7 +1542,7 @@ class GwyChannel_add_line_sel_to_gwy(unittest.TestCase):
                   self.gwysel)])
 
     @patch('pygwyfile.gwychannel.add_gwyitem_to_gwycontainer', autospec=True)
-    @patch.object(Gwyfile, 'new_gwyitem_object')
+    @patch('pygwyfile.gwychannel.new_gwyitem_object', autospec=True)
     def test_add_gwyitem_to_container(self,
                                       mock_new_gwyitem_object,
                                       mock_add_gwyitem_to_gwycontainer):
@@ -1555,7 +1555,7 @@ class GwyChannel_add_line_sel_to_gwy(unittest.TestCase):
             [call(gwyitem, self.gwycontainer)])
 
     @patch('pygwyfile.gwychannel.add_gwyitem_to_gwycontainer', autospec=True)
-    @patch.object(Gwyfile, 'new_gwyitem_object')
+    @patch('pygwyfile.gwychannel.new_gwyitem_object', autospec=True)
     def test_return_value(self,
                           mock_new_gwyitem_object,
                           mock_add_gwyitem_to_gwycontainer):
@@ -1657,7 +1657,7 @@ class GwyChannel_add_rectangle_sel_to_gwy(unittest.TestCase):
         mock_add_gwyitem_to_gwycontainer.assert_has_calls([])
 
     @patch('pygwyfile.gwychannel.add_gwyitem_to_gwycontainer', autospec=True)
-    @patch.object(Gwyfile, 'new_gwyitem_object')
+    @patch('pygwyfile.gwychannel.new_gwyitem_object', autospec=True)
     def test_create_new_gwyitem(self,
                                 mock_new_gwyitem_object,
                                 mock_add_gwyitem_to_gwycontainer):
@@ -1670,7 +1670,7 @@ class GwyChannel_add_rectangle_sel_to_gwy(unittest.TestCase):
                   self.gwysel)])
 
     @patch('pygwyfile.gwychannel.add_gwyitem_to_gwycontainer', autospec=True)
-    @patch.object(Gwyfile, 'new_gwyitem_object')
+    @patch('pygwyfile.gwychannel.new_gwyitem_object', autospec=True)
     def test_add_gwyitem_to_container(self,
                                       mock_new_gwyitem_object,
                                       mock_add_gwyitem_to_gwycontainer):
@@ -1683,7 +1683,7 @@ class GwyChannel_add_rectangle_sel_to_gwy(unittest.TestCase):
             [call(gwyitem, self.gwycontainer)])
 
     @patch('pygwyfile.gwychannel.add_gwyitem_to_gwycontainer', autospec=True)
-    @patch.object(Gwyfile, 'new_gwyitem_object')
+    @patch('pygwyfile.gwychannel.new_gwyitem_object', autospec=True)
     def test_return_value(self,
                           mock_new_gwyitem_object,
                           mock_add_gwyitem_to_gwycontainer):
@@ -1781,7 +1781,7 @@ class GwyChannel_add_ellipse_sel_to_gwy(unittest.TestCase):
         mock_add_gwyitem_to_gwycontainer.assert_has_calls([])
 
     @patch('pygwyfile.gwychannel.add_gwyitem_to_gwycontainer', autospec=True)
-    @patch.object(Gwyfile, 'new_gwyitem_object')
+    @patch('pygwyfile.gwychannel.new_gwyitem_object', autospec=True)
     def test_create_new_gwyitem(self,
                                 mock_new_gwyitem_object,
                                 mock_add_gwyitem_to_gwycontainer):
@@ -1794,7 +1794,7 @@ class GwyChannel_add_ellipse_sel_to_gwy(unittest.TestCase):
                   self.gwysel)])
 
     @patch('pygwyfile.gwychannel.add_gwyitem_to_gwycontainer', autospec=True)
-    @patch.object(Gwyfile, 'new_gwyitem_object')
+    @patch('pygwyfile.gwychannel.new_gwyitem_object', autospec=True)
     def test_add_gwyitem_to_container(self,
                                       mock_new_gwyitem_object,
                                       mock_add_gwyitem_to_gwycontainer):
@@ -1807,7 +1807,7 @@ class GwyChannel_add_ellipse_sel_to_gwy(unittest.TestCase):
             [call(gwyitem, self.gwycontainer)])
 
     @patch('pygwyfile.gwychannel.add_gwyitem_to_gwycontainer', autospec=True)
-    @patch.object(Gwyfile, 'new_gwyitem_object')
+    @patch('pygwyfile.gwychannel.new_gwyitem_object', autospec=True)
     def test_return_value(self,
                           mock_new_gwyitem_object,
                           mock_add_gwyitem_to_gwycontainer):

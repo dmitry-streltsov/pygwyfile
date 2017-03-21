@@ -21,6 +21,8 @@ class GwyGraphCurve:
     Methods:
         from_gwy(gwyobject): Create GwyGraphCurve instance from
                              <GwyGraphCurveModel*> object
+        to_gwy(): Create  GWY file <GwyGraphCurveModel*> object
+                  from GwyGraphCurve instance
 
     """
 

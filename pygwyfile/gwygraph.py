@@ -25,6 +25,7 @@ class GwyGraphModel:
     Methods:
         from_gwy(gwyobject): create GwyGraphModel instance
                              from <GwyGraphModel*> object
+        to_gwy(): create a new GWY file <GwyGraphModel*> object.
 
     """
 

@@ -7,6 +7,11 @@
 from pygwyfile.gwyfile import GwyfileError
 from pygwyfile.gwyfile import Gwyfile
 from pygwyfile.gwyfile import add_gwyitem_to_gwycontainer
+from pygwyfile.gwyfile import (new_gwyitem_bool,
+                               new_gwyitem_int32,
+                               new_gwyitem_double,
+                               new_gwyitem_string,
+                               new_gwyitem_object)
 from pygwyfile.gwydatafield import GwyDataField
 from pygwyfile.gwyselection import (GwyPointSelection,
                                     GwyPointerSelection,
@@ -222,7 +227,7 @@ class GwyChannel:
         """
         if self.title is not None:
             item_key = "/{:d}/data/title".format(channel_id)
-            gwyitem = Gwyfile.new_gwyitem_string(item_key, self.title)
+            gwyitem = new_gwyitem_string(item_key, self.title)
             is_added = add_gwyitem_to_gwycontainer(gwyitem, gwycontainer)
             return is_added
         else:
@@ -259,7 +264,7 @@ class GwyChannel:
         """
         if self.palette is not None:
             item_key = "/{:d}/base/palette".format(channel_id)
-            gwyitem = Gwyfile.new_gwyitem_string(item_key, self.palette)
+            gwyitem = new_gwyitem_string(item_key, self.palette)
             is_added = add_gwyitem_to_gwycontainer(gwyitem, gwycontainer)
             return is_added
         else:
@@ -294,7 +299,7 @@ class GwyChannel:
         """
         if self.visible is not None:
             item_key = "/{:d}/data/visible".format(channel_id)
-            gwyitem = Gwyfile.new_gwyitem_bool(item_key, self.visible)
+            gwyitem = new_gwyitem_bool(item_key, self.visible)
             is_added = add_gwyitem_to_gwycontainer(gwyitem, gwycontainer)
             return is_added
         else:
@@ -330,7 +335,7 @@ class GwyChannel:
         """
         if self.range_type is not None:
             item_key = "/{:d}/base/range-type".format(channel_id)
-            gwyitem = Gwyfile.new_gwyitem_int32(item_key, self.range_type)
+            gwyitem = new_gwyitem_int32(item_key, self.range_type)
             is_added = add_gwyitem_to_gwycontainer(gwyitem, gwycontainer)
             return is_added
         else:
@@ -364,7 +369,7 @@ class GwyChannel:
         """
         if self.range_min is not None:
             item_key = "/{:d}/base/min".format(channel_id)
-            gwyitem = Gwyfile.new_gwyitem_double(item_key, self.range_min)
+            gwyitem = new_gwyitem_double(item_key, self.range_min)
             is_added = add_gwyitem_to_gwycontainer(gwyitem, gwycontainer)
             return is_added
         else:
@@ -398,7 +403,7 @@ class GwyChannel:
         """
         if self.range_max is not None:
             item_key = "/{:d}/base/max".format(channel_id)
-            gwyitem = Gwyfile.new_gwyitem_double(item_key, self.range_max)
+            gwyitem = new_gwyitem_double(item_key, self.range_max)
             is_added = add_gwyitem_to_gwycontainer(gwyitem, gwycontainer)
             return is_added
         else:
@@ -432,7 +437,7 @@ class GwyChannel:
         """
         if self.mask_red is not None:
             item_key = "/{:d}/mask/red".format(channel_id)
-            gwyitem = Gwyfile.new_gwyitem_double(item_key, self.mask_red)
+            gwyitem = new_gwyitem_double(item_key, self.mask_red)
             is_added = add_gwyitem_to_gwycontainer(gwyitem, gwycontainer)
             return is_added
         else:
@@ -466,7 +471,7 @@ class GwyChannel:
         """
         if self.mask_green is not None:
             item_key = "/{:d}/mask/green".format(channel_id)
-            gwyitem = Gwyfile.new_gwyitem_double(item_key, self.mask_green)
+            gwyitem = new_gwyitem_double(item_key, self.mask_green)
             is_added = add_gwyitem_to_gwycontainer(gwyitem, gwycontainer)
             return is_added
         else:
@@ -500,7 +505,7 @@ class GwyChannel:
         """
         if self.mask_blue is not None:
             item_key = "/{:d}/mask/blue".format(channel_id)
-            gwyitem = Gwyfile.new_gwyitem_double(item_key, self.mask_blue)
+            gwyitem = new_gwyitem_double(item_key, self.mask_blue)
             is_added = add_gwyitem_to_gwycontainer(gwyitem, gwycontainer)
             return is_added
         else:
@@ -534,7 +539,7 @@ class GwyChannel:
         """
         if self.mask_alpha is not None:
             item_key = "/{:d}/mask/alpha".format(channel_id)
-            gwyitem = Gwyfile.new_gwyitem_double(item_key, self.mask_alpha)
+            gwyitem = new_gwyitem_double(item_key, self.mask_alpha)
             is_added = add_gwyitem_to_gwycontainer(gwyitem, gwycontainer)
             return is_added
         else:
@@ -575,7 +580,7 @@ class GwyChannel:
         if isinstance(self.data, GwyDataField):
             key = "/{:d}/data".format(channel_id)
             gwydf = self.data.to_gwy()
-            gwyitem = Gwyfile.new_gwyitem_object(key, gwydf)
+            gwyitem = new_gwyitem_object(key, gwydf)
             is_added = add_gwyitem_to_gwycontainer(gwyitem, gwycontainer)
             return is_added
         else:
@@ -617,7 +622,7 @@ class GwyChannel:
         elif isinstance(self.mask, GwyDataField):
             key = "/{:d}/mask".format(channel_id)
             gwydf = self.mask.to_gwy()
-            gwyitem = Gwyfile.new_gwyitem_object(key, gwydf)
+            gwyitem = new_gwyitem_object(key, gwydf)
             is_added = add_gwyitem_to_gwycontainer(gwyitem, gwycontainer)
             return is_added
         else:
@@ -660,7 +665,7 @@ class GwyChannel:
         elif isinstance(self.show, GwyDataField):
             key = "/{:d}/show".format(channel_id)
             gwydf = self.show.to_gwy()
-            gwyitem = Gwyfile.new_gwyitem_object(key, gwydf)
+            gwyitem = new_gwyitem_object(key, gwydf)
             is_added = add_gwyitem_to_gwycontainer(gwyitem, gwycontainer)
             return is_added
         else:
@@ -702,7 +707,7 @@ class GwyChannel:
         elif isinstance(self.point_selections, GwyPointSelection):
             key = "/{:d}/select/point".format(channel_id)
             gwysel = self.point_selections.to_gwy()
-            gwyitem = Gwyfile.new_gwyitem_object(key, gwysel)
+            gwyitem = new_gwyitem_object(key, gwysel)
             is_added = add_gwyitem_to_gwycontainer(gwyitem, gwycontainer)
             return is_added
         else:
@@ -745,7 +750,7 @@ class GwyChannel:
         elif isinstance(self.pointer_selections, GwyPointerSelection):
             key = "/{:d}/select/pointer".format(channel_id)
             gwysel = self.pointer_selections.to_gwy()
-            gwyitem = Gwyfile.new_gwyitem_object(key, gwysel)
+            gwyitem = new_gwyitem_object(key, gwysel)
             is_added = add_gwyitem_to_gwycontainer(gwyitem, gwycontainer)
             return is_added
         else:
@@ -788,7 +793,7 @@ class GwyChannel:
         elif isinstance(self.line_selections, GwyLineSelection):
             key = "/{:d}/select/line".format(channel_id)
             gwysel = self.line_selections.to_gwy()
-            gwyitem = Gwyfile.new_gwyitem_object(key, gwysel)
+            gwyitem = new_gwyitem_object(key, gwysel)
             is_added = add_gwyitem_to_gwycontainer(gwyitem, gwycontainer)
             return is_added
         else:
@@ -831,7 +836,7 @@ class GwyChannel:
         elif isinstance(self.rectangle_selections, GwyRectangleSelection):
             key = "/{:d}/select/rectangle".format(channel_id)
             gwysel = self.rectangle_selections.to_gwy()
-            gwyitem = Gwyfile.new_gwyitem_object(key, gwysel)
+            gwyitem = new_gwyitem_object(key, gwysel)
             is_added = add_gwyitem_to_gwycontainer(gwyitem, gwycontainer)
             return is_added
         else:
@@ -874,7 +879,7 @@ class GwyChannel:
         elif isinstance(self.ellipse_selections, GwyEllipseSelection):
             key = "/{:d}/select/ellipse".format(channel_id)
             gwysel = self.ellipse_selections.to_gwy()
-            gwyitem = Gwyfile.new_gwyitem_object(key, gwysel)
+            gwyitem = new_gwyitem_object(key, gwysel)
             is_added = add_gwyitem_to_gwycontainer(gwyitem, gwycontainer)
             return is_added
         else:
