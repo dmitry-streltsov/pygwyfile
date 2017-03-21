@@ -96,9 +96,28 @@ class GwyContainer:
         gwycontainer = new_gwycontainer()
         _container_graphs_dic[gwycontainer] = []
 
+        self._add_channels_to_gwycontainer(gwycontainer)
+        self._add_graphs_to_gwycontainer(gwycontainer)
+
+        return gwycontainer
+
+    def _add_channels_to_gwycontainer(self, gwycontainer):
+        """ Convert channels to gwychannels and add them to gwycontainer
+
+        Args:
+            gwycontainer (<GwyfileObject*>)
+
+        """
         for channel_id, channel in enumerate(self.channels):
             channel.to_gwy(gwycontainer, channel_id)
 
+    def _add_graphs_to_gwycontainer(self, gwycontainer):
+        """ Convert graphs to gwygraphmodels and them to gwycontainer
+
+        Args:
+            gwycontainer (<GwyfileObject*>)
+
+        """
         for graph_id, graph in enumerate(self.graphs):
             gwygraph = graph.to_gwy()
 
@@ -106,19 +125,30 @@ class GwyContainer:
             key = "/0/graph/graph/{:d}".format(graph_id + 1)
             gwyitem = Gwyfile.new_gwyitem_object(key, gwygraph)
 
-            if not add_gwyitem_to_gwycontainer(gwyitem, gwycontainer):
-                continue
+            if add_gwyitem_to_gwycontainer(gwyitem, gwycontainer):
+                # gwycontainer object keeps alive gwygraph objects
+                _container_graphs_dic[gwycontainer].append(gwygraph)
 
-            # gwycontainer object keeps alive gwygraph objects
-            _container_graphs_dic[gwycontainer].append(gwygraph)
+                self._add_graph_visibility_to_gwycontainer(graph,
+                                                           gwycontainer,
+                                                           key)
 
-            if graph.visible is not None:
-                key_visible = '/'.join((key, 'visible'))
-                gwyitem_visible = Gwyfile.new_gwyitem_bool(key_visible,
-                                                           graph.visible)
-                add_gwyitem_to_gwycontainer(gwyitem_visible, gwycontainer)
+    @staticmethod
+    def _add_graph_visibility_to_gwycontainer(graph, gwycontainer, key):
+        """ Add graph visibility GWY data item to gwycontainer
 
-        return gwycontainer
+        Args:
+            graph (GwyGraphModel instance):
+            gwycontainer (<GwyfileObject*>)
+            key (string): name of the graph in gwycontainer
+                          (e.g. "/0/graph/graph/1")
+
+        """
+        if graph.visible is not None:
+            key_visible = '/'.join((key, 'visible'))
+            gwyitem_visible = Gwyfile.new_gwyitem_bool(key_visible,
+                                                       graph.visible)
+            add_gwyitem_to_gwycontainer(gwyitem_visible, gwycontainer)
 
     def to_gwyfile(self, filename=None):
         """ Write this container to gwy file.

@@ -1,5 +1,5 @@
 import unittest
-from unittest.mock import patch, call, Mock
+from unittest.mock import patch, call, Mock, ANY
 
 from pygwyfile._libgwyfile import ffi
 from pygwyfile.gwyfile import Gwyfile
@@ -436,6 +436,191 @@ class Func_read_gwyfile_TestCase(unittest.TestCase):
         expected_return = container
 
         self.assertEqual(actual_return, expected_return)
+
+
+class GwyContainer_to_gwy(unittest.TestCase):
+    """ Tests for to_gwy method of GwyContainer"""
+    def setUp(self):
+        self.gwycontainer = Mock(spec=GwyContainer)
+        self.gwycontainer.to_gwy = GwyContainer.to_gwy
+        self.gwycontainer._add_channels_to_gwycontainer = Mock(autospec=True)
+        self.gwycontainer._add_graphs_to_gwycontainer = Mock(autospec=True)
+
+    @patch('pygwyfile.gwycontainer.new_gwycontainer', autospec=True)
+    def test_create_new_empty_gwycontainer_object(self, mock_new_gwycontainer):
+        """ Create new empty gwycontainer"""
+        self.gwycontainer.to_gwy(self.gwycontainer)
+        mock_new_gwycontainer.assert_has_calls(
+            [call()])
+
+    @patch('pygwyfile.gwycontainer.new_gwycontainer', autospec=True)
+    def test_add_channels_to_gwycontainer_object(self, mock_new_gwycontainer):
+        """ Add channels to created gwycontainer"""
+        self.gwycontainer.to_gwy(self.gwycontainer)
+        self.gwycontainer._add_channels_to_gwycontainer.assert_has_calls(
+            [call(mock_new_gwycontainer.return_value)])
+
+    @patch('pygwyfile.gwycontainer.new_gwycontainer', autospec=True)
+    def test_add_graphs_to_gwycontainer_object(self, mock_new_gwycontainer):
+        """ Add graphs to gwycontainer """
+        self.gwycontainer.to_gwy(self.gwycontainer)
+        self.gwycontainer._add_graphs_to_gwycontainer.assert_has_calls(
+            [call(mock_new_gwycontainer.return_value)])
+
+    @patch('pygwyfile.gwycontainer.new_gwycontainer', autospec=True)
+    def test_return_gwycontainer(self, mock_new_gwycontainer):
+        """ Return created gwycontainer"""
+        actual_return = self.gwycontainer.to_gwy(self.gwycontainer)
+        self.assertEqual(actual_return, mock_new_gwycontainer.return_value)
+
+
+class GwyContainer_add_channels_to_gwycontainer(unittest.TestCase):
+    """Tests for _add_channels_to_gwycontainer method of GwyContainer class"""
+    def setUp(self):
+        self.container = Mock(spec=GwyContainer)
+        self.gwycontainer = Mock()
+        self.container._add_channels_to_gwycontainer = (
+            GwyContainer._add_channels_to_gwycontainer)
+        self.channel0 = Mock(spec=GwyChannel)
+        self.channel1 = Mock(spec=GwyChannel)
+        self.container.channels = [self.channel0, self.channel1]
+
+    def test_converting_channels_to_gwychannels(self):
+        """ Convert channels to gwychannels and add them to gwycontainer"""
+        self.container._add_channels_to_gwycontainer(self.container,
+                                                     self.gwycontainer)
+        self.channel0.to_gwy.side_effect = self._ch0_to_gwy_side_effect
+        self.channel1.to_gwy.side_effect = self._ch1_to_gwy_side_effect
+
+    def _ch0_to_gwy_side_effect(self, *args):
+        self.assertEqual(args[0], self.gwycontainer)
+        self.assertEqual(args[1], 0)
+
+    def _ch1_to_gwy_side_effect(self, *args):
+        self.assertEqual(args[0], self.gwycontainer)
+        self.assertEqual(args[1], 1)
+
+
+class GwyContainer_add_graphs_to_gwycontainer(unittest.TestCase):
+    """Tests for _add_graphs_to_gwycontainer method of GwyContainer class"""
+    def setUp(self):
+        self.container = Mock(spec=GwyContainer)
+        self.gwycontainer = Mock()
+        self.container._add_graphs_to_gwycontainer = (
+            GwyContainer._add_graphs_to_gwycontainer)
+        self.graph1 = Mock(spec=GwyGraphModel)
+        self.graph2 = Mock(spec=GwyGraphModel)
+        self.container.graphs = [self.graph1, self.graph2]
+
+    @patch('pygwyfile.gwycontainer._container_graphs_dic')
+    @patch('pygwyfile.gwycontainer.add_gwyitem_to_gwycontainer', autospec=True)
+    @patch('pygwyfile.gwycontainer.Gwyfile', autospec=True)
+    def test_convert_graphs_to_gwygraph_objects(self,
+                                                mock_gwyfile,
+                                                mock_add_gwyitem,
+                                                mock_weadref_dic):
+        """ Convert graphs to gwygraphmodel objects"""
+        self.container._add_graphs_to_gwycontainer(self.container,
+                                                   self.gwycontainer)
+        self.graph1.to_gwy.assert_has_calls(
+            [call()])
+        self.graph2.to_gwy.assert_has_calls(
+            [call()])
+
+    @patch('pygwyfile.gwycontainer._container_graphs_dic')
+    @patch('pygwyfile.gwycontainer.add_gwyitem_to_gwycontainer', autospec=True)
+    @patch('pygwyfile.gwycontainer.Gwyfile', autospec=True)
+    def test_create_new_gwyitems_from_gwygraphmodel_objects(self,
+                                                            mock_gwyfile,
+                                                            mock_add_gwyitem,
+                                                            mock_weadref_dic):
+        """ Create new gwyitems from the gwygraphmodel objects"""
+        mock_gwyfile.new_gwyitem_object = Mock(autospec=True)
+        self.container._add_graphs_to_gwycontainer(self.container,
+                                                   self.gwycontainer)
+        mock_gwyfile.new_gwyitem_object.assert_has_calls(
+            [call('/0/graph/graph/1', self.graph1.to_gwy.return_value),
+             call('/0/graph/graph/2', self.graph2.to_gwy.return_value)])
+
+    @patch('pygwyfile.gwycontainer._container_graphs_dic')
+    @patch('pygwyfile.gwycontainer.add_gwyitem_to_gwycontainer', autospec=True)
+    @patch('pygwyfile.gwycontainer.Gwyfile', autospec=True)
+    def test_add_gwyitems_to_gwycontainer(self,
+                                          mock_gwyfile,
+                                          mock_add_gwyitem,
+                                          mock_weadref_dic):
+        """ Add created gwyitems to the gwycontainer"""
+        self.container._add_graphs_to_gwycontainer(self.container,
+                                                   self.gwycontainer)
+        mock_add_gwyitem.assert_has_calls(
+            [call(mock_gwyfile.new_gwyitem_object.return_value,
+                  self.gwycontainer)])
+
+    @patch('pygwyfile.gwycontainer._container_graphs_dic')
+    @patch('pygwyfile.gwycontainer.add_gwyitem_to_gwycontainer', autospec=True)
+    @patch('pygwyfile.gwycontainer.Gwyfile', autospec=True)
+    def test_append_weakref_dictionary_with_gwygraph_objects(self,
+                                                             mock_gwyfile,
+                                                             mock_add_gwyitem,
+                                                             mock_weadref_dic):
+        """ Append _container_graphs_dic weakref key dictionary to
+            prevent removing gwygraph objects by garbage collector
+        """
+        self.container._add_graphs_to_gwycontainer(self.container,
+                                                   self.gwycontainer)
+        mock_weadref_dic[self.gwycontainer].append.assert_has_calls(
+            [call(self.graph1.to_gwy.return_value),
+             call(self.graph2.to_gwy.return_value)])
+
+    @patch('pygwyfile.gwycontainer._container_graphs_dic')
+    @patch('pygwyfile.gwycontainer.add_gwyitem_to_gwycontainer', autospec=True)
+    @patch('pygwyfile.gwycontainer.Gwyfile', autospec=True)
+    def test_add_graph_visibility_to_gwycontainer(self,
+                                                  mock_gwyfile,
+                                                  mock_add_gwyitem,
+                                                  mock_weadref_dic):
+        """ Add graph visibility data item to gwycontainer """
+        self.container._add_graph_visibility_to_gwycontainer = (
+            Mock(autospec=True))
+        self.container._add_graphs_to_gwycontainer(self.container,
+                                                   self.gwycontainer)
+        self.container._add_graph_visibility_to_gwycontainer.assert_has_calls(
+            [call(self.graph1, self.gwycontainer, "/0/graph/graph/1"),
+             call(self.graph2, self.gwycontainer, "/0/graph/graph/2")])
+
+
+class GwyContainer_add_graph_visibility_to_gwycontainer(unittest.TestCase):
+    """Tests for GwyContainer._add_graph_visibility_to_gwycontainer"""
+    def setUp(self):
+        self.gwycontainer = Mock()
+        self.graph = Mock(spec=GwyGraphModel)
+        self.graph.visible = True
+        self.key = "/0/graph/graph/1"
+
+    @patch('pygwyfile.gwycontainer.add_gwyitem_to_gwycontainer', autospec=True)
+    @patch('pygwyfile.gwycontainer.Gwyfile', autospec=True)
+    def test_convert_visible_to_bool_gwyitem(self,
+                                             mock_gwyfile,
+                                             mock_add_gwyitem):
+        """ Create bool gwyitem from visible attribute"""
+        GwyContainer._add_graph_visibility_to_gwycontainer(self.graph,
+                                                           self.gwycontainer,
+                                                           self.key)
+        mock_gwyfile.new_gwyitem_bool.assert_has_calls(
+            [call("/0/graph/graph/1/visible", self.graph.visible)])
+
+    @patch('pygwyfile.gwycontainer.add_gwyitem_to_gwycontainer', autospec=True)
+    @patch('pygwyfile.gwycontainer.Gwyfile', autospec=True)
+    def test_add_gwyitems_to_gwycontainer(self,
+                                          mock_gwyfile,
+                                          mock_add_gwyitem):
+        """ Add bool gwyitem to gwycontainer"""
+        GwyContainer._add_graph_visibility_to_gwycontainer(self.graph,
+                                                           self.gwycontainer,
+                                                           self.key)
+        mock_add_gwyitem.assert_has_calls(
+            [call(mock_gwyfile.new_gwyitem_bool.return_value,
+                  self.gwycontainer)])
 
 
 if __name__ == '__main__':

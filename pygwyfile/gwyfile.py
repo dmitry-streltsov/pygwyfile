@@ -5,6 +5,17 @@
         GwyfileErrorCMsg(GwyfileError): Libgwyfile C library exceptions
         Gwyfile: representation of GwyfileObject* from Libgwyfile C library
 
+    Functions:
+        new_gwycontainer():
+            Create new empty <GwyContainer*> object
+
+        add_gwyitem_to_gwycontainer(gwyitem, gwycontainer):
+            Add data item to <GwyContainer*> object
+
+        write_gwycontainer_to_gwyfile(gwycontainer, filename):
+            Write gwycontainer to file.
+            The file will be overwritten if it exists
+
 """
 
 import os.path
@@ -319,7 +330,7 @@ def new_gwycontainer():
 
 
 def add_gwyitem_to_gwycontainer(gwyitem, gwycontainer):
-    """ Add an data item to a GwyContainer
+    """ Add data item to a GwyContainer
 
     Args:
         gwyitem (GwyfileItem*): A GWY file data item
