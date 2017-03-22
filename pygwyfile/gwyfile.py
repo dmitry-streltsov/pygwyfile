@@ -17,9 +17,13 @@
             The file will be overwritten if it exists
 
         new_gwyitem_bool(item_key, value): Create a new boolean GWY file item
+
         new_gwyitem_string(item_key, value): Create a new string GWY file item
+
         new_gwyitem_object(item_key, value): Create a new object GWY file item
+
         new_gwyitem_int32(item_key, value): Create a new int32 GWY file item
+
         new_gwyitem_double(item_key, vlue): Create a new double GWY file item
 
 """
@@ -58,13 +62,12 @@ class Gwyfile:
                                            Libgwyfile C library
 
     Methods:
-        check_gwyobject(key):  Check presence of object in the gwyfile
-        get_gwyobject(key):    Get Gwyfile object
-        get_gwyitem_bool(item): Get boolean value contained in Gwy data item
-        get_gwyitem_double(item): Get double value contained in Gwy data item
-        get_gwyitem_int32(item): Get 32bit integer value contained in
-                                 Gwy data item
-        get_gwyitem_string(item): Get string value contained in Gyw data item
+        get_gwyitem_bool(self, item_key): Get boolean value from Gwy data item
+        get_gwyitem_string(self, item_key): Get string value from Gwy data item
+        get_gwyitem_object(self, item_key): Get object from Gwy data item
+        get_gwyitem_int32(self, item_key): Get int32 value from Gwy data item
+        get_gwyitem_double(self, item_key): Get double value from Gwy data item
+        from_gwy(filename): Create Gwyfile instance from file
     """
 
     def __init__(self, c_gwyfile):

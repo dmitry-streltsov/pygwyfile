@@ -5,6 +5,7 @@
 
     Functions:
         read_gwyfile: create GwyContainer instance from gwy file
+
 """
 import os.path
 import weakref
@@ -35,8 +36,12 @@ class GwyContainer:
                 All graphs in Gwyfile instance
 
     Methods:
-        from_gwy(gwyfile): create GwyContainer instance
-                           from Gwyfile object
+        from_gwy(cls, gwyfile): create GwyContainer instance
+                                from Gwyfile object
+        to_gwy(self): Create a new GWY container object with data
+                      from this container
+        to_gwyfile(self, filename=None): Write this container to gwy file.
+                                The file will be overwritten if it exists.
     """
 
     def __init__(self, filename=None, channels=None, graphs=None):

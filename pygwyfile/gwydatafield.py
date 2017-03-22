@@ -21,8 +21,9 @@ class GwyDataField:
             datafield metadata
 
     Methods:
-        from_gwy(gwyobject): Create GwyDataField instance from
-                             <GwyDataField*> object
+        from_gwy(cls, gwyobject): Create GwyDataField instance from
+                                  <GwyDataField*> object
+        to_gwy(self): Get C representation of GwyDataField instance
     """
 
     def __init__(self, data, meta=None):

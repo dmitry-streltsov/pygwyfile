@@ -40,8 +40,9 @@ class GwyChannel:
         ellipse_selections (GwyEllipseSelection): ellipse selections
 
     Methods:
-        from_gwy(gwyfile, channel_id): Get channel with id=channel_id
-                                       from Gwyfile object
+        from_gwy(cls, gwyfile, channel_id): Get channel with id=channel_id
+                                            from Gwyfile object
+        to_gwy(self, gwycontainer, channel_id): Add the channel to gwycontainer
 
     """
 
