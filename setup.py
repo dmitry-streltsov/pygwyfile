@@ -2,7 +2,7 @@ from setuptools import setup
 
 
 setup(name="pygwyfile",
-      version="0.1.0a",
+      version="0.1.0,
       author="Dmitry Streltsov",
       author_email="streltsov.dmitry@gmail.com",
       description=("A pythonic interface for reading and "
