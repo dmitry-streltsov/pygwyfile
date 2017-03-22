@@ -1,4 +1,4 @@
-# flpygwyfile
+# pygwyfile
 Pygwyfile is a small Python library that provides interface for reading and writing of [Gwyddion](http://gwyddion.net/) GWY files. For operations with GWY files [Libgwyfile](http://libgwyfile.sourceforge.net/) C library is used.
 
 ## Installation
@@ -21,7 +21,7 @@ sudo apt-get install build-essential libssl-dev libffi-dev python-dev
 pip install https://github.com/dmitry-streltsov/pygwyfile
 ```
 ## Usage
-Here is a simple example that shows how to load a gwy file and save it as another file
+Here is a simple example that shows how to load a gwy file and save it to another file.
 
 ```python
 from pygwyfile.gwycontainer import read_gwyfile
