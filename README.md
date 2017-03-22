@@ -18,7 +18,7 @@ sudo apt-get install build-essential libssl-dev libffi-dev python-dev
 3. Install pygwyfile (Installation in virtual environment is recommended).
 
 ```
-pip install https://github.com/dmitry-streltsov/pygwyfile
+pip install git+https://github.com/dmitry-streltsov/pygwyfile
 ```
 ## Usage
 Here is a simple example that shows how to load a gwy file and save it to another file.
